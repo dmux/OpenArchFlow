@@ -52,6 +52,8 @@ interface DiagramState {
     updateNode: (id: string, data: any) => void;
     layout: () => Promise<void>;
     clear: () => void;
+    isPlaying: boolean;
+    setIsPlaying: (isPlaying: boolean) => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -61,6 +63,9 @@ export const useDiagramStore = create<DiagramState>()(
             activeDiagramId: null,
             selectedNodeId: null,
             geminiApiKey: null,
+            isPlaying: false,
+
+            setIsPlaying: (isPlaying) => set({ isPlaying }),
 
             createDiagram: (name = 'New Architecture') => {
                 const id = crypto.randomUUID();
@@ -303,7 +308,8 @@ export const useDiagramStore = create<DiagramState>()(
             partialize: (state) => ({
                 diagrams: state.diagrams,
                 activeDiagramId: state.activeDiagramId,
-                geminiApiKey: state.geminiApiKey
+                geminiApiKey: state.geminiApiKey,
+                // isPlaying is transient, do not persist
             }),
             onRehydrateStorage: () => (state) => {
                 // Ensure there is at least one diagram if none exist after hydration

@@ -15,7 +15,7 @@ import PropertiesPanel from '@/components/diagram/PropertiesPanel';
 import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
-import { Cloud, Laptop, Download, Layout, Trash2 } from 'lucide-react';
+import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,6 +44,8 @@ export default function Home() {
     const setEdges = useDiagramStore((state) => state.setEdges);
     const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
     const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
+    const isPlaying = useDiagramStore((state) => state.isPlaying);
+    const setIsPlaying = useDiagramStore((state) => state.setIsPlaying);
 
     // Initialize WebLLM when toggled on
     useEffect(() => {
@@ -148,6 +150,19 @@ export default function Home() {
                 <div className="absolute top-4 left-4 z-50 flex items-center space-x-4">
                     <Button variant="outline" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-background/80 backdrop-blur">
                         <Layout className="w-5 h-5" />
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsPlaying(!isPlaying)}
+                        className={cn(
+                            "bg-background/80 backdrop-blur transition-all",
+                            isPlaying && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                        )}
+                        title={isPlaying ? "Stop Animation" : "Play Animation"}
+                    >
+                        {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                     </Button>
 
                     <h1 className="text-xl font-bold tracking-tighter text-foreground/80 pointer-events-none hidden md:block">

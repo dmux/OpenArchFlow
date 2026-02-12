@@ -41,6 +41,7 @@ const selector = (state: any) => {
         setNodes: state.setNodes,
         setEdges: state.setEdges,
         setSelectedNode: state.setSelectedNode,
+        isPlaying: state.isPlaying,
     };
 };
 
@@ -54,11 +55,21 @@ function FlowCanvasInternal() {
         setNodes,
         setEdges,
         setSelectedNode,
+        isPlaying,
     } = useDiagramStore(useShallow(selector));
 
     const onNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
         setSelectedNode(node.id);
     }, [setSelectedNode]);
+
+    const animatedEdges = React.useMemo(() => {
+        if (!isPlaying) return edges;
+        return edges.map((edge: any) => ({
+            ...edge,
+            animated: true,
+            style: { ...edge.style, stroke: 'hsl(var(--primary))', strokeWidth: 2 },
+        }));
+    }, [edges, isPlaying]);
 
     // Initialize from store on mount if needed (Zustand persist handles hydration usually)
     // But ReactFlow internal state needs to be synced if controlled.
@@ -69,7 +80,7 @@ function FlowCanvasInternal() {
                 nodeTypes={nodeTypes}
                 onNodeClick={onNodeClick}
                 nodes={nodes}
-                edges={edges}
+                edges={animatedEdges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
