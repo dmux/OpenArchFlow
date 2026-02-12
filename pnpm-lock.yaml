@@ -47,6 +47,9 @@ importers:
       '@upstash/redis':
         specifier: ^1.36.2
         version: 1.36.2
+      aws-react-icons:
+        specifier: ^3.2.0
+        version: 3.2.0(react@19.2.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1254,6 +1257,11 @@ packages:
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
+
+  aws-react-icons@3.2.0:
+    resolution: {integrity: sha512-yPpYM+KSMoIP7I7KWmRt/lqLXtFZXiFcWwaLtHl5ki5AOBdmUd8g7fZiHVp/djpl9Ea4sCrpwPmHA0Qy3mk68g==}
+    peerDependencies:
+      react: '*'
 
   axe-core@4.11.1:
     resolution: {integrity: sha512-BASOg+YwO2C+346x3LZOeoovTIoTrRqEsqMa6fmfAV0P+U9mFr9NsyOEpiYvFjbc64NMrSswhV50WdXzdb/Z5A==}
@@ -4048,6 +4056,10 @@ snapshots:
   available-typed-arrays@1.0.7:
     dependencies:
       possible-typed-array-names: 1.1.0
+
+  aws-react-icons@3.2.0(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   axe-core@4.11.1: {}
 

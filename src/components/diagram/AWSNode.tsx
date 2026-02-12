@@ -1,20 +1,21 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Cpu, Database, Cloud, HardDrive, Network, Box } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const IconMap: Record<string, React.ElementType> = {
-    'aws-compute': Cpu,
-    'aws-database': Database,
-    'aws-storage': HardDrive,
-    'aws-network': Network,
-    'default': Cloud,
-};
+import { getAwsIcon } from '@/lib/aws-icon-registry';
 
 const AWSNode = ({ data, selected }: NodeProps) => {
-    const Icon = IconMap[data.type] || IconMap['default'] || Box;
+    const Icon = getAwsIcon(data.service, data.type);
     const label = data.label || 'AWS Resource';
     const service = data.service || 'Service';
+    // The main difference is styling: Official icons are colored SVGs, so we shouldn't tint them.
+    // Lucide icons (fallbacks) need tinting.
+
+    // Simple heuristic: If the service name was found in our registry, it's likely an official icon.
+    // However, for simplicity, we'll just render the icon. 
+    // If we want to strictly differentiate, we could have getAwsIcon return metadata.
+    // For now, let's assume if it comes from our registry it might be colored, so we remove the `text-primary` class
+    // dependent on whether we want to enforce theme colors or use official brand colors.
+    // Official icons usually shouldn't be overridden with `text-primary`.
 
     return (
         <div
@@ -35,9 +36,10 @@ const AWSNode = ({ data, selected }: NodeProps) => {
             {/* Icon Circle */}
             <div className={cn(
                 "p-3 rounded-full mb-2 transition-colors",
-                selected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground group-hover:text-primary group-hover:bg-primary/5"
+                selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5"
             )}>
-                <Icon size={24} strokeWidth={1.5} />
+                {/* We pass size/strokeWidth props, but official icons might ignore strokeWidth if they are filled SVGs */}
+                <Icon size={48} className="w-12 h-12" />
             </div>
 
             {/* Labels */}
