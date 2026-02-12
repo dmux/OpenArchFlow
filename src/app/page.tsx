@@ -32,7 +32,8 @@ export default function Home() {
     const clearDiagram = useDiagramStore((state) => state.clear);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [useLocalAI, setUseLocalAI] = useState(true);
+    const [useLocalAI, setUseLocalAI] = useState(false);
+    // ... (lines 36-288) ...
     const [modelProgressText, setModelProgressText] = useState<string>('');
     const [modelProgressValue, setModelProgressValue] = useState<number>(0);
     const [isModelLoading, setIsModelLoading] = useState(false);
@@ -297,7 +298,12 @@ export default function Home() {
 
                 <FlowCanvas />
 
-                <FloatingInput onSubmit={handlePromptSubmit} isLoading={isLoading || isModelLoading} />
+                <FloatingInput
+                    onSubmit={handlePromptSubmit}
+                    isLoading={isLoading || isModelLoading}
+                    disabled={!useLocalAI && !geminiApiKey}
+                    placeholder={!useLocalAI && !geminiApiKey ? "Enter API Key to start..." : undefined}
+                />
             </div>
         </main>
     );

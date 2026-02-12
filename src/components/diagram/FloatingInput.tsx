@@ -9,14 +9,16 @@ import { toast } from 'sonner';
 interface FloatingInputProps {
     onSubmit: (prompt: string) => void;
     isLoading: boolean;
+    disabled?: boolean;
+    placeholder?: string;
 }
 
-export default function FloatingInput({ onSubmit, isLoading }: FloatingInputProps) {
+export default function FloatingInput({ onSubmit, isLoading, disabled, placeholder }: FloatingInputProps) {
     const [prompt, setPrompt] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!prompt.trim()) return;
+        if (!prompt.trim() || disabled) return;
         onSubmit(prompt);
         setPrompt('');
     };
@@ -25,7 +27,7 @@ export default function FloatingInput({ onSubmit, isLoading }: FloatingInputProp
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50">
             <form
                 onSubmit={handleSubmit}
-                className="relative flex items-center w-full bg-background/80 backdrop-blur-lg border border-border rounded-full shadow-lg p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all duration-300"
+                className={`relative flex items-center w-full bg-background/80 backdrop-blur-lg border border-border rounded-full shadow-lg p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <div className="pl-3 text-muted-foreground">
                     <Sparkles className="w-5 h-5 animate-pulse text-indigo-500" />
@@ -33,15 +35,15 @@ export default function FloatingInput({ onSubmit, isLoading }: FloatingInputProp
                 <Input
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Describe your AWS architecture (e.g., 'Serverless API with Lambda and DynamoDB')..."
+                    placeholder={placeholder || "Describe your AWS architecture (e.g., 'Serverless API with Lambda and DynamoDB')..."}
                     className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 h-12 text-base shadow-none"
-                    disabled={isLoading}
+                    disabled={isLoading || disabled}
                 />
                 <Button
                     type="submit"
                     size="icon"
                     className="rounded-full h-10 w-10 shrink-0 mr-1"
-                    disabled={isLoading || !prompt.trim()}
+                    disabled={isLoading || !prompt.trim() || disabled}
                 >
                     <CornerDownLeft className="h-4 w-4" />
                 </Button>
