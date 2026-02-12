@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AWSContextProvider } from '@/lib/mcp/aws-client';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
@@ -69,7 +70,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'API Key is required' }, { status: 401 });
         }
 
-        // 2. Google Gemini Generation
+        // 2. Fetch AWS Documentation Context
+        let awsContext = "";
+        try {
+            console.log("Fetching AWS MCP Context...");
+            const awsProvider = AWSContextProvider.getInstance();
+            awsContext = await awsProvider.getContext(prompt);
+            console.log("AWS MCP Context fetched:", awsContext ? "Yes" : "No");
+        } catch (mcpError) {
+            console.error("Failed to fetch AWS context:", mcpError);
+            // Continue without context
+        }
+
+        // 3. Google Gemini Generation
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.5-flash',
@@ -80,6 +93,8 @@ export async function POST(req: NextRequest) {
       You are an AWS Certified Solutions Architect and DevOps Expert.
       Your goal is to design a high-quality, production-ready AWS architecture based on the user's request.
       
+      ${awsContext ? `\nIMPORTANT: Use the following AWS Documentation context to inform your design decisions and service selection:\n${awsContext}\n` : ""}
+
       Follow the **AWS Well-Architected Framework**:
       1. **Operational Excellence**: Include monitoring/logging (CloudWatch).
       2. **Security**: Use private subnets, WAF, IAM where appropriate.
@@ -93,6 +108,7 @@ export async function POST(req: NextRequest) {
       Nodes Schema:
       - id: unique string (e.g., "node-1")
       - type: "aws-compute" | "aws-database" | "aws-network" | "aws-storage" | "default"
+        (IMPORTANT: You MUST use ONLY these exact values for 'type'. Do NOT invent others like 'aws-analytics' or 'aws-security'.)
       - data: { 
           label: string (e.g., "Web Server"), 
           service: string (Exact AWS Service Name, e.g., "EC2", "Lambda", "S3", "DynamoDB"), 
