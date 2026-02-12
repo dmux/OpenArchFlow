@@ -17,6 +17,16 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '@/lib/store';
 import { useShallow } from 'zustand/react/shallow';
+import AWSNode from './AWSNode';
+
+const nodeTypes = {
+    'aws-compute': AWSNode,
+    'aws-database': AWSNode,
+    'aws-network': AWSNode,
+    'aws-storage': AWSNode,
+    'default': AWSNode,
+};
+
 const EMPTY_NODES: any[] = [];
 const EMPTY_EDGES: any[] = [];
 
@@ -30,6 +40,7 @@ const selector = (state: any) => {
         onConnect: state.onConnect,
         setNodes: state.setNodes,
         setEdges: state.setEdges,
+        setSelectedNode: state.setSelectedNode,
     };
 };
 
@@ -42,7 +53,12 @@ function FlowCanvasInternal() {
         onConnect,
         setNodes,
         setEdges,
+        setSelectedNode,
     } = useDiagramStore(useShallow(selector));
+
+    const onNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
+        setSelectedNode(node.id);
+    }, [setSelectedNode]);
 
     // Initialize from store on mount if needed (Zustand persist handles hydration usually)
     // But ReactFlow internal state needs to be synced if controlled.
@@ -50,6 +66,8 @@ function FlowCanvasInternal() {
     return (
         <div className="w-full h-full bg-background" style={{ width: '100vw', height: '100vh' }}>
             <ReactFlow
+                nodeTypes={nodeTypes}
+                onNodeClick={onNodeClick}
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}

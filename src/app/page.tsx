@@ -11,6 +11,7 @@ import { InitProgressReport } from '@mlc-ai/web-llm';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import PropertiesPanel from '@/components/diagram/PropertiesPanel';
 import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
@@ -297,6 +298,7 @@ export default function Home() {
                 />
 
                 <FlowCanvas />
+                <PropertiesPanel />
 
                 <FloatingInput
                     onSubmit={handlePromptSubmit}

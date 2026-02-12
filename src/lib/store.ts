@@ -31,12 +31,14 @@ interface Diagram {
 interface DiagramState {
     diagrams: Record<string, Diagram>;
     activeDiagramId: string | null;
+    selectedNodeId: string | null;
     geminiApiKey: string | null;
 
     // Actions for Diagram Management
     createDiagram: (name?: string) => string;
     deleteDiagram: (id: string) => void;
     setActiveDiagram: (id: string) => void;
+    setSelectedNode: (id: string | null) => void;
     renameDiagram: (id: string, name: string) => void;
     setGeminiApiKey: (key: string | null) => void;
 
@@ -57,6 +59,7 @@ export const useDiagramStore = create<DiagramState>()(
         (set, get) => ({
             diagrams: {},
             activeDiagramId: null,
+            selectedNodeId: null,
             geminiApiKey: null,
 
             createDiagram: (name = 'New Architecture') => {
@@ -71,6 +74,7 @@ export const useDiagramStore = create<DiagramState>()(
                 set((state) => ({
                     diagrams: { ...state.diagrams, [id]: newDiagram },
                     activeDiagramId: id,
+                    selectedNodeId: null,
                 }));
                 return id;
             },
@@ -90,11 +94,13 @@ export const useDiagramStore = create<DiagramState>()(
                     return {
                         diagrams: newDiagrams,
                         activeDiagramId: newActiveId,
+                        selectedNodeId: state.selectedNodeId,
                     };
                 });
             },
 
-            setActiveDiagram: (id) => set({ activeDiagramId: id }),
+            setActiveDiagram: (id) => set({ activeDiagramId: id, selectedNodeId: null }),
+            setSelectedNode: (id) => set({ selectedNodeId: id }),
 
             renameDiagram: (id, name) => {
                 set((state) => ({
