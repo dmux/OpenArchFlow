@@ -44,37 +44,73 @@ export class AWSContextProvider {
                 throw new Error("MCP Client failed to initialize");
             }
 
-            // Call the 'search_documentation' tool
-            const result = await this.client.callTool({
+            console.log(`MCP: Searching for "${query}"...`);
+
+            // 1. Search for documentation
+            const searchResult = await this.client.callTool({
                 name: "search_documentation",
                 arguments: {
                     search_phrase: query,
-                    limit: 3, // Fetch top 3 relevant docs
+                    limit: 1, // We only need the top result to read
                 },
             });
 
-            // Parse and format the result
-            // The result content is typically an array of text or image content
-            // We expect text content with documentation snippets
-            if (!result || !result.content || !Array.isArray(result.content)) {
-                console.warn("MCP: Invalid result format", result);
+            if (!searchResult || !searchResult.content || !Array.isArray(searchResult.content)) {
+                console.warn("MCP: Invalid search result format", searchResult);
                 return "";
             }
 
-            const textContent = result.content
+            const searchJsonString = searchResult.content
+                .filter((item: any) => item.type === "text")
+                .map((item: any) => item.text)
+                .join("");
+
+            if (!searchJsonString) return "";
+
+            let searchData: any;
+            try {
+                searchData = JSON.parse(searchJsonString);
+            } catch (e) {
+                console.warn("MCP: Failed to parse search JSON", e);
+                return "";
+            }
+
+            const topResult = searchData.search_results?.[0];
+            if (!topResult || !topResult.url) {
+                console.warn("MCP: No valid URL found in search results");
+                return "";
+            }
+
+            const targetUrl = topResult.url;
+            console.log(`MCP: Found relevant page: ${targetUrl}. Fetching content...`);
+
+            // 2. Read the full documentation page
+            const readResult = await this.client.callTool({
+                name: "read_documentation",
+                arguments: {
+                    url: targetUrl
+                }
+            });
+
+            if (!readResult || !readResult.content || !Array.isArray(readResult.content)) {
+                console.warn("MCP: Invalid read result format");
+                return "";
+            }
+
+            const fullContent = readResult.content
                 .filter((item: any) => item.type === "text")
                 .map((item: any) => item.text)
                 .join("\n\n");
 
-            if (!textContent) {
-                return "";
-            }
+            // Truncate if too long to avoid token limits (e.g., 20k chars)
+            const truncatedContent = fullContent.length > 20000
+                ? fullContent.substring(0, 20000) + "\n...[truncated]..."
+                : fullContent;
 
-            return `\n\n--- AWS DOCUMENTATION CONTEXT ---\n${textContent}\n--- END CONTEXT ---\n`;
+            return `\n\n--- AWS DOCUMENTATION CONTEXT (${targetUrl}) ---\n${truncatedContent}\n--- END CONTEXT ---\n`;
 
         } catch (error) {
             console.error("MCP: Failed to fetch AWS context:", error);
-            // Fail gracefully - don't block generation if MCP fails
             return "";
         }
     }

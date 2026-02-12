@@ -112,7 +112,8 @@ export async function POST(req: NextRequest) {
       - data: { 
           label: string (e.g., "Web Server"), 
           service: string (Exact AWS Service Name, e.g., "EC2", "Lambda", "S3", "DynamoDB"), 
-          metadata: { ...detail key-values... } 
+          metadata: { ...key-value pairs... } 
+          (IMPORTANT: All metadata values MUST be strings. distinct values should be comma-joined. Do NOT use arrays or objects.)
         }
 
       Edges Schema:
