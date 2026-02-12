@@ -31,12 +31,14 @@ interface Diagram {
 interface DiagramState {
     diagrams: Record<string, Diagram>;
     activeDiagramId: string | null;
+    geminiApiKey: string | null;
 
     // Actions for Diagram Management
     createDiagram: (name?: string) => string;
     deleteDiagram: (id: string) => void;
     setActiveDiagram: (id: string) => void;
     renameDiagram: (id: string, name: string) => void;
+    setGeminiApiKey: (key: string | null) => void;
 
     // Actions for Active Diagram (Proxied)
     onNodesChange: OnNodesChange;
@@ -55,6 +57,7 @@ export const useDiagramStore = create<DiagramState>()(
         (set, get) => ({
             diagrams: {},
             activeDiagramId: null,
+            geminiApiKey: null,
 
             createDiagram: (name = 'New Architecture') => {
                 const id = crypto.randomUUID();
@@ -101,6 +104,8 @@ export const useDiagramStore = create<DiagramState>()(
                     },
                 }));
             },
+
+            setGeminiApiKey: (key) => set({ geminiApiKey: key }),
 
             // --- Active Diagram Actions ---
 
@@ -289,7 +294,11 @@ export const useDiagramStore = create<DiagramState>()(
         }),
         {
             name: 'open-arch-flow-storage-v2', // Changed version to reset/separate storage
-            partialize: (state) => ({ diagrams: state.diagrams, activeDiagramId: state.activeDiagramId }),
+            partialize: (state) => ({
+                diagrams: state.diagrams,
+                activeDiagramId: state.activeDiagramId,
+                geminiApiKey: state.geminiApiKey
+            }),
             onRehydrateStorage: () => (state) => {
                 // Ensure there is at least one diagram if none exist after hydration
                 if (state && (!state.activeDiagramId || Object.keys(state.diagrams).length === 0)) {

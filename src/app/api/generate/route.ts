@@ -59,21 +59,20 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const { prompt } = await req.json();
+        const { prompt, apiKey } = await req.json();
 
         if (!prompt) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
         }
 
-        // 2. Google Gemini Generation
-        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return NextResponse.json({ error: 'Server misconfiguration: Missing GEMINI_API_KEY' }, { status: 500 });
+            return NextResponse.json({ error: 'API Key is required' }, { status: 401 });
         }
 
+        // 2. Google Gemini Generation
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.5-flash',
             generationConfig: { responseMimeType: "application/json" }
         });
 

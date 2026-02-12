@@ -2,6 +2,7 @@
 
 import FlowCanvas from '@/components/diagram/FlowCanvas';
 import FloatingInput from '@/components/diagram/FloatingInput';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { useDiagramStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import { WebLLMService } from '@/lib/ai/webllm';
 import { InitProgressReport } from '@mlc-ai/web-llm';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
@@ -38,6 +40,8 @@ export default function Home() {
     const layout = useDiagramStore((state) => state.layout);
     const setNodes = useDiagramStore((state) => state.setNodes);
     const setEdges = useDiagramStore((state) => state.setEdges);
+    const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
+    const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
 
     // Initialize WebLLM when toggled on
     useEffect(() => {
@@ -87,10 +91,15 @@ export default function Home() {
                 }
             } else {
                 toast.info('Generating with Cloud AI...');
+
+                if (!geminiApiKey) {
+                    throw new Error("Gemini API Key is required. Please check your settings.");
+                }
+
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt }),
+                    body: JSON.stringify({ prompt, apiKey: geminiApiKey }),
                 });
 
                 if (!response.ok) {
@@ -163,6 +172,17 @@ export default function Home() {
                         </div>
                     </div>
 
+                    {!useLocalAI && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setGeminiApiKey(null)}
+                            className="text-xs text-muted-foreground hover:text-foreground h-8 px-3 bg-background/80 backdrop-blur border rounded-full"
+                        >
+                            Change Key
+                        </Button>
+                    )}
+
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <button className="flex items-center space-x-1.5 px-4 py-2 bg-background/80 backdrop-blur border rounded-full shadow-sm transition-all hover:bg-destructive/10 hover:text-destructive group">
@@ -213,9 +233,67 @@ export default function Home() {
                             <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
                                 <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
                             </div>
+                            <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                                <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
+                            </div>
                         </div>
                     </div>
                 )}
+
+                {/* API Key Input Overlay for Cloud Mode */}
+                {!useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isLoading && (
+                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                        <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-full">
+                                    <Cloud className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-lg">Enter Gemini API Key</h3>
+                                    <p className="text-sm text-muted-foreground">A valid API Key is required for Cloud generation.</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const key = formData.get('apiKey') as string;
+                                if (key?.trim()) {
+                                    setGeminiApiKey(key.trim());
+                                    toast.success('API Key saved!');
+                                }
+                            }} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="apiKey">Google Gemini API Key</Label>
+                                    <Input
+                                        id="apiKey"
+                                        name="apiKey"
+                                        type="password"
+                                        placeholder="AIzaSy..."
+                                        required
+                                        className="font-mono"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Your key is stored locally in your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get a key here</a>.
+                                    </p>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)}>
+                                        Use Local AI Instead
+                                    </Button>
+                                    <Button type="submit">
+                                        Save Key
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                <LoadingOverlay
+                    isLoading={isLoading}
+                    message={useLocalAI ? "Running Phi-3 Local Model..." : "Consulting Cloud Gemini..."}
+                />
 
                 <FlowCanvas />
 
