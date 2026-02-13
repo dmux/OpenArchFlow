@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { ReactFlowProvider, useReactFlow } from 'reactflow';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -40,51 +40,93 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 function ActionsMenu() {
-    const { getNodes } = useReactFlow();
+    const { getNodes, getViewport } = useReactFlow();
 
-    const handleExport = useCallback(() => {
-        // We target the viewport to capture the diagram content 
-        const viewport = document.querySelector('.react-flow__viewport') as HTMLElement;
+    const handleExport = useCallback(async () => {
+        const nodes = getNodes();
 
-        if (!viewport) {
+        if (nodes.length === 0) {
+            toast.error('No diagram to export');
+            return;
+        }
+
+        // Get the viewport element that contains the actual diagram content
+        const viewportElement = document.querySelector('.react-flow__viewport') as HTMLElement;
+
+        if (!viewportElement) {
             toast.error('Could not find diagram viewport');
             return;
         }
 
-        const filter = (node: HTMLElement) => {
-            // Check if classList exists (it might be a text node or other node type)
-            if (!node || !node.classList) return true;
+        try {
+            // Import getNodesBounds and getViewportForBounds from reactflow
+            const { getNodesBounds, getViewportForBounds } = await import('reactflow');
 
-            const exclusionClasses = ['react-flow__minimap', 'react-flow__controls', 'react-flow__panel'];
-            return !exclusionClasses.some((cls) => node.classList.contains(cls));
-        };
+            // Calculate the bounds of all nodes
+            const nodesBounds = getNodesBounds(nodes);
 
-        toPng(viewport, {
-            backgroundColor: '#ffffff',
-            width: viewport.scrollWidth,
-            height: viewport.scrollHeight,
-            style: {
-                width: '100%',
-                height: '100%',
-                transform: 'none',
-            },
-            quality: 1,
-            pixelRatio: 2,
-            cacheBust: true, // Force reload images/resources
-            filter: filter,
-        })
-            .then((dataUrl) => {
-                const link = document.createElement('a');
-                link.download = 'architecture-diagram.png';
-                link.href = dataUrl;
-                link.click();
-                toast.success('Diagram exported successfully!');
-            })
-            .catch((err) => {
-                console.error('Export failed:', err);
-                toast.error('Failed to export diagram.');
+            // Add padding
+            const padding = 50;
+            const imageWidth = nodesBounds.width + padding * 2;
+            const imageHeight = nodesBounds.height + padding * 2;
+
+            // Get the viewport that would fit all nodes
+            const viewport = getViewportForBounds(
+                nodesBounds,
+                imageWidth,
+                imageHeight,
+                0.5, // min zoom
+                2,   // max zoom
+                padding
+            );
+
+            // Capture using html2canvas with proper configuration
+            const canvas = await html2canvas(viewportElement, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: imageWidth,
+                height: imageHeight,
+                onclone: (clonedDoc) => {
+                    const clonedViewport = clonedDoc.querySelector('.react-flow__viewport') as HTMLElement;
+                    if (clonedViewport) {
+                        // Calculate the center offset
+                        // We need to move the diagram so it's centered in the exported image
+                        const offsetX = padding - nodesBounds.x * viewport.zoom;
+                        const offsetY = padding - nodesBounds.y * viewport.zoom;
+
+                        // Apply the transform to center and scale the diagram
+                        clonedViewport.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${viewport.zoom})`;
+                    }
+                },
+                ignoreElements: (element) => {
+                    return element.classList?.contains('react-flow__minimap') ||
+                        element.classList?.contains('react-flow__controls') ||
+                        element.classList?.contains('react-flow__attribution') ||
+                        element.classList?.contains('react-flow__panel');
+                }
             });
-    }, []);
+
+            // Convert canvas to blob and download
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = 'architecture-diagram.png';
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    toast.success('Diagram exported successfully!');
+                } else {
+                    toast.error('Failed to create image');
+                }
+            });
+        } catch (err) {
+            console.error('Export failed:', err);
+            toast.error('Failed to export diagram.');
+        }
+    }, [getNodes, getViewport]);
 
     return (
         <DropdownMenu>
