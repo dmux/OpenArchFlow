@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import { Button } from '@/components/ui/button';
-import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause, FileText } from 'lucide-react';
+import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause, FileText, LayoutGrid } from 'lucide-react';
 import SpecificationDialog from '@/components/diagram/SpecificationDialog';
 import {
     AlertDialog,
@@ -33,6 +33,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ReactFlowProvider, useReactFlow } from 'reactflow';
 import html2canvas from 'html2canvas';
+import { getLayoutedElements } from '@/lib/layout-utils';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -40,13 +41,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-function ActionsMenu() {
+function ActionsMenu({ isGenerating, setIsGenerating }: { isGenerating: boolean; setIsGenerating: (value: boolean) => void }) {
     const { getNodes, getViewport } = useReactFlow();
 
     const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
     const diagrams = useDiagramStore((state) => state.diagrams);
     const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
     const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
+    const setNodes = useDiagramStore((state) => state.setNodes);
 
     // Derive computed values from the store
     const activeDiagram = activeDiagramId ? diagrams[activeDiagramId] : null;
@@ -62,6 +64,7 @@ function ActionsMenu() {
             return;
         }
 
+        setIsGenerating(true);
         try {
             let specification: string;
 
@@ -98,8 +101,21 @@ function ActionsMenu() {
         } catch (error) {
             console.error('Specification generation error:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to generate specification');
+        } finally {
+            setIsGenerating(false);
         }
-    }, [nodes, edges, activeDiagramName, geminiApiKey, setGeneratedSpecification]);
+    }, [nodes, edges, activeDiagramName, geminiApiKey, setGeneratedSpecification, setIsGenerating]);
+
+    const handleAutoLayout = useCallback(() => {
+        if (nodes.length === 0) {
+            toast.error('No nodes to organize');
+            return;
+        }
+
+        const layouted = getLayoutedElements(nodes, edges, 'TB');
+        setNodes(layouted.nodes);
+        toast.success('Layout organized automatically!');
+    }, [nodes, edges, setNodes]);
 
     const handleExport = useCallback(async () => {
         const nodes = getNodes();
@@ -195,6 +211,10 @@ function ActionsMenu() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleAutoLayout}>
+                    <LayoutGrid className="w-4 h-4 mr-2" />
+                    Auto Layout
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExport}>
                     <Download className="w-4 h-4 mr-2" />
                     Export as PNG
@@ -222,6 +242,7 @@ function HomeContent() {
     const [modelProgressText, setModelProgressText] = useState<string>('');
     const [modelProgressValue, setModelProgressValue] = useState<number>(0);
     const [isModelLoading, setIsModelLoading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const layout = useDiagramStore((state) => state.layout);
     const setNodes = useDiagramStore((state) => state.setNodes);
@@ -337,7 +358,7 @@ function HomeContent() {
                             <Layout className="w-5 h-5" />
                         </Button>
 
-                        <ActionsMenu />
+                        <ActionsMenu isGenerating={isGenerating} setIsGenerating={setIsGenerating} />
 
                         <Button
                             variant="outline"
@@ -529,6 +550,9 @@ function HomeContent() {
                             specification={generatedSpecification}
                         />
                     )}
+
+                    {/* Loading Overlay for Specification Generation */}
+                    <LoadingOverlay isLoading={isGenerating} message="Generating technical specification..." />
                 </div >
             </main >
         </AIContext.Provider>
