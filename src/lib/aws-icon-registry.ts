@@ -24,6 +24,20 @@ import {
     CategoryDatabase,
     CategoryStorage,
     CategoryNetworkingContentDelivery,
+    ArchitectureServiceAWSGlue,
+    ArchitectureServiceAWSStepFunctions,
+    ArchitectureServiceAmazonEventBridge,
+    ArchitectureServiceAmazonAthena,
+    ArchitectureServiceAmazonEMR,
+    ArchitectureServiceAmazonRedshift,
+    ArchitectureServiceAmazonQuickSight,
+    ArchitectureServiceAmazonOpenSearchService,
+    ArchitectureServiceAmazonManagedStreamingforApacheKafka,
+    ArchitectureServiceAWSBatch,
+    ArchitectureServiceAWSElasticBeanstalk,
+    ArchitectureServiceAmazonElasticContainerRegistry,
+    ArchitectureServiceAWSAppSync,
+    ArchitectureServiceAmazonMQ,
 } from 'aws-react-icons';
 import { Cloud, Box, LucideIcon } from 'lucide-react';
 
@@ -58,6 +72,20 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'cloudfront': ArchitectureServiceAmazonCloudFront,
         'elasticache': ArchitectureServiceAmazonElastiCache,
         'kinesis': ArchitectureServiceAmazonKinesis,
+        'glue': ArchitectureServiceAWSGlue,
+        'stepfunctions': ArchitectureServiceAWSStepFunctions,
+        'eventbridge': ArchitectureServiceAmazonEventBridge,
+        'athena': ArchitectureServiceAmazonAthena,
+        'emr': ArchitectureServiceAmazonEMR,
+        'redshift': ArchitectureServiceAmazonRedshift,
+        'quicksight': ArchitectureServiceAmazonQuickSight,
+        'opensearch': ArchitectureServiceAmazonOpenSearchService,
+        'msk': ArchitectureServiceAmazonManagedStreamingforApacheKafka,
+        'batch': ArchitectureServiceAWSBatch,
+        'elasticbeanstalk': ArchitectureServiceAWSElasticBeanstalk,
+        'ecr': ArchitectureServiceAmazonElasticContainerRegistry,
+        'appsync': ArchitectureServiceAWSAppSync,
+        'mq': ArchitectureServiceAmazonMQ,
     };
 
     // Check for exact match or partial match in service name

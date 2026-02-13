@@ -27,6 +27,9 @@ const AWS_SERVICES = [
             { name: "EKS", service: "eks", type: "aws-compute" },
             { name: "ECS", service: "ecs", type: "aws-compute" },
             { name: "App Runner", service: "apprunner", type: "aws-compute" },
+            { name: "Batch", service: "batch", type: "aws-compute" },
+            { name: "Elastic Beanstalk", service: "elasticbeanstalk", type: "aws-compute" },
+            { name: "ECR", service: "ecr", type: "aws-compute" }, // Grouping ECR in Compute for now
         ]
     },
     {
@@ -58,6 +61,18 @@ const AWS_SERVICES = [
         ]
     },
     {
+        category: "Application Integration",
+        items: [
+            { name: "SQS", service: "sqs", type: "aws-integration" },
+            { name: "SNS", service: "sns", type: "aws-integration" },
+            { name: "Step Functions", service: "stepfunctions", type: "aws-integration" },
+            { name: "EventBridge", service: "eventbridge", type: "aws-integration" },
+            { name: "AppSync", service: "appsync", type: "aws-integration" },
+            { name: "MQ", service: "mq", type: "aws-integration" },
+            { name: "DLQ", service: "sqs", type: "aws-integration" }, // Using SQS icon
+        ]
+    },
+    {
         category: "Security",
         items: [
             { name: "IAM", service: "iam", type: "aws-security" },
@@ -76,6 +91,13 @@ const AWS_SERVICES = [
         category: "Analytics",
         items: [
             { name: "Kinesis", service: "kinesis", type: "aws-analytics" },
+            { name: "Glue", service: "glue", type: "aws-analytics" },
+            { name: "Athena", service: "athena", type: "aws-analytics" },
+            { name: "EMR", service: "emr", type: "aws-analytics" },
+            { name: "Redshift", service: "redshift", type: "aws-analytics" },
+            { name: "QuickSight", service: "quicksight", type: "aws-analytics" },
+            { name: "OpenSearch", service: "opensearch", type: "aws-analytics" },
+            { name: "MSK", service: "msk", type: "aws-analytics" },
         ]
     },
 ];
