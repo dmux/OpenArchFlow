@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import PropertiesPanel from '@/components/diagram/PropertiesPanel';
+import ComponentPalette from '@/components/diagram/ComponentPalette';
 import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
@@ -314,6 +315,11 @@ export default function Home() {
 
                 <FlowCanvas />
                 <PropertiesPanel />
+
+                {/* Component Palette */}
+                <div className="absolute top-4 right-4 z-50">
+                    <ComponentPalette />
+                </div>
 
                 <FloatingInput
                     onSubmit={handlePromptSubmit}

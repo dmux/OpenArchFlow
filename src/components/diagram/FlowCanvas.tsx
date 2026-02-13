@@ -62,6 +62,11 @@ function FlowCanvasInternal() {
         setSelectedNode(node.id);
     }, [setSelectedNode]);
 
+    const onEdgeClick = useCallback((_event: React.MouseEvent, edge: any) => {
+        // Stop propagation if needed, but ReactFlow handles this well usually
+        useDiagramStore.getState().setSelectedEdge(edge.id);
+    }, []);
+
     const animatedEdges = React.useMemo(() => {
         if (!isPlaying) return edges;
         return edges.map((edge: any) => ({
@@ -79,6 +84,7 @@ function FlowCanvasInternal() {
             <ReactFlow
                 nodeTypes={nodeTypes}
                 onNodeClick={onNodeClick}
+                onEdgeClick={onEdgeClick}
                 nodes={nodes}
                 edges={animatedEdges}
                 onNodesChange={onNodesChange}
