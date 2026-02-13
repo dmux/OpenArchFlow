@@ -45,7 +45,10 @@ export function PrivacyInfo() {
                                 <h4 className="font-semibold text-foreground">About the Application</h4>
                                 <p>
                                     OpenArchFlow is designed to be a free and open tool for the community.
-                                    It allows you to generate and edit cloud architecture diagrams using AI and standard components.
+                                    It uses <strong>AI, Large Language Models (LLMs), AI Agents, and AWS MCP (Model Context Protocol)</strong> to generate cloud architecture diagrams from natural language descriptions and automatically create comprehensive technical documentation.
+                                </p>
+                                <p className="text-sm">
+                                    Simply describe your AWS architecture in plain English, and the application will generate professional diagrams and specifications using advanced AI capabilities.
                                 </p>
                                 <div className="pt-2">
                                     <a

@@ -34,6 +34,7 @@ interface DiagramState {
     selectedNodeId: string | null;
     selectedEdgeId: string | null;
     geminiApiKey: string | null;
+    generatedSpecification: string | null;
 
     // Actions for Diagram Management
     createDiagram: (name?: string) => string;
@@ -45,6 +46,7 @@ interface DiagramState {
     updateEdge: (id: string, data: any) => void;
     renameDiagram: (id: string, name: string) => void;
     setGeminiApiKey: (key: string | null) => void;
+    setGeneratedSpecification: (spec: string | null) => void;
 
     // Actions for Active Diagram (Proxied)
     onNodesChange: OnNodesChange;
@@ -71,6 +73,7 @@ export const useDiagramStore = create<DiagramState>()(
             selectedEdgeId: null,
             geminiApiKey: null,
             isPlaying: false,
+            generatedSpecification: null,
 
             setIsPlaying: (isPlaying) => set({ isPlaying }),
 
@@ -127,6 +130,7 @@ export const useDiagramStore = create<DiagramState>()(
             },
 
             setGeminiApiKey: (key) => set({ geminiApiKey: key }),
+            setGeneratedSpecification: (spec) => set({ generatedSpecification: spec }),
 
             // --- Active Diagram Actions ---
 

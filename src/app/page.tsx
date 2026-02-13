@@ -4,7 +4,7 @@ import FlowCanvas from '@/components/diagram/FlowCanvas';
 import FloatingInput from '@/components/diagram/FloatingInput';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { useDiagramStore } from '@/lib/store';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { WebLLMService } from '@/lib/ai/webllm';
 import { InitProgressReport } from '@mlc-ai/web-llm';
@@ -17,7 +17,8 @@ import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import { Button } from '@/components/ui/button';
-import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause } from 'lucide-react';
+import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause, FileText } from 'lucide-react';
+import SpecificationDialog from '@/components/diagram/SpecificationDialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,6 +42,64 @@ import {
 
 function ActionsMenu() {
     const { getNodes, getViewport } = useReactFlow();
+
+    const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
+    const diagrams = useDiagramStore((state) => state.diagrams);
+    const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
+    const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
+
+    // Derive computed values from the store
+    const activeDiagram = activeDiagramId ? diagrams[activeDiagramId] : null;
+    const nodes = activeDiagram?.nodes || [];
+    const edges = activeDiagram?.edges || [];
+    const activeDiagramName = activeDiagram?.name || 'Architecture';
+
+    const useLocalAI = React.useContext(AIContext);
+
+    const handleGenerateSpec = useCallback(async (useLocal: boolean) => {
+        if (nodes.length === 0) {
+            toast.error('No diagram to generate specification for');
+            return;
+        }
+
+        try {
+            let specification: string;
+
+            if (useLocal) {
+                toast.info('Generating specification with Local AI...');
+                const service = WebLLMService.getInstance();
+                if (!service.isReady()) {
+                    throw new Error('Local model not ready yet.');
+                }
+                specification = await service.generateSpecification(nodes, edges, activeDiagramName);
+            } else {
+                if (!geminiApiKey) {
+                    throw new Error('Gemini API Key is required.');
+                }
+
+                toast.info('Generating specification with Cloud AI...');
+                const response = await fetch('/api/generate-spec', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nodes, edges, apiKey: geminiApiKey, diagramName: activeDiagramName }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to generate specification');
+                }
+
+                const data = await response.json();
+                specification = data.specification;
+            }
+
+            setGeneratedSpecification(specification);
+            toast.success('Specification generated successfully!');
+        } catch (error) {
+            console.error('Specification generation error:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to generate specification');
+        }
+    }, [nodes, edges, activeDiagramName, geminiApiKey, setGeneratedSpecification]);
 
     const handleExport = useCallback(async () => {
         const nodes = getNodes();
@@ -140,16 +199,25 @@ function ActionsMenu() {
                     <Download className="w-4 h-4 mr-2" />
                     Export as PNG
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleGenerateSpec(useLocalAI.value)}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generate Specification
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     );
 }
+
+// Context for sharing useLocalAI state
+const AIContext = React.createContext<{ value: boolean }>({ value: false });
 
 function HomeContent() {
     const clearDiagram = useDiagramStore((state) => state.clear);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [useLocalAI, setUseLocalAI] = useState(false);
+    const generatedSpecification = useDiagramStore((state) => state.generatedSpecification);
+    const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
     // ... (lines 36-288) ...
     const [modelProgressText, setModelProgressText] = useState<string>('');
     const [modelProgressValue, setModelProgressValue] = useState<number>(0);
@@ -258,201 +326,212 @@ function HomeContent() {
     };
 
     return (
-        <main className="flex w-full h-screen overflow-hidden bg-background">
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <AIContext.Provider value={{ value: useLocalAI }}>
+            <main className="flex w-full h-screen overflow-hidden bg-background">
+                <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-            <div className="flex-1 relative h-full overflow-hidden">
-                {/* Header / Controls */}
-                <div className="absolute top-4 left-4 z-50 flex items-center space-x-4">
-                    <Button variant="outline" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-background/80 backdrop-blur">
-                        <Layout className="w-5 h-5" />
-                    </Button>
+                <div className="flex-1 relative h-full overflow-hidden">
+                    {/* Header / Controls */}
+                    <div className="absolute top-4 left-4 z-50 flex items-center space-x-4">
+                        <Button variant="outline" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-background/80 backdrop-blur">
+                            <Layout className="w-5 h-5" />
+                        </Button>
 
-                    <ActionsMenu />
+                        <ActionsMenu />
 
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className={cn(
-                            "bg-background/80 backdrop-blur transition-all",
-                            isPlaying && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setIsPlaying(!isPlaying)}
+                            className={cn(
+                                "bg-background/80 backdrop-blur transition-all",
+                                isPlaying && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                            )}
+                            title={isPlaying ? "Stop Animation" : "Play Animation"}
+                        >
+                            {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
+                        </Button>
+
+                        <h1 className="text-xl font-bold tracking-tighter text-foreground/80 pointer-events-none hidden md:block">
+                            OpenArchFlow
+                        </h1>
+
+                        <div className="flex items-center space-x-3 bg-background/80 backdrop-blur border rounded-full px-4 py-2 shadow-sm transition-all hover:bg-background/100">
+                            <div className={`flex items-center space-x-1.5 text-xs font-medium transition-colors ${!useLocalAI ? 'text-sky-600 font-bold' : 'text-muted-foreground'}`}>
+                                <Cloud className="w-3.5 h-3.5" />
+                                <span>Cloud (Gemini)</span>
+                            </div>
+
+                            <Switch
+                                id="ai-mode"
+                                checked={useLocalAI}
+                                onCheckedChange={setUseLocalAI}
+                                disabled={isLoading || isModelLoading}
+                                className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-sky-500"
+                            />
+
+                            <div className={`flex items-center space-x-1.5 text-xs font-medium transition-colors ${useLocalAI ? 'text-emerald-600 font-bold' : 'text-muted-foreground'}`}>
+                                <Laptop className="w-3.5 h-3.5" />
+                                <span>Local (Phi-3)</span>
+                            </div>
+                        </div>
+
+                        {!useLocalAI && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setGeminiApiKey(null)}
+                                className="text-xs text-muted-foreground hover:text-foreground h-8 px-3 bg-background/80 backdrop-blur border rounded-full"
+                            >
+                                Change Key
+                            </Button>
                         )}
-                        title={isPlaying ? "Stop Animation" : "Play Animation"}
-                    >
-                        {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-                    </Button>
 
-                    <h1 className="text-xl font-bold tracking-tighter text-foreground/80 pointer-events-none hidden md:block">
-                        OpenArchFlow
-                    </h1>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <button className="flex items-center space-x-1.5 px-4 py-2 bg-background/80 backdrop-blur border rounded-full shadow-sm transition-all hover:bg-destructive/10 hover:text-destructive group">
+                                    <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-destructive transition-colors" />
+                                    <span className="text-xs font-medium text-muted-foreground group-hover:text-destructive transition-colors">Clear Canvas</span>
+                                </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Clear Canvas?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will remove all nodes and edges from the current diagram. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={clearDiagram} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Clear
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
 
-                    <div className="flex items-center space-x-3 bg-background/80 backdrop-blur border rounded-full px-4 py-2 shadow-sm transition-all hover:bg-background/100">
-                        <div className={`flex items-center space-x-1.5 text-xs font-medium transition-colors ${!useLocalAI ? 'text-sky-600 font-bold' : 'text-muted-foreground'}`}>
-                            <Cloud className="w-3.5 h-3.5" />
-                            <span>Cloud (Gemini)</span>
-                        </div>
 
-                        <Switch
-                            id="ai-mode"
-                            checked={useLocalAI}
-                            onCheckedChange={setUseLocalAI}
-                            disabled={isLoading || isModelLoading}
-                            className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-sky-500"
-                        />
-
-                        <div className={`flex items-center space-x-1.5 text-xs font-medium transition-colors ${useLocalAI ? 'text-emerald-600 font-bold' : 'text-muted-foreground'}`}>
-                            <Laptop className="w-3.5 h-3.5" />
-                            <span>Local (Phi-3)</span>
-                        </div>
+                        <PrivacyInfo />
                     </div>
 
-                    {!useLocalAI && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setGeminiApiKey(null)}
-                            className="text-xs text-muted-foreground hover:text-foreground h-8 px-3 bg-background/80 backdrop-blur border rounded-full"
-                        >
-                            Change Key
-                        </Button>
-                    )}
-
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <button className="flex items-center space-x-1.5 px-4 py-2 bg-background/80 backdrop-blur border rounded-full shadow-sm transition-all hover:bg-destructive/10 hover:text-destructive group">
-                                <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-destructive transition-colors" />
-                                <span className="text-xs font-medium text-muted-foreground group-hover:text-destructive transition-colors">Clear Canvas</span>
-                            </button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Clear Canvas?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will remove all nodes and edges from the current diagram. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={clearDiagram} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Clear
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-
-
-                    <PrivacyInfo />
-                </div>
-
-                {/* ... rest of the component (Modal, Canvas, Input) ... */}
-                {
-                    isModelLoading && (
-                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                            {/* ... modal content ... */}
-                            <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-full">
-                                        <Download className="w-6 h-6 text-primary" />
+                    {/* ... rest of the component (Modal, Canvas, Input) ... */}
+                    {
+                        isModelLoading && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                                {/* ... modal content ... */}
+                                <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-full">
+                                            <Download className="w-6 h-6 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Setting up Local AI</h3>
+                                            <p className="text-sm text-muted-foreground">Downloading Phi-3 model to your browser...</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Setting up Local AI</h3>
-                                        <p className="text-sm text-muted-foreground">Downloading Phi-3 model to your browser...</p>
-                                    </div>
-                                </div>
 
-                                <div className="space-y-2">
-                                    <Progress value={modelProgressValue * 100} className="h-2" />
-                                    <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                                        <span className="truncate max-w-[280px]">{modelProgressText}</span>
-                                        <span>{Math.round(modelProgressValue * 100)}%</span>
-                                    </div>
-                                </div>
-
-                                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                                    <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
-                                </div>
-                                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                                    <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
-                                </div>
-                            </div>
-                        </div>
-                    )
-                }
-
-                {/* API Key Input Overlay for Cloud Mode */}
-                {
-                    !useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isLoading && (
-                        <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                            <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-full">
-                                        <Cloud className="w-6 h-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Enter Gemini API Key</h3>
-                                        <p className="text-sm text-muted-foreground">A valid API Key is required for Cloud generation.</p>
-                                    </div>
-                                </div>
-
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    const formData = new FormData(e.currentTarget);
-                                    const key = formData.get('apiKey') as string;
-                                    if (key?.trim()) {
-                                        setGeminiApiKey(key.trim());
-                                        toast.success('API Key saved!');
-                                    }
-                                }} className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="apiKey">Google Gemini API Key</Label>
-                                        <Input
-                                            id="apiKey"
-                                            name="apiKey"
-                                            type="password"
-                                            placeholder="AIzaSy..."
-                                            required
-                                            className="font-mono"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            Your key is stored locally in your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get a key here</a>.
-                                        </p>
+                                        <Progress value={modelProgressValue * 100} className="h-2" />
+                                        <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                                            <span className="truncate max-w-[280px]">{modelProgressText}</span>
+                                            <span>{Math.round(modelProgressValue * 100)}%</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-end gap-2">
-                                        <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)}>
-                                            Use Local AI Instead
-                                        </Button>
-                                        <Button type="submit">
-                                            Save Key
-                                        </Button>
+
+                                    <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                                        <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
                                     </div>
-                                </form>
+                                    <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                                        <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    )
-                }
+                        )
+                    }
 
-                <LoadingOverlay
-                    isLoading={isLoading}
-                    message={useLocalAI ? "Running Phi-3 Local Model..." : "Consulting Cloud Gemini..."}
-                />
+                    {/* API Key Input Overlay for Cloud Mode */}
+                    {
+                        !useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isLoading && (
+                            <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                                <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-full">
+                                            <Cloud className="w-6 h-6 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Enter Gemini API Key</h3>
+                                            <p className="text-sm text-muted-foreground">A valid API Key is required for Cloud generation.</p>
+                                        </div>
+                                    </div>
 
-                <FlowCanvas />
-                <PropertiesPanel />
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const formData = new FormData(e.currentTarget);
+                                        const key = formData.get('apiKey') as string;
+                                        if (key?.trim()) {
+                                            setGeminiApiKey(key.trim());
+                                            toast.success('API Key saved!');
+                                        }
+                                    }} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="apiKey">Google Gemini API Key</Label>
+                                            <Input
+                                                id="apiKey"
+                                                name="apiKey"
+                                                type="password"
+                                                placeholder="AIzaSy..."
+                                                required
+                                                className="font-mono"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Your key is stored locally in your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get a key here</a>.
+                                            </p>
+                                        </div>
+                                        <div className="flex justify-end gap-2">
+                                            <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)}>
+                                                Use Local AI Instead
+                                            </Button>
+                                            <Button type="submit">
+                                                Save Key
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )
+                    }
 
-                {/* Component Palette */}
-                <div className="absolute top-4 right-4 z-50">
-                    <ComponentPalette />
-                </div>
+                    <LoadingOverlay
+                        isLoading={isLoading}
+                        message={useLocalAI ? "Running Phi-3 Local Model..." : "Consulting Cloud Gemini..."}
+                    />
 
-                <FloatingInput
-                    onSubmit={handlePromptSubmit}
-                    isLoading={isLoading || isModelLoading}
-                    disabled={!useLocalAI && !geminiApiKey}
-                    placeholder={!useLocalAI && !geminiApiKey ? "Enter API Key to start..." : undefined}
-                />
-            </div >
-        </main >
+                    <FlowCanvas />
+                    <PropertiesPanel />
+
+                    {/* Component Palette */}
+                    <div className="absolute top-4 right-4 z-50">
+                        <ComponentPalette />
+                    </div>
+
+                    <FloatingInput
+                        onSubmit={handlePromptSubmit}
+                        isLoading={isLoading || isModelLoading}
+                        disabled={!useLocalAI && !geminiApiKey}
+                        placeholder={!useLocalAI && !geminiApiKey ? "Enter API Key to start..." : undefined}
+                    />
+
+                    {/* Specification Dialog */}
+                    {generatedSpecification && (
+                        <SpecificationDialog
+                            isOpen={!!generatedSpecification}
+                            onClose={() => setGeneratedSpecification(null)}
+                            specification={generatedSpecification}
+                        />
+                    )}
+                </div >
+            </main >
+        </AIContext.Provider>
     );
 }
 

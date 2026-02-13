@@ -29,11 +29,10 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     const createDiagram = useDiagramStore((state) => state.createDiagram);
     const setActiveDiagram = useDiagramStore((state) => state.setActiveDiagram);
     const deleteDiagram = useDiagramStore((state) => state.deleteDiagram);
-    // ...
+    const renameDiagram = useDiagramStore((state) => state.renameDiagram);
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
-    const renameDiagram = useDiagramStore((state) => state.renameDiagram);
 
     // ...
 
