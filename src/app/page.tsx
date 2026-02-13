@@ -15,6 +15,7 @@ import PropertiesPanel from '@/components/diagram/PropertiesPanel';
 import ComponentPalette from '@/components/diagram/ComponentPalette';
 import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import { Button } from '@/components/ui/button';
 import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause } from 'lucide-react';
 import {
@@ -223,90 +224,97 @@ export default function Home() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
+
+
+                    <PrivacyInfo />
                 </div>
 
                 {/* ... rest of the component (Modal, Canvas, Input) ... */}
-                {isModelLoading && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                        {/* ... modal content ... */}
-                        <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-full">
-                                    <Download className="w-6 h-6 text-primary" />
+                {
+                    isModelLoading && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                            {/* ... modal content ... */}
+                            <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <Download className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg">Setting up Local AI</h3>
+                                        <p className="text-sm text-muted-foreground">Downloading Phi-3 model to your browser...</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold text-lg">Setting up Local AI</h3>
-                                    <p className="text-sm text-muted-foreground">Downloading Phi-3 model to your browser...</p>
-                                </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <Progress value={modelProgressValue * 100} className="h-2" />
-                                <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                                    <span className="truncate max-w-[280px]">{modelProgressText}</span>
-                                    <span>{Math.round(modelProgressValue * 100)}%</span>
+                                <div className="space-y-2">
+                                    <Progress value={modelProgressValue * 100} className="h-2" />
+                                    <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                                        <span className="truncate max-w-[280px]">{modelProgressText}</span>
+                                        <span>{Math.round(modelProgressValue * 100)}%</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                                <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
-                            </div>
-                            <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                                <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
+                                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                                    <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
+                                </div>
+                                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                                    <strong>Note:</strong> This happens only once. The model (~2GB) will be cached for offline use.
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* API Key Input Overlay for Cloud Mode */}
-                {!useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isLoading && (
-                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                        <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-full">
-                                    <Cloud className="w-6 h-6 text-primary" />
+                {
+                    !useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isLoading && (
+                        <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                            <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <Cloud className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg">Enter Gemini API Key</h3>
+                                        <p className="text-sm text-muted-foreground">A valid API Key is required for Cloud generation.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold text-lg">Enter Gemini API Key</h3>
-                                    <p className="text-sm text-muted-foreground">A valid API Key is required for Cloud generation.</p>
-                                </div>
-                            </div>
 
-                            <form onSubmit={(e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                const key = formData.get('apiKey') as string;
-                                if (key?.trim()) {
-                                    setGeminiApiKey(key.trim());
-                                    toast.success('API Key saved!');
-                                }
-                            }} className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="apiKey">Google Gemini API Key</Label>
-                                    <Input
-                                        id="apiKey"
-                                        name="apiKey"
-                                        type="password"
-                                        placeholder="AIzaSy..."
-                                        required
-                                        className="font-mono"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Your key is stored locally in your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get a key here</a>.
-                                    </p>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)}>
-                                        Use Local AI Instead
-                                    </Button>
-                                    <Button type="submit">
-                                        Save Key
-                                    </Button>
-                                </div>
-                            </form>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const key = formData.get('apiKey') as string;
+                                    if (key?.trim()) {
+                                        setGeminiApiKey(key.trim());
+                                        toast.success('API Key saved!');
+                                    }
+                                }} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="apiKey">Google Gemini API Key</Label>
+                                        <Input
+                                            id="apiKey"
+                                            name="apiKey"
+                                            type="password"
+                                            placeholder="AIzaSy..."
+                                            required
+                                            className="font-mono"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Your key is stored locally in your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get a key here</a>.
+                                        </p>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)}>
+                                            Use Local AI Instead
+                                        </Button>
+                                        <Button type="submit">
+                                            Save Key
+                                        </Button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 <LoadingOverlay
                     isLoading={isLoading}
@@ -327,7 +335,7 @@ export default function Home() {
                     disabled={!useLocalAI && !geminiApiKey}
                     placeholder={!useLocalAI && !geminiApiKey ? "Enter API Key to start..." : undefined}
                 />
-            </div>
-        </main>
+            </div >
+        </main >
     );
 }
