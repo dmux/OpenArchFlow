@@ -4,7 +4,7 @@ import FlowCanvas from '@/components/diagram/FlowCanvas';
 import FloatingInput from '@/components/diagram/FloatingInput';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { useDiagramStore } from '@/lib/store';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { WebLLMService } from '@/lib/ai/webllm';
 import { InitProgressReport } from '@mlc-ai/web-llm';
@@ -30,8 +30,80 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { ReactFlowProvider, useReactFlow } from 'reactflow';
+import { toPng } from 'html-to-image';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-export default function Home() {
+function ActionsMenu() {
+    const { getNodes } = useReactFlow();
+
+    const handleExport = useCallback(() => {
+        // We target the viewport to capture the diagram content 
+        const viewport = document.querySelector('.react-flow__viewport') as HTMLElement;
+
+        if (!viewport) {
+            toast.error('Could not find diagram viewport');
+            return;
+        }
+
+        const filter = (node: HTMLElement) => {
+            // Check if classList exists (it might be a text node or other node type)
+            if (!node || !node.classList) return true;
+
+            const exclusionClasses = ['react-flow__minimap', 'react-flow__controls', 'react-flow__panel'];
+            return !exclusionClasses.some((cls) => node.classList.contains(cls));
+        };
+
+        toPng(viewport, {
+            backgroundColor: '#ffffff',
+            width: viewport.scrollWidth,
+            height: viewport.scrollHeight,
+            style: {
+                width: '100%',
+                height: '100%',
+                transform: 'none',
+            },
+            quality: 1,
+            pixelRatio: 2,
+            cacheBust: true, // Force reload images/resources
+            filter: filter,
+        })
+            .then((dataUrl) => {
+                const link = document.createElement('a');
+                link.download = 'architecture-diagram.png';
+                link.href = dataUrl;
+                link.click();
+                toast.success('Diagram exported successfully!');
+            })
+            .catch((err) => {
+                console.error('Export failed:', err);
+                toast.error('Failed to export diagram.');
+            });
+    }, []);
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="bg-background/80 backdrop-blur">
+                    Actions
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export as PNG
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+function HomeContent() {
     const clearDiagram = useDiagramStore((state) => state.clear);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -153,6 +225,8 @@ export default function Home() {
                     <Button variant="outline" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-background/80 backdrop-blur">
                         <Layout className="w-5 h-5" />
                     </Button>
+
+                    <ActionsMenu />
 
                     <Button
                         variant="outline"
@@ -337,5 +411,13 @@ export default function Home() {
                 />
             </div >
         </main >
+    );
+}
+
+export default function Home() {
+    return (
+        <ReactFlowProvider>
+            <HomeContent />
+        </ReactFlowProvider>
     );
 }

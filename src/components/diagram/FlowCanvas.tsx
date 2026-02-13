@@ -11,7 +11,6 @@ import ReactFlow, {
     useNodesState,
     useEdgesState,
     addEdge,
-    ReactFlowProvider,
     MiniMap,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -45,7 +44,7 @@ const selector = (state: any) => {
     };
 };
 
-function FlowCanvasInternal() {
+function FlowCanvas() {
     const {
         nodes,
         edges,
@@ -105,10 +104,6 @@ function FlowCanvasInternal() {
     );
 }
 
-export default function FlowCanvas() {
-    return (
-        <ReactFlowProvider>
-            <FlowCanvasInternal />
-        </ReactFlowProvider>
-    );
-}
+
+
+export default FlowCanvas;
