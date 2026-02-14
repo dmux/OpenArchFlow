@@ -251,6 +251,8 @@ function HomeContent() {
     const setEdges = useDiagramStore((state) => state.setEdges);
     const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
     const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
+    const isOfflineMode = useDiagramStore((state) => state.isOfflineMode);
+    const setOfflineMode = useDiagramStore((state) => state.setOfflineMode);
     const isPlaying = useDiagramStore((state) => state.isPlaying);
     const setIsPlaying = useDiagramStore((state) => state.setIsPlaying);
 
@@ -418,7 +420,7 @@ function HomeContent() {
                                 onClick={() => setGeminiApiKey(null)}
                                 className="text-xs text-muted-foreground hover:text-foreground h-8 px-3 bg-background/80 backdrop-blur border rounded-full"
                             >
-                                Change Key
+                                {isOfflineMode ? "Setup Cloud AI" : "Change Key"}
                             </Button>
                         )}
 
@@ -486,7 +488,7 @@ function HomeContent() {
 
                     {/* API Key Input Overlay for Cloud Mode */}
                     {
-                        !useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isLoading && (
+                        !useLocalAI && (!geminiApiKey || !geminiApiKey.trim()) && !isOfflineMode && !isLoading && (
                             <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
                                 <div className="w-full max-w-md bg-card border rounded-xl shadow-2xl p-6 space-y-4">
                                     <div className="flex items-center gap-3">
@@ -522,13 +524,18 @@ function HomeContent() {
                                                 Your key is stored locally in your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get a key here</a>.
                                             </p>
                                         </div>
-                                        <div className="flex justify-end gap-2">
-                                            <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)}>
-                                                Use Local AI Instead
-                                            </Button>
-                                            <Button type="submit">
+                                        <div className="flex flex-col gap-2">
+                                            <Button type="submit" className="w-full">
                                                 Save Key
                                             </Button>
+                                            <div className="flex justify-between gap-2">
+                                                <Button type="button" variant="ghost" onClick={() => setUseLocalAI(true)} className="flex-1 text-xs">
+                                                    Use Local AI
+                                                </Button>
+                                                <Button type="button" variant="secondary" onClick={() => setOfflineMode(true)} className="flex-1 text-xs">
+                                                    Continue without AI
+                                                </Button>
+                                            </div>
                                         </div>
                                     </form>
                                 </div>

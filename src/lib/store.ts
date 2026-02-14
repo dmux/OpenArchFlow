@@ -95,6 +95,7 @@ interface DiagramState {
     selectedNodeId: string | null;
     selectedEdgeId: string | null;
     geminiApiKey: string | null;
+    isOfflineMode: boolean;
     generatedSpecification: string | null;
 
     // Import Actions
@@ -111,6 +112,7 @@ interface DiagramState {
     updateEdge: (id: string, data: any) => void;
     renameDiagram: (id: string, name: string) => void;
     setGeminiApiKey: (key: string | null) => void;
+    setOfflineMode: (isOffline: boolean) => void;
     setGeneratedSpecification: (spec: string | null) => void;
 
     // Actions for Active Diagram (Proxied)
@@ -151,6 +153,7 @@ export const useDiagramStore = create<DiagramState>()(
             selectedNodeId: null,
             selectedEdgeId: null,
             geminiApiKey: null,
+            isOfflineMode: false,
             isPlaying: false,
             simulationSpeed: 1,
             simulationLogs: [],
@@ -373,7 +376,8 @@ export const useDiagramStore = create<DiagramState>()(
                 }));
             },
 
-            setGeminiApiKey: (key) => set({ geminiApiKey: key }),
+            setGeminiApiKey: (key) => set({ geminiApiKey: key, isOfflineMode: false }),
+            setOfflineMode: (isOffline) => set({ isOfflineMode: isOffline }),
             setGeneratedSpecification: (spec) => set({ generatedSpecification: spec }),
 
             // --- Active Diagram Actions ---
@@ -629,6 +633,7 @@ export const useDiagramStore = create<DiagramState>()(
                 diagrams: state.diagrams,
                 activeDiagramId: state.activeDiagramId,
                 geminiApiKey: state.geminiApiKey,
+                isOfflineMode: state.isOfflineMode,
                 // isPlaying is transient, do not persist
             }),
             onRehydrateStorage: () => (state) => {
