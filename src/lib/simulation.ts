@@ -3,6 +3,7 @@ import { useDiagramStore } from '@/lib/store';
 export class SimulationEngine {
     private static instance: SimulationEngine;
     private activeTimeouts: NodeJS.Timeout[] = [];
+    private activeIntervals: NodeJS.Timeout[] = [];
 
     private constructor() { }
 
@@ -19,12 +20,16 @@ export class SimulationEngine {
         store.setIsPlaying(true);
 
         // 1. Identify Entry Points (Gateways or Roots)
-        let roots: { id: string }[] = [];
+        let roots: { id: string, data: any }[] = []; // Type adjusted for data access
 
         if (startNodeIds && startNodeIds.length > 0) {
-            roots = startNodeIds.map(id => ({ id }));
+            // Need to fetch full node objects for data access (mock config)
+            const { diagrams, activeDiagramId } = store;
+            if (activeDiagramId) {
+                roots = diagrams[activeDiagramId].nodes.filter(n => startNodeIds.includes(n.id)) as any;
+            }
         } else {
-            roots = this.findRootNodes();
+            roots = this.findRootNodes() as any;
         }
 
         if (roots.length === 0) {
@@ -34,7 +39,25 @@ export class SimulationEngine {
 
         store.addSimulationLog({ level: 'info', message: `Starting simulation with ${roots.length} entry points.` });
 
-        roots.forEach(node => this.processNode(node.id));
+
+        roots.forEach(node => {
+            const mock = node.data.mock || {};
+            const rps = mock.requestsPerSecond || 0;
+
+            if (rps > 0) {
+                // Continuous Mode
+                const intervalMs = 1000 / rps;
+                this.processNode(node.id); // Initial run
+                const interval = setInterval(() => {
+                    this.processNode(node.id);
+                }, intervalMs);
+                this.activeIntervals.push(interval);
+                store.addSimulationLog({ level: 'info', message: `Started continuous load (${rps} RPS) from [${node.data.label}]` });
+            } else {
+                // Single Shot
+                this.processNode(node.id);
+            }
+        });
     }
 
     stop() {
@@ -42,6 +65,8 @@ export class SimulationEngine {
         store.setIsPlaying(false);
         this.activeTimeouts.forEach(clearTimeout);
         this.activeTimeouts = [];
+        this.activeIntervals.forEach(clearInterval);
+        this.activeIntervals = [];
         // Optional: Reset visualization state on stop
         // store.resetSimulation(); 
         store.addSimulationLog({ level: 'info', message: 'Simulation stopped.' });

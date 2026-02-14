@@ -41,6 +41,8 @@ export interface NodeMockData {
         path: string;
         body?: string;
     }[];
+    // Global Config for Root Nodes (Clients/Gateways)
+    requestsPerSecond?: number; // 0 = Single shot, >0 = Continuous
 }
 
 export interface NodeSimulationStatus {

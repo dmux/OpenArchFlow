@@ -235,6 +235,29 @@ export default function PropertiesPanel() {
                                         {isClient && (
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
+                                                    <Label className="text-xs uppercase text-muted-foreground">Traffic Simulation</Label>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between">
+                                                        <Label className="text-xs">Requests Per Second (RPS)</Label>
+                                                        <span className="text-xs text-muted-foreground">{mock?.requestsPerSecond || 0} req/s</span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        min={0}
+                                                        max={100}
+                                                        step={1}
+                                                        value={mock?.requestsPerSecond || 0}
+                                                        onChange={(e) => updateNodeMock(selectedNodeId, { requestsPerSecond: parseInt(e.target.value) })}
+                                                        className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        0 = Single request. &gt;0 = Continuous stream.
+                                                    </p>
+                                                </div>
+                                                <Separator className="my-2" />
+
+                                                <div className="flex items-center justify-between">
                                                     <Label className="text-xs uppercase text-muted-foreground">Test Requests</Label>
                                                     <Button
                                                         variant="ghost"
@@ -347,7 +370,7 @@ export default function PropertiesPanel() {
 
                             <Separator />
 
-                            {/* Actions / Links (Placeholder) */}
+                            {/* Actions */}
                             <div className="space-y-2">
                                 <h3 className="text-sm font-semibold text-muted-foreground">Actions</h3>
                                 <Button variant="outline" className="w-full justify-start gap-2" asChild>
