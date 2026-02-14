@@ -24,6 +24,7 @@ export class SimulationEngine {
         path: string[];
         startTime: number;
         status: 'pending' | 'success' | 'failed';
+        payload?: any; // Data carried by the request
     }[] = [];
 
     private constructor() { }
@@ -114,6 +115,15 @@ export class SimulationEngine {
             const mock = currentNode.data.mock as NodeMockData | undefined;
             const failureRate = mock?.failureRate || 0;
 
+            // Data Querying / Fetching Logic
+            if (mock?.data && mock.data.length > 0) {
+                // Simple logic: Pick random item or first item
+                // For now, let's pick random to simulate varying data
+                const randomItem = mock.data[Math.floor(Math.random() * mock.data.length)];
+                req.payload = randomItem;
+                logs.push({ nodeId: currentNode.id, level: 'success', message: `Data Fetched: ${JSON.stringify(randomItem).substring(0, 30)}...` });
+            }
+
             if (Math.random() * 100 < failureRate) {
                 req.status = 'failed';
                 logs.push({ nodeId: currentNode.id, level: 'error', message: `Request failed at ${currentNode.data.label}` });
@@ -142,6 +152,9 @@ export class SimulationEngine {
                 // Reached end of flow
                 req.status = 'success';
                 logs.push({ nodeId: currentNode.id, level: 'success', message: `Request completed at ${currentNode.data.label}` });
+                if (req.payload) {
+                    logs.push({ nodeId: currentNode.id, level: 'info', message: `Final Payload: ${JSON.stringify(req.payload).substring(0, 50)}...` });
+                }
             }
         }
 

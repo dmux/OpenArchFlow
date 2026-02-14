@@ -51,6 +51,7 @@ export default function PropertiesPanel() {
         // Helper to determine node category
         const isGateway = service?.toLowerCase().includes('gateway') || service?.toLowerCase().includes('balancer') || service?.toLowerCase().includes('appsync');
         const isCompute = service?.toLowerCase().includes('lambda') || service?.toLowerCase().includes('container') || service?.toLowerCase().includes('instance');
+        const isDatabase = service?.toLowerCase().includes('dynamodb') || service?.toLowerCase().includes('rds') || service?.toLowerCase().includes('database') || service?.toLowerCase().includes('store') || type === 'database';
         const isClient = type === 'client';
 
         // Get connected target nodes for Gateway routing
@@ -364,6 +365,40 @@ export default function PropertiesPanel() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Database / Storage Config */}
+                                        {isDatabase && (
+                                            <div className="space-y-3">
+                                                <Separator className="my-2" />
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between items-center">
+                                                        <Label className="text-xs uppercase text-muted-foreground">Mock Data (JSON Array)</Label>
+                                                        <span className="text-[10px] text-muted-foreground">Array of objects</span>
+                                                    </div>
+                                                    <JsonEditor
+                                                        value={JSON.stringify(mock?.data || [], null, 2)}
+                                                        onChange={(val) => {
+                                                            try {
+                                                                const parsed = JSON.parse(val);
+                                                                if (Array.isArray(parsed)) {
+                                                                    updateNodeMock(selectedNodeId, { data: parsed });
+                                                                }
+                                                            } catch (e) {
+                                                                // Allow typing invalid JSON while editing, but maybe don't save or handle gracefully?
+                                                                // For now, simpler to only update on valid JSON or let JsonEditor handle validation visual
+                                                                // Actually JsonEditor likely returns string. We need to parse.
+                                                                // If parse fails, we might rely on the Editor's own validation state if we had access.
+                                                                // Let's just try parse.
+                                                            }
+                                                        }}
+                                                        placeholder='[{"id": "1", "name": "Item A"}]'
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        Simulated queries will return items from this list.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

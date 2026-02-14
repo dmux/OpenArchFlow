@@ -43,6 +43,10 @@ export interface NodeMockData {
     }[];
     // Global Config for Root Nodes (Clients/Gateways)
     requestsPerSecond?: number; // 0 = Single shot, >0 = Continuous
+
+    // For Database / Storage Nodes
+    data?: Record<string, any>[]; // Mocked data items (rows, documents)
+    queryLogic?: string; // Optional: "random", "first", "byId"
 }
 
 export interface NodeSimulationStatus {
