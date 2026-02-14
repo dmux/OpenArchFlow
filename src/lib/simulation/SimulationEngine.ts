@@ -116,12 +116,13 @@ export class SimulationEngine {
             const failureRate = mock?.failureRate || 0;
 
             // Data Querying / Fetching Logic
-            if (mock?.data && mock.data.length > 0) {
+            // Legacy: Node-based auto-fetch (keep as fallback if payload is empty and node has data)
+            if (!req.payload && mock?.data && mock.data.length > 0) {
                 // Simple logic: Pick random item or first item
                 // For now, let's pick random to simulate varying data
                 const randomItem = mock.data[Math.floor(Math.random() * mock.data.length)];
                 req.payload = randomItem;
-                logs.push({ nodeId: currentNode.id, level: 'success', message: `Data Fetched: ${JSON.stringify(randomItem).substring(0, 30)}...` });
+                logs.push({ nodeId: currentNode.id, level: 'success', message: `Data Fetched (Auto): ${JSON.stringify(randomItem).substring(0, 30)}...` });
             }
 
             if (Math.random() * 100 < failureRate) {
@@ -143,6 +144,37 @@ export class SimulationEngine {
                 const targetEdge = outgoingEdges[Math.floor(Math.random() * outgoingEdges.length)];
                 const targetNodeId = targetEdge.target;
                 activeEdgeIds.push(targetEdge.id); // Visualize traffic on this edge
+
+                // Process Edge Simulation Actions (Request Semantics)
+                const edgeData = targetEdge.data;
+                if (edgeData?.simulationAction) {
+                    const action = edgeData.simulationAction;
+                    const targetNode = nodes.find(n => n.id === targetNodeId);
+
+                    if (targetNode) {
+                        if (action.type === 'read') {
+                            // Fetch data from target node's mock data
+                            const targetMock = targetNode.data.mock as NodeMockData | undefined;
+                            if (targetMock?.data && targetMock.data.length > 0) {
+                                // Simple logic: Pick random item or first item
+                                // Future: Use action.query to filter
+                                const randomItem = targetMock.data[Math.floor(Math.random() * targetMock.data.length)];
+                                req.payload = randomItem;
+                                logs.push({
+                                    nodeId: targetNodeId,
+                                    level: 'success',
+                                    message: `Read Action: Fetched ${JSON.stringify(randomItem).substring(0, 20)}...`
+                                });
+                            } else {
+                                logs.push({ nodeId: targetNodeId, level: 'warning', message: `Read Action: No data found in ${targetNode.data.label}` });
+                            }
+                        } else if (action.type === 'write') {
+                            logs.push({ nodeId: targetNodeId, level: 'success', message: `Write Action: Data written to ${targetNode.data.label}` });
+                        } else if (action.type === 'trigger') {
+                            logs.push({ nodeId: targetNodeId, level: 'info', message: `Trigger Action: Invoking ${targetNode.data.label}` });
+                        }
+                    }
+                }
 
                 // Move request to next node
                 req.currentNodeId = targetNodeId;

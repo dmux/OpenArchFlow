@@ -479,6 +479,65 @@ export default function PropertiesPanel() {
 
                             <Separator />
 
+                            {/* Simulation Action Configuration */}
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                    <PlayCircle size={14} /> Simulation Action
+                                </h3>
+                                <div className="space-y-3 bg-muted/20 p-3 rounded-lg border">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Action Type</Label>
+                                        <select
+                                            value={selectedEdge.data?.simulationAction?.type || ''}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const currentAction = selectedEdge.data?.simulationAction || {};
+                                                if (!val) {
+                                                    const { simulationAction, ...rest } = selectedEdge.data || {};
+                                                    updateEdge(selectedEdgeId, rest);
+                                                } else {
+                                                    updateEdge(selectedEdgeId, {
+                                                        simulationAction: { ...currentAction, type: val }
+                                                    });
+                                                }
+                                            }}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
+                                        >
+                                            <option value="">(None - Pass Through)</option>
+                                            <option value="read">Read / Fetch Data</option>
+                                            <option value="write">Write / Update Data</option>
+                                            <option value="trigger">Trigger / Invoke</option>
+                                        </select>
+                                    </div>
+
+                                    {selectedEdge.data?.simulationAction?.type && (
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Query / Payload Filter</Label>
+                                            <Input
+                                                value={selectedEdge.data?.simulationAction?.query || ''}
+                                                onChange={(e) => {
+                                                    const currentAction = selectedEdge.data?.simulationAction || {};
+                                                    updateEdge(selectedEdgeId, {
+                                                        simulationAction: { ...currentAction, query: e.target.value }
+                                                    });
+                                                }}
+                                                placeholder={
+                                                    selectedEdge.data.simulationAction.type === 'read' ? 'e.g. GetItem { id: payload.userId }' :
+                                                        selectedEdge.data.simulationAction.type === 'write' ? 'e.g. PutItem { ...payload }' :
+                                                            'e.g. Invoke Function'
+                                                }
+                                                className="h-8 text-xs"
+                                            />
+                                            <p className="text-[10px] text-muted-foreground">
+                                                Describes the intent of this connection during simulation.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Separator />
+
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div className="p-3 bg-muted/30 rounded-lg">
                                     <span className="text-xs text-muted-foreground uppercase block mb-1">Source</span>

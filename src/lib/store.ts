@@ -17,8 +17,17 @@ import ELK from 'elkjs/lib/elk.bundled';
 
 const elk = new ELK();
 
+export interface AppEdgeData {
+    simulationAction?: {
+        type: 'read' | 'write' | 'trigger';
+        targetId?: string; // For things like GetItem where we might want to specify WHAT to get (though typically implied by connection)
+        query?: string; // e.g. "Select * from Users" or "GetItem { id: payload.userId }"
+    };
+    [key: string]: any;
+}
+
 export type AppNode = Node<AppNodeData>;
-export type AppEdge = Edge;
+export type AppEdge = Edge<AppEdgeData>;
 
 export interface NodeMockData {
     enabled?: boolean;
