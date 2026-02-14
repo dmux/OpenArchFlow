@@ -254,6 +254,12 @@ function HomeContent() {
     const isPlaying = useDiagramStore((state) => state.isPlaying);
     const setIsPlaying = useDiagramStore((state) => state.setIsPlaying);
 
+    const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
+    const diagrams = useDiagramStore((state) => state.diagrams);
+
+    const activeDiagram = activeDiagramId ? diagrams[activeDiagramId] : null;
+    const nodes = activeDiagram?.nodes || [];
+
     // Initialize WebLLM when toggled on
     useEffect(() => {
         if (useLocalAI) {
@@ -549,6 +555,7 @@ function HomeContent() {
                         isLoading={isLoading || isModelLoading}
                         disabled={!useLocalAI && !geminiApiKey}
                         placeholder={!useLocalAI && !geminiApiKey ? "Enter API Key to start..." : undefined}
+                        defaultCollapsed={nodes.length > 0}
                     />
 
                     {/* Specification Dialog */}

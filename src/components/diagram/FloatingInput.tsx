@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CornerDownLeft, Sparkles, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
@@ -12,11 +12,16 @@ interface FloatingInputProps {
     isLoading: boolean;
     disabled?: boolean;
     placeholder?: string;
+    defaultCollapsed?: boolean;
 }
 
-export default function FloatingInput({ onSubmit, isLoading, disabled, placeholder }: FloatingInputProps) {
+export default function FloatingInput({ onSubmit, isLoading, disabled, placeholder, defaultCollapsed = false }: FloatingInputProps) {
     const [prompt, setPrompt] = useState('');
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+    useEffect(() => {
+        setIsCollapsed(defaultCollapsed);
+    }, [defaultCollapsed]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,7 +32,7 @@ export default function FloatingInput({ onSubmit, isLoading, disabled, placehold
 
     return (
         <div className={cn(
-            "fixed bottom-8 left-8 z-50 transition-all duration-300 ease-in-out",
+            "fixed bottom-8 left-24 z-50 transition-all duration-300 ease-in-out",
             isCollapsed ? "w-12 h-12" : "w-full max-w-xl"
         )}>
             {isCollapsed ? (
