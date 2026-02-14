@@ -47,8 +47,10 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **Auto-Layout**: One-click hierarchical organization using dagre algorithm
 - **AWS Components**: 30+ AWS service components with official icons
 - **Smart Connections**: Automatic edge routing and labels
-- **Export Options**: Download diagrams as high-quality PNG images
-- **Multi-Diagram Support**: Create and manage multiple architecture diagrams
+- **Export Options**: Download diagrams as high-quality PNG images or JSON files
+- **Multi-Diagram Support**: Create, manage, and backup multiple architecture diagrams
+- **Import/Export**: detailed JSON export for individual diagrams or full backup of all work
+- **Versioning**: Backward-compatible file format ensures your data is safe across updates
 
 ### 📝 AI-Generated Documentation
 
@@ -167,6 +169,14 @@ pnpm start
 
 - Click **Actions** → **Export as PNG**
 - Download professional diagrams for presentations
+
+### 5. Manage Diagrams (Import/Export)
+
+- **Export Single**: Click the download icon (⬇️) next to a diagram in the sidebar to save it as a JSON file.
+- **Backup All**: Click **Backup All** in the sidebar footer to export all your diagrams at once.
+- **Import**: Click **Import** to restore diagrams from a JSON file.
+  - Automatically handles versioning
+  - Merges with existing diagrams safely (renames duplicates)
 
 ---
 
