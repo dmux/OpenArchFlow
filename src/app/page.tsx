@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import { Button } from '@/components/ui/button';
-import { Cloud, Laptop, Download, Layout, Trash2, Play, Square, FileText, LayoutGrid } from 'lucide-react';
+import { Cloud, Laptop, Download, Layout, Trash2, Play, Square, FileText, LayoutGrid, Github } from 'lucide-react';
 import SpecificationDialog from '@/components/diagram/SpecificationDialog';
 import SimulationLogs from '@/components/diagram/SimulationLogs';
 import { SimulationEngine } from '@/lib/simulation';
@@ -449,6 +449,16 @@ function HomeContent() {
 
 
                         <PrivacyInfo />
+
+                        <a
+                            href="https://github.com/dmux/OpenArchFlow"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-background/80 backdrop-blur border hover:bg-background/100 transition-all hover:scale-110 group"
+                            title="View on GitHub - Open Source Project"
+                        >
+                            <Github className="w-4 h-4 text-foreground fill-current group-hover:text-primary transition-colors" />
+                        </a>
                     </div>
 
                     {/* ... rest of the component (Modal, Canvas, Input) ... */}
