@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from "@/components/ui/switch";
+import JsonEditor from './JsonEditor';
 
 export default function PropertiesPanel() {
     const {
@@ -332,11 +333,10 @@ export default function PropertiesPanel() {
                                             {isCompute && (
                                                 <div className="space-y-1">
                                                     <Label className="text-xs">Response Body (JSON)</Label>
-                                                    <textarea
-                                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                                                        placeholder='{"status": "ok"}'
+                                                    <JsonEditor
                                                         value={mock?.responseBody || ''}
-                                                        onChange={(e) => updateNodeMock(selectedNodeId, { responseBody: e.target.value })}
+                                                        onChange={(val) => updateNodeMock(selectedNodeId, { responseBody: val })}
+                                                        placeholder='{"status": "ok"}'
                                                     />
                                                 </div>
                                             )}
