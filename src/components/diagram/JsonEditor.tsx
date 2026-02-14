@@ -49,7 +49,6 @@ export default function JsonEditor({
             setIsValid(false);
             // Check if it's fixable (relaxed JSON)
             try {
-                // eslint-disable-next-line
                 (new Function(`return ${newValue}`))();
                 setIsFixable(true);
             } catch {
@@ -69,7 +68,6 @@ export default function JsonEditor({
         } catch (e) {
             // Try relaxed JSON (e.g. JS objects)
             try {
-                // eslint-disable-next-line
                 const relaxed = (new Function(`return ${localValue}`))();
                 const formatted = JSON.stringify(relaxed, null, 2);
                 setLocalValue(formatted);
