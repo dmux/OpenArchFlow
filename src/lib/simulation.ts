@@ -62,7 +62,7 @@ export class SimulationEngine {
 
     stop() {
         const store = useDiagramStore.getState();
-        store.setIsPlaying(false);
+        store.stopSimulation();
         this.activeTimeouts.forEach(clearTimeout);
         this.activeTimeouts = [];
         this.activeIntervals.forEach(clearInterval);

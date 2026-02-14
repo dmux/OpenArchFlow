@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDiagramStore } from '@/lib/store';
+import { SimulationEngine } from '@/lib/simulation';
 import { Play, Square, FastForward, RotateCcw, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -13,13 +14,20 @@ import {
 export default function SimulationControls() {
     const {
         isPlaying,
-        toggleSimulation,
         simulationSpeed,
         setSimulationSpeed,
         simulationLogs,
         clearSimulationLogs,
         resetSimulation
     } = useDiagramStore();
+
+    const handleToggleSimulation = () => {
+        if (isPlaying) {
+            SimulationEngine.getInstance().stop();
+        } else {
+            SimulationEngine.getInstance().start();
+        }
+    };
 
     return (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
@@ -33,7 +41,7 @@ export default function SimulationControls() {
                                 variant={isPlaying ? "destructive" : "default"}
                                 size="icon"
                                 className="rounded-full h-10 w-10 shadow-sm"
-                                onClick={toggleSimulation}
+                                onClick={handleToggleSimulation}
                             >
                                 {isPlaying ? <Square className="fill-current" size={16} /> : <Play className="fill-current" size={16} />}
                             </Button>
@@ -82,7 +90,7 @@ export default function SimulationControls() {
                     {simulationLogs.length > 0 ? (
                         <span className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${simulationLogs[simulationLogs.length - 1].level === 'error' ? 'bg-red-500' :
-                                    simulationLogs[simulationLogs.length - 1].level === 'success' ? 'bg-green-500' : 'bg-blue-500'
+                                simulationLogs[simulationLogs.length - 1].level === 'success' ? 'bg-green-500' : 'bg-blue-500'
                                 }`} />
                             {simulationLogs[simulationLogs.length - 1].message}
                         </span>

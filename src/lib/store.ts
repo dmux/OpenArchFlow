@@ -129,6 +129,8 @@ interface DiagramState {
     // Simulation State
     isPlaying: boolean;
     setIsPlaying: (isPlaying: boolean) => void;
+    simulationSpeed: number;
+    setSimulationSpeed: (speed: number) => void;
     simulationLogs: SimulationLog[];
     addSimulationLog: (log: Omit<SimulationLog, 'id' | 'timestamp'>) => void;
     clearSimulationLogs: () => void;
@@ -137,6 +139,8 @@ interface DiagramState {
     updateNodeMock: (nodeId: string, mock: Partial<NodeMockData>) => void;
     setNodeSimulationStatus: (nodeId: string, status: NodeSimulationStatus) => void;
     resetSimulation: () => void;
+    stopSimulation: () => void;
+
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -148,6 +152,7 @@ export const useDiagramStore = create<DiagramState>()(
             selectedEdgeId: null,
             geminiApiKey: null,
             isPlaying: false,
+            simulationSpeed: 1,
             simulationLogs: [],
             generatedSpecification: null,
 
@@ -203,6 +208,7 @@ export const useDiagramStore = create<DiagramState>()(
             }),
 
             setIsPlaying: (isPlaying) => set({ isPlaying }),
+            setSimulationSpeed: (simulationSpeed) => set({ simulationSpeed }),
 
             addSimulationLog: (log) => set((state) => ({
                 simulationLogs: [
@@ -260,6 +266,34 @@ export const useDiagramStore = create<DiagramState>()(
                             ...state.diagrams,
                             [activeDiagramId]: { ...activeDiagram, nodes: newNodes }
                             // We don't update lastModified for simulation state to avoid "unsaved changes" if we implemented that
+                        },
+                    };
+                });
+            },
+
+            stopSimulation: () => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+
+                set((state) => {
+                    const activeDiagram = state.diagrams[activeDiagramId];
+                    const newNodes = activeDiagram.nodes.map((node) => {
+                        // Clear processing status on stop, convert to idle or leave as is if not processing?
+                        // Requirement: "status de loading e execução sejam parados" -> implies clearing processing state.
+                        if (node.data.simulation?.status === 'processing') {
+                            return {
+                                ...node,
+                                data: { ...node.data, simulation: { status: 'idle' as const, lastRun: Date.now() } }
+                            };
+                        }
+                        return node;
+                    });
+
+                    return {
+                        isPlaying: false,
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: { ...activeDiagram, nodes: newNodes }
                         },
                     };
                 });
