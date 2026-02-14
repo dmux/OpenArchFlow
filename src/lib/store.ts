@@ -68,7 +68,7 @@ export interface SimulationLog {
     message: string;
 }
 
-interface Diagram {
+export interface Diagram {
     id: string;
     name: string;
     nodes: AppNode[];
@@ -83,6 +83,10 @@ interface DiagramState {
     selectedEdgeId: string | null;
     geminiApiKey: string | null;
     generatedSpecification: string | null;
+
+    // Import Actions
+    importDiagram: (diagram: Diagram) => void;
+    importDiagrams: (diagrams: Record<string, Diagram>) => void;
 
     // Actions for Diagram Management
     createDiagram: (name?: string) => string;
@@ -133,6 +137,57 @@ export const useDiagramStore = create<DiagramState>()(
             isPlaying: false,
             simulationLogs: [],
             generatedSpecification: null,
+
+            importDiagram: (diagram) => set((state) => {
+                // Check if ID exists, if so, create a new ID and append (Imported) to name
+                let newId = diagram.id;
+                let newName = diagram.name;
+
+                if (state.diagrams[newId]) {
+                    newId = crypto.randomUUID();
+                    newName = `${diagram.name} (Imported)`;
+                }
+
+                const newDiagram = {
+                    ...diagram,
+                    id: newId,
+                    name: newName,
+                    lastModified: Date.now()
+                };
+
+                return {
+                    diagrams: { ...state.diagrams, [newId]: newDiagram },
+                    activeDiagramId: newId // Switch to imported diagram
+                };
+            }),
+
+            importDiagrams: (importedDiagrams) => set((state) => {
+                const newDiagrams = { ...state.diagrams };
+
+                Object.values(importedDiagrams).forEach(diagram => {
+                    let newId = diagram.id;
+                    let newName = diagram.name;
+
+                    // Conflict resolution: if ID exists, generate new ID
+                    if (newDiagrams[newId]) {
+                        newId = crypto.randomUUID();
+                        newName = `${diagram.name} (Imported)`;
+                    }
+
+                    newDiagrams[newId] = {
+                        ...diagram,
+                        id: newId,
+                        name: newName,
+                        lastModified: Date.now()
+                    };
+                });
+
+                return {
+                    diagrams: newDiagrams,
+                    // keep active diagram as is, or switch if it was null
+                    activeDiagramId: state.activeDiagramId || Object.keys(newDiagrams)[0]
+                };
+            }),
 
             setIsPlaying: (isPlaying) => set({ isPlaying }),
 

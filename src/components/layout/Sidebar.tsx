@@ -13,7 +13,8 @@ import { useDiagramStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Layout, X, Pencil } from 'lucide-react';
+import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson } from 'lucide-react';
+import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -30,6 +31,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     const setActiveDiagram = useDiagramStore((state) => state.setActiveDiagram);
     const deleteDiagram = useDiagramStore((state) => state.deleteDiagram);
     const renameDiagram = useDiagramStore((state) => state.renameDiagram);
+    const importDiagram = useDiagramStore((state) => state.importDiagram);
+    const importDiagrams = useDiagramStore((state) => state.importDiagrams);
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
@@ -57,6 +60,75 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         }
         setEditingId(null);
         setEditName('');
+    };
+
+    const handleExport = (e: React.MouseEvent, diagram: any) => {
+        e.stopPropagation();
+        const json = serializeDiagram(diagram);
+        downloadJson(`OpenArchFlow_${diagram.name.replace(/\s+/g, '_')}.json`, json);
+    };
+
+    const handleExportAll = () => {
+        const json = serializeAllDiagrams(diagrams);
+        const dateStr = new Date().toISOString().split('T')[0];
+        downloadJson(`OpenArchFlow_Backup_${dateStr}.json`, json);
+    };
+
+    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const content = event.target?.result as string;
+                const importData = validateAndParseImport(content);
+
+                if (importData.type === 'single') {
+                    importDiagram(importData.data as any);
+                } else if (importData.type === 'backup') {
+                    importDiagrams(importData.data as any); // Diagrams are stored as array or record? Validation returns export data format
+                    // IMPORTANT: store.importDiagrams expects Record<string, Diagram>. 
+                    // But serializeAllDiagrams exports array definition in DiagramData[].
+                    // Wait, serializeAllDiagrams implementation:
+                    // data: Object.values(diagrams) -> This is Diagram[]
+                    // So importData.data is Diagram[] (if backup).
+
+                    // Let's check store implementation of importDiagrams.
+                    // It expects Record<string, Diagram>.
+                    // I need to convert array back to record or update store.
+
+                    // Let me check my store implementation again.
+                    // importDiagrams: (importedDiagrams) => set((state) => { ... Object.values(importedDiagrams) ...
+                    // If I pass an array to Object.values(), it works (values are items).
+                    // BUT keys would be "0", "1", etc.
+                    // The store implementation uses `diagram.id` inside the loop, so it effectively ignores the keys of the input record if it iterates values.
+                    // Object.values() on an array returns the array itself.
+                    // So `importDiagrams` in store SHOULD handle array input too if typed as Record or just casted.
+                    // Let's cast it to any for now to be safe or map it.
+
+                    // Actually, let's just make sure we pass what the store expects.
+                    // Store expects Record<string, Diagram>.
+                    // If importData.data is Diagram[], I can reduce it to Record.
+                    if (Array.isArray(importData.data)) {
+                        const record = importData.data.reduce((acc: any, d: any) => {
+                            acc[d.id] = d;
+                            return acc;
+                        }, {});
+                        importDiagrams(record);
+                    } else {
+                        // fallback if it was somehow a record
+                        importDiagrams(importData.data as any);
+                    }
+                }
+            } catch (error) {
+                console.error('Import failed:', error);
+                alert('Import failed: ' + (error as Error).message);
+            }
+        };
+        reader.readAsText(file);
+        // Reset input value to allow selecting same file again
+        e.target.value = '';
     };
 
     const cancelEditing = (e?: React.KeyboardEvent) => {
@@ -133,6 +205,16 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                        onClick={(e) => handleExport(e, diagram)}
+                                        title="Export JSON"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
                                         onClick={(e) => startEditing(e, diagram)}
                                     >
                                         <Pencil className="w-3.5 h-3.5" />
@@ -176,8 +258,27 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     </div>
                 </ScrollArea>
 
-                <div className="p-4 text-xs text-center text-muted-foreground border-t">
-                    {sortedDiagrams.length} diagrams stored locally
+                <div className="p-4 border-t space-y-2">
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleExportAll}>
+                            <FileJson className="w-3.5 h-3.5 mr-2" />
+                            Backup All
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => document.getElementById('import-file')?.click()}>
+                            <Upload className="w-3.5 h-3.5 mr-2" />
+                            Import
+                        </Button>
+                        <input
+                            type="file"
+                            id="import-file"
+                            className="hidden"
+                            accept=".json"
+                            onChange={handleImport}
+                        />
+                    </div>
+                    <div className="text-xs text-center text-muted-foreground">
+                        {sortedDiagrams.length} diagrams stored locally
+                    </div>
                 </div>
             </div>
         </div>
