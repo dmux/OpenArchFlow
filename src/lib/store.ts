@@ -143,6 +143,10 @@ interface DiagramState {
     resetSimulation: () => void;
     stopSimulation: () => void;
 
+    // Laser Pointer State
+    laserPointerEnabled: boolean;
+    setLaserPointerEnabled: (enabled: boolean) => void;
+
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -158,6 +162,7 @@ export const useDiagramStore = create<DiagramState>()(
             simulationSpeed: 1,
             simulationLogs: [],
             generatedSpecification: null,
+            laserPointerEnabled: false,
 
             importDiagram: (diagram) => set((state) => {
                 // Check if ID exists, if so, create a new ID and append (Imported) to name
@@ -212,6 +217,7 @@ export const useDiagramStore = create<DiagramState>()(
 
             setIsPlaying: (isPlaying) => set({ isPlaying }),
             setSimulationSpeed: (simulationSpeed) => set({ simulationSpeed }),
+            setLaserPointerEnabled: (enabled) => set({ laserPointerEnabled: enabled }),
 
             addSimulationLog: (log) => set((state) => ({
                 simulationLogs: [

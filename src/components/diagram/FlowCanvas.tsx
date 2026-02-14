@@ -17,6 +17,10 @@ import 'reactflow/dist/style.css';
 import { useDiagramStore } from '@/lib/store';
 import { useShallow } from 'zustand/react/shallow';
 import AWSNode from './AWSNode';
+import FrameNode from './FrameNode';
+import AnnotationNode from './AnnotationNode';
+import LaserPointer from './LaserPointer';
+import SimulationControls from '../simulation/SimulationControls';
 
 const nodeTypes = {
     'aws-compute': AWSNode,
@@ -43,7 +47,11 @@ const nodeTypes = {
     'aws-quantum-technologies': AWSNode, // Added
     'aws-serverless': AWSNode, // Added
     'aws-containers': AWSNode, // Added
+    'aws-ai': AWSNode, // Added
+    'aws-devtools': AWSNode, // Added
     'client': AWSNode,
+    'frame': FrameNode,
+    'annotation': AnnotationNode,
     'default': AWSNode,
 };
 
@@ -121,6 +129,12 @@ function FlowCanvas() {
                 <Controls />
                 <MiniMap />
             </ReactFlow>
+
+            {/* Laser Pointer Overlay */}
+            <LaserPointer />
+
+            {/* Simulation Controls */}
+            <SimulationControls />
         </div>
     );
 }

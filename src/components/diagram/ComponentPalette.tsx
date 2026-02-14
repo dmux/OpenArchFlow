@@ -10,7 +10,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Box } from "lucide-react";
+import { Plus, Search, Box, Frame, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDiagramStore } from "@/lib/store";
@@ -19,6 +19,12 @@ import { cn } from "@/lib/utils";
 
 // Define categories and services
 const AWS_SERVICES = [
+    {
+        category: "Diagram Tools",
+        items: [
+            { name: "Frame/Group", service: "frame", type: "frame" },
+        ]
+    },
     {
         category: "Client & Devices",
         items: [
@@ -256,7 +262,16 @@ export default function ComponentPalette() {
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                     {category.items.map((item) => {
-                                        const Icon = getAwsIcon(item.service, item.type);
+                                        // Use custom icons for diagram tools
+                                        let Icon;
+                                        if (item.type === 'frame') {
+                                            Icon = Frame;
+                                        } else if (item.type === 'annotation') {
+                                            Icon = MessageSquare;
+                                        } else {
+                                            Icon = getAwsIcon(item.service, item.type);
+                                        }
+
                                         return (
                                             <button
                                                 key={`${item.service}-${item.name}`}

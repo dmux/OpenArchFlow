@@ -49,6 +49,8 @@ export default function PropertiesPanel() {
         const type = selectedNode.type || 'default';
 
         // Helper to determine node category
+        const isFrame = type === 'frame';
+        const isAnnotation = type === 'annotation';
         const isGateway = service?.toLowerCase().includes('gateway') || service?.toLowerCase().includes('balancer') || service?.toLowerCase().includes('appsync');
         const isCompute = service?.toLowerCase().includes('lambda') || service?.toLowerCase().includes('container') || service?.toLowerCase().includes('instance');
         const isDatabase = service?.toLowerCase().includes('dynamodb') || service?.toLowerCase().includes('rds') || service?.toLowerCase().includes('database') || service?.toLowerCase().includes('store') || type === 'database';
@@ -84,335 +86,478 @@ export default function PropertiesPanel() {
                     <ScrollArea className="flex-1 p-4">
                         <div className="space-y-6">
 
-                            {/* Metadata Section */}
-                            {metadata && Object.keys(metadata).length > 0 ? (
+
+                            {/* Frame-specific Properties */}
+                            {isFrame && (
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                                        <Info size={14} /> Configuration & Details
+                                        <Settings size={14} /> Frame Properties
                                     </h3>
-                                    <div className="grid gap-3">
-                                        {Object.entries(metadata).map(([key, value]) => (
-                                            <div key={key} className="bg-muted/50 p-3 rounded-lg border border-border/50">
-                                                <div className="text-xs font-medium text-muted-foreground uppercase mb-1">{key.replace(/_/g, ' ')}</div>
-                                                <div className="text-sm font-medium text-foreground break-words">{String(value)}</div>
-                                            </div>
-                                        ))}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-xs">Title</Label>
+                                            <Input
+                                                value={metadata?.title || label || ''}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, title: e.target.value }
+                                                    });
+                                                }}
+                                                placeholder="Group Name"
+                                                className="h-8 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Description</Label>
+                                            <Input
+                                                value={metadata?.description || ''}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, description: e.target.value }
+                                                    });
+                                                }}
+                                                placeholder="Optional description"
+                                                className="h-8 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Background Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.borderColor || '#93c5fd'}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    const color = e.target.value;
+                                                    // Convert hex to rgba for background
+                                                    const r = parseInt(color.slice(1, 3), 16);
+                                                    const g = parseInt(color.slice(3, 5), 16);
+                                                    const b = parseInt(color.slice(5, 7), 16);
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: {
+                                                            ...metadata,
+                                                            borderColor: color,
+                                                            backgroundColor: `rgba(${r}, ${g}, ${b}, 0.1)`
+                                                        }
+                                                    });
+                                                }}
+                                                className="h-8"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="text-sm text-muted-foreground italic">No metadata available for this resource.</div>
+                            )}
+
+                            {/* Annotation-specific Properties */}
+                            {isAnnotation && (
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Settings size={14} /> Annotation Properties
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-xs">Text</Label>
+                                            <Input
+                                                value={metadata?.text || label || ''}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, text: e.target.value }
+                                                    });
+                                                }}
+                                                placeholder="Annotation text"
+                                                className="h-8 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.color || '#ef4444'}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, color: e.target.value }
+                                                    });
+                                                }}
+                                                className="h-8"
+                                            />
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                                Cor do laser pointer (vermelho é mais realista)
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Pointer Direction</Label>
+                                            <select
+                                                value={metadata?.pointerDirection || 'right'}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, pointerDirection: e.target.value }
+                                                    });
+                                                }}
+                                                className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
+                                            >
+                                                <option value="up">Up ↑</option>
+                                                <option value="down">Down ↓</option>
+                                                <option value="left">Left ←</option>
+                                                <option value="right">Right →</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-xs">Animated</Label>
+                                            <Switch
+                                                checked={metadata?.animated !== false}
+                                                onCheckedChange={(checked) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, animated: checked }
+                                                    });
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Regular Metadata Section for other nodes */}
+                            {!isFrame && !isAnnotation && (
+                                <>
+                                    {metadata && Object.keys(metadata).length > 0 ? (
+                                        <div className="space-y-3">
+                                            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                                <Info size={14} /> Configuration & Details
+                                            </h3>
+                                            <div className="grid gap-3">
+                                                {Object.entries(metadata).map(([key, value]) => (
+                                                    <div key={key} className="bg-muted/50 p-3 rounded-lg border border-border/50">
+                                                        <div className="text-xs font-medium text-muted-foreground uppercase mb-1">{key.replace(/_/g, ' ')}</div>
+                                                        <div className="text-sm font-medium text-foreground break-words">{String(value)}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm text-muted-foreground italic">No metadata available for this resource.</div>
+                                    )}
+                                </>
                             )}
 
                             <Separator />
 
-                            {/* Simulation / Mock Configuration */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                                            <PlayCircle size={14} /> Simulation Mock
-                                        </h3>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-6 w-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                            onClick={handleTriggerNode}
-                                            title="Trigger Simulation from this Node"
-                                        >
-                                            <PlayCircle size={14} />
-                                        </Button>
+                            {/* Simulation / Mock Configuration - Only for non-Frame/Annotation nodes */}
+                            {!isFrame && !isAnnotation && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                                <PlayCircle size={14} /> Simulation Mock
+                                            </h3>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-6 w-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                onClick={handleTriggerNode}
+                                                title="Trigger Simulation from this Node"
+                                            >
+                                                <PlayCircle size={14} />
+                                            </Button>
+                                        </div>
+                                        <Switch
+                                            checked={mock?.enabled !== false}
+                                            onCheckedChange={(checked) => updateNodeMock(selectedNodeId, { enabled: checked })}
+                                        />
                                     </div>
-                                    <Switch
-                                        checked={mock?.enabled !== false}
-                                        onCheckedChange={(checked) => updateNodeMock(selectedNodeId, { enabled: checked })}
-                                    />
-                                </div>
 
-                                {(mock?.enabled !== false) && (
-                                    <div className="space-y-4 border rounded-lg p-3 bg-muted/20">
+                                    {(mock?.enabled !== false) && (
+                                        <div className="space-y-4 border rounded-lg p-3 bg-muted/20">
 
-                                        {/* Gateway Specific Config */}
-                                        {isGateway && (
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-xs uppercase text-muted-foreground">Endpoints</Label>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6"
-                                                        onClick={() => {
-                                                            const newEndpoint = {
-                                                                id: crypto.randomUUID(),
-                                                                method: 'GET',
-                                                                path: '/path',
-                                                                status: 200
-                                                            };
-                                                            updateNodeMock(selectedNodeId, {
-                                                                endpoints: [...(mock?.endpoints || []), newEndpoint]
-                                                            });
-                                                        }}
-                                                    >
-                                                        <Plus size={14} />
-                                                    </Button>
+                                            {/* Gateway Specific Config */}
+                                            {isGateway && (
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="text-xs uppercase text-muted-foreground">Endpoints</Label>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6"
+                                                            onClick={() => {
+                                                                const newEndpoint = {
+                                                                    id: crypto.randomUUID(),
+                                                                    method: 'GET',
+                                                                    path: '/path',
+                                                                    status: 200
+                                                                };
+                                                                updateNodeMock(selectedNodeId, {
+                                                                    endpoints: [...(mock?.endpoints || []), newEndpoint]
+                                                                });
+                                                            }}
+                                                        >
+                                                            <Plus size={14} />
+                                                        </Button>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        {(mock?.endpoints || []).length === 0 && (
+                                                            <div className="text-xs text-muted-foreground italic">No endpoints defined.</div>
+                                                        )}
+                                                        {mock?.endpoints?.map((ep, idx) => (
+                                                            <div key={ep.id} className="flex flex-col gap-2 bg-card p-2 rounded border shadow-sm">
+                                                                <div className="flex gap-2 items-center">
+                                                                    <select
+                                                                        value={ep.method}
+                                                                        onChange={(e) => {
+                                                                            const newEndpoints = [...(mock?.endpoints || [])];
+                                                                            newEndpoints[idx].method = e.target.value;
+                                                                            updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        }}
+                                                                        className="h-7 w-[80px] text-xs rounded-md border border-input bg-background px-2 py-1"
+                                                                    >
+                                                                        {['GET', 'POST', 'PUT', 'DELETE'].map(m => <option key={m} value={m}>{m}</option>)}
+                                                                    </select>
+                                                                    <Input
+                                                                        value={ep.path}
+                                                                        onChange={(e) => {
+                                                                            const newEndpoints = [...(mock.endpoints || [])];
+                                                                            newEndpoints[idx].path = e.target.value;
+                                                                            updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        }}
+                                                                        className="h-7 text-xs flex-1"
+                                                                        placeholder="/users"
+                                                                    />
+                                                                    <Input
+                                                                        value={ep.status}
+                                                                        type="number"
+                                                                        onChange={(e) => {
+                                                                            const newEndpoints = [...(mock.endpoints || [])];
+                                                                            newEndpoints[idx].status = parseInt(e.target.value);
+                                                                            updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        }}
+                                                                        className="h-7 w-[70px] text-xs text-center"
+                                                                        placeholder="200"
+                                                                    />
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                                        onClick={() => {
+                                                                            const newEndpoints = (mock.endpoints || []).filter(e => e.id !== ep.id);
+                                                                            updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        }}
+                                                                    >
+                                                                        <Trash size={12} />
+                                                                    </Button>
+                                                                </div>
+                                                                {/* Target Routing Selector */}
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[10px] text-muted-foreground uppercase">Routes to:</span>
+                                                                    <select
+                                                                        value={ep.targetNodeId || ''}
+                                                                        onChange={(e) => {
+                                                                            const newEndpoints = [...(mock?.endpoints || [])];
+                                                                            newEndpoints[idx].targetNodeId = e.target.value || undefined;
+                                                                            updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        }}
+                                                                        className="h-6 flex-1 text-xs rounded-md border border-input bg-background px-2"
+                                                                    >
+                                                                        <option value="">(Broadcast to all)</option>
+                                                                        {connectedTargetNodes.map(node => (
+                                                                            <option key={node.id} value={node.id}>
+                                                                                {node.data.label}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    {(mock?.endpoints || []).length === 0 && (
-                                                        <div className="text-xs text-muted-foreground italic">No endpoints defined.</div>
-                                                    )}
-                                                    {mock?.endpoints?.map((ep, idx) => (
-                                                        <div key={ep.id} className="flex flex-col gap-2 bg-card p-2 rounded border shadow-sm">
-                                                            <div className="flex gap-2 items-center">
+                                            )}
+
+                                            {/* Client Specific Config */}
+                                            {isClient && (
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="text-xs uppercase text-muted-foreground">Traffic Simulation</Label>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between">
+                                                            <Label className="text-xs">Requests Per Second (RPS)</Label>
+                                                            <span className="text-xs text-muted-foreground">{mock?.requestsPerSecond || 0} req/s</span>
+                                                        </div>
+                                                        <input
+                                                            type="range"
+                                                            min={0}
+                                                            max={100}
+                                                            step={1}
+                                                            value={mock?.requestsPerSecond || 0}
+                                                            onChange={(e) => updateNodeMock(selectedNodeId, { requestsPerSecond: parseInt(e.target.value) })}
+                                                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                                        />
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            0 = Single request. &gt;0 = Continuous stream.
+                                                        </p>
+                                                    </div>
+                                                    <Separator className="my-2" />
+
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="text-xs uppercase text-muted-foreground">Test Requests</Label>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6"
+                                                            onClick={() => {
+                                                                const newReq = {
+                                                                    id: crypto.randomUUID(),
+                                                                    method: 'GET',
+                                                                    path: '/users'
+                                                                };
+                                                                updateNodeMock(selectedNodeId, { testRequests: [...(mock?.testRequests || []), newReq] });
+                                                            }}
+                                                        >
+                                                            <Plus size={14} />
+                                                        </Button>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        {mock?.testRequests?.map((req, idx) => (
+                                                            <div key={req.id} className="flex gap-2 items-center bg-card p-2 rounded border shadow-sm">
                                                                 <select
-                                                                    value={ep.method}
+                                                                    value={req.method}
                                                                     onChange={(e) => {
-                                                                        const newEndpoints = [...(mock?.endpoints || [])];
-                                                                        newEndpoints[idx].method = e.target.value;
-                                                                        updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        const newRequests = [...(mock?.testRequests || [])];
+                                                                        newRequests[idx].method = e.target.value;
+                                                                        updateNodeMock(selectedNodeId, { testRequests: newRequests });
                                                                     }}
                                                                     className="h-7 w-[80px] text-xs rounded-md border border-input bg-background px-2 py-1"
                                                                 >
                                                                     {['GET', 'POST', 'PUT', 'DELETE'].map(m => <option key={m} value={m}>{m}</option>)}
                                                                 </select>
                                                                 <Input
-                                                                    value={ep.path}
+                                                                    value={req.path}
                                                                     onChange={(e) => {
-                                                                        const newEndpoints = [...(mock.endpoints || [])];
-                                                                        newEndpoints[idx].path = e.target.value;
-                                                                        updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        const newRequests = [...(mock.testRequests || [])];
+                                                                        newRequests[idx].path = e.target.value;
+                                                                        updateNodeMock(selectedNodeId, { testRequests: newRequests });
                                                                     }}
                                                                     className="h-7 text-xs flex-1"
-                                                                    placeholder="/users"
-                                                                />
-                                                                <Input
-                                                                    value={ep.status}
-                                                                    type="number"
-                                                                    onChange={(e) => {
-                                                                        const newEndpoints = [...(mock.endpoints || [])];
-                                                                        newEndpoints[idx].status = parseInt(e.target.value);
-                                                                        updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
-                                                                    }}
-                                                                    className="h-7 w-[70px] text-xs text-center"
-                                                                    placeholder="200"
+                                                                    placeholder="/api/resource"
                                                                 />
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="h-6 w-6 text-muted-foreground hover:text-destructive"
                                                                     onClick={() => {
-                                                                        const newEndpoints = (mock.endpoints || []).filter(e => e.id !== ep.id);
-                                                                        updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
+                                                                        const newRequests = (mock.testRequests || []).filter(r => r.id !== req.id);
+                                                                        updateNodeMock(selectedNodeId, { testRequests: newRequests });
                                                                     }}
                                                                 >
                                                                     <Trash size={12} />
                                                                 </Button>
                                                             </div>
-                                                            {/* Target Routing Selector */}
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[10px] text-muted-foreground uppercase">Routes to:</span>
-                                                                <select
-                                                                    value={ep.targetNodeId || ''}
-                                                                    onChange={(e) => {
-                                                                        const newEndpoints = [...(mock?.endpoints || [])];
-                                                                        newEndpoints[idx].targetNodeId = e.target.value || undefined;
-                                                                        updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
-                                                                    }}
-                                                                    className="h-6 flex-1 text-xs rounded-md border border-input bg-background px-2"
-                                                                >
-                                                                    <option value="">(Broadcast to all)</option>
-                                                                    {connectedTargetNodes.map(node => (
-                                                                        <option key={node.id} value={node.id}>
-                                                                            {node.data.label}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                        {(mock?.testRequests || []).length === 0 && (
+                                                            <div className="text-xs text-muted-foreground italic">No requests defined.</div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {/* Client Specific Config */}
-                                        {isClient && (
+                                            {/* Compute / Generic Config */}
                                             <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-xs uppercase text-muted-foreground">Traffic Simulation</Label>
-                                                </div>
                                                 <div className="space-y-1">
                                                     <div className="flex justify-between">
-                                                        <Label className="text-xs">Requests Per Second (RPS)</Label>
-                                                        <span className="text-xs text-muted-foreground">{mock?.requestsPerSecond || 0} req/s</span>
+                                                        <Label className="text-xs">Latency (ms)</Label>
+                                                        <span className="text-xs text-muted-foreground">{mock?.latency || 0}ms</span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        min={0}
+                                                        max={5000}
+                                                        step={100}
+                                                        value={mock?.latency || 0}
+                                                        onChange={(e) => updateNodeMock(selectedNodeId, { latency: parseInt(e.target.value) })}
+                                                        className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between">
+                                                        <Label className="text-xs">Failure Rate (%)</Label>
+                                                        <span className="text-xs text-muted-foreground">{mock?.failureRate || 0}%</span>
                                                     </div>
                                                     <input
                                                         type="range"
                                                         min={0}
                                                         max={100}
-                                                        step={1}
-                                                        value={mock?.requestsPerSecond || 0}
-                                                        onChange={(e) => updateNodeMock(selectedNodeId, { requestsPerSecond: parseInt(e.target.value) })}
+                                                        step={5}
+                                                        value={mock?.failureRate || 0}
+                                                        onChange={(e) => updateNodeMock(selectedNodeId, { failureRate: parseInt(e.target.value) })}
                                                         className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
                                                     />
-                                                    <p className="text-[10px] text-muted-foreground">
-                                                        0 = Single request. &gt;0 = Continuous stream.
-                                                    </p>
                                                 </div>
-                                                <Separator className="my-2" />
 
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-xs uppercase text-muted-foreground">Test Requests</Label>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6"
-                                                        onClick={() => {
-                                                            const newReq = {
-                                                                id: crypto.randomUUID(),
-                                                                method: 'GET',
-                                                                path: '/users'
-                                                            };
-                                                            updateNodeMock(selectedNodeId, { testRequests: [...(mock?.testRequests || []), newReq] });
-                                                        }}
-                                                    >
-                                                        <Plus size={14} />
-                                                    </Button>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {mock?.testRequests?.map((req, idx) => (
-                                                        <div key={req.id} className="flex gap-2 items-center bg-card p-2 rounded border shadow-sm">
-                                                            <select
-                                                                value={req.method}
-                                                                onChange={(e) => {
-                                                                    const newRequests = [...(mock?.testRequests || [])];
-                                                                    newRequests[idx].method = e.target.value;
-                                                                    updateNodeMock(selectedNodeId, { testRequests: newRequests });
-                                                                }}
-                                                                className="h-7 w-[80px] text-xs rounded-md border border-input bg-background px-2 py-1"
-                                                            >
-                                                                {['GET', 'POST', 'PUT', 'DELETE'].map(m => <option key={m} value={m}>{m}</option>)}
-                                                            </select>
-                                                            <Input
-                                                                value={req.path}
-                                                                onChange={(e) => {
-                                                                    const newRequests = [...(mock.testRequests || [])];
-                                                                    newRequests[idx].path = e.target.value;
-                                                                    updateNodeMock(selectedNodeId, { testRequests: newRequests });
-                                                                }}
-                                                                className="h-7 text-xs flex-1"
-                                                                placeholder="/api/resource"
-                                                            />
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                                                onClick={() => {
-                                                                    const newRequests = (mock.testRequests || []).filter(r => r.id !== req.id);
-                                                                    updateNodeMock(selectedNodeId, { testRequests: newRequests });
-                                                                }}
-                                                            >
-                                                                <Trash size={12} />
-                                                            </Button>
+                                                {isCompute && (
+                                                    <div className="space-y-1">
+                                                        <Label className="text-xs">Response Body (JSON)</Label>
+                                                        <JsonEditor
+                                                            value={mock?.responseBody || ''}
+                                                            onChange={(val) => updateNodeMock(selectedNodeId, { responseBody: val })}
+                                                            placeholder='{"status": "ok"}'
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Database / Storage Config */}
+                                            {isDatabase && (
+                                                <div className="space-y-3">
+                                                    <Separator className="my-2" />
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between items-center">
+                                                            <Label className="text-xs uppercase text-muted-foreground">Mock Data (JSON Array)</Label>
+                                                            <span className="text-[10px] text-muted-foreground">Array of objects</span>
                                                         </div>
-                                                    ))}
-                                                    {(mock?.testRequests || []).length === 0 && (
-                                                        <div className="text-xs text-muted-foreground italic">No requests defined.</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Compute / Generic Config */}
-                                        <div className="space-y-3">
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between">
-                                                    <Label className="text-xs">Latency (ms)</Label>
-                                                    <span className="text-xs text-muted-foreground">{mock?.latency || 0}ms</span>
-                                                </div>
-                                                <input
-                                                    type="range"
-                                                    min={0}
-                                                    max={5000}
-                                                    step={100}
-                                                    value={mock?.latency || 0}
-                                                    onChange={(e) => updateNodeMock(selectedNodeId, { latency: parseInt(e.target.value) })}
-                                                    className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between">
-                                                    <Label className="text-xs">Failure Rate (%)</Label>
-                                                    <span className="text-xs text-muted-foreground">{mock?.failureRate || 0}%</span>
-                                                </div>
-                                                <input
-                                                    type="range"
-                                                    min={0}
-                                                    max={100}
-                                                    step={5}
-                                                    value={mock?.failureRate || 0}
-                                                    onChange={(e) => updateNodeMock(selectedNodeId, { failureRate: parseInt(e.target.value) })}
-                                                    className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                                                />
-                                            </div>
-
-                                            {isCompute && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs">Response Body (JSON)</Label>
-                                                    <JsonEditor
-                                                        value={mock?.responseBody || ''}
-                                                        onChange={(val) => updateNodeMock(selectedNodeId, { responseBody: val })}
-                                                        placeholder='{"status": "ok"}'
-                                                    />
+                                                        <JsonEditor
+                                                            value={JSON.stringify(mock?.data || [], null, 2)}
+                                                            onChange={(val) => {
+                                                                try {
+                                                                    const parsed = JSON.parse(val);
+                                                                    if (Array.isArray(parsed)) {
+                                                                        updateNodeMock(selectedNodeId, { data: parsed });
+                                                                    }
+                                                                } catch (e) {
+                                                                    // Allow typing invalid JSON while editing, but maybe don't save or handle gracefully?
+                                                                    // For now, simpler to only update on valid JSON or let JsonEditor handle validation visual
+                                                                    // Actually JsonEditor likely returns string. We need to parse.
+                                                                    // If parse fails, we might rely on the Editor's own validation state if we had access.
+                                                                    // Let's just try parse.
+                                                                }
+                                                            }}
+                                                            placeholder='[{"id": "1", "name": "Item A"}]'
+                                                        />
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            Simulated queries will return items from this list.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
-
-                                        {/* Database / Storage Config */}
-                                        {isDatabase && (
-                                            <div className="space-y-3">
-                                                <Separator className="my-2" />
-                                                <div className="space-y-1">
-                                                    <div className="flex justify-between items-center">
-                                                        <Label className="text-xs uppercase text-muted-foreground">Mock Data (JSON Array)</Label>
-                                                        <span className="text-[10px] text-muted-foreground">Array of objects</span>
-                                                    </div>
-                                                    <JsonEditor
-                                                        value={JSON.stringify(mock?.data || [], null, 2)}
-                                                        onChange={(val) => {
-                                                            try {
-                                                                const parsed = JSON.parse(val);
-                                                                if (Array.isArray(parsed)) {
-                                                                    updateNodeMock(selectedNodeId, { data: parsed });
-                                                                }
-                                                            } catch (e) {
-                                                                // Allow typing invalid JSON while editing, but maybe don't save or handle gracefully?
-                                                                // For now, simpler to only update on valid JSON or let JsonEditor handle validation visual
-                                                                // Actually JsonEditor likely returns string. We need to parse.
-                                                                // If parse fails, we might rely on the Editor's own validation state if we had access.
-                                                                // Let's just try parse.
-                                                            }
-                                                        }}
-                                                        placeholder='[{"id": "1", "name": "Item A"}]'
-                                                    />
-                                                    <p className="text-[10px] text-muted-foreground">
-                                                        Simulated queries will return items from this list.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
 
                             <Separator />
 
                             {/* Actions */}
                             <div className="space-y-2">
                                 <h3 className="text-sm font-semibold text-muted-foreground">Actions</h3>
-                                <Button variant="outline" className="w-full justify-start gap-2" asChild>
-                                    <a href={`https://docs.aws.amazon.com/search/doc-search.html?searchPath=documentation-guide&searchQuery=${service}`} target="_blank" rel="noopener noreferrer">
-                                        <ExternalLink size={14} /> View AWS Documentation
-                                    </a>
-                                </Button>
+                                {!isFrame && !isAnnotation && (
+                                    <Button variant="outline" className="w-full justify-start gap-2" asChild>
+                                        <a href={`https://docs.aws.amazon.com/search/doc-search.html?searchPath=documentation-guide&searchQuery=${service}`} target="_blank" rel="noopener noreferrer">
+                                            <ExternalLink size={14} /> View AWS Documentation
+                                        </a>
+                                    </Button>
+                                )}
                                 <Button
                                     variant="destructive"
                                     className="w-full justify-start gap-2"

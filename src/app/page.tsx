@@ -19,7 +19,6 @@ import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import { Button } from '@/components/ui/button';
 import { Cloud, Laptop, Download, Layout, Trash2, Play, Square, FileText, LayoutGrid, Github } from 'lucide-react';
 import SpecificationDialog from '@/components/diagram/SpecificationDialog';
-import SimulationLogs from '@/components/diagram/SimulationLogs';
 import { SimulationEngine } from '@/lib/simulation';
 import {
     AlertDialog,
@@ -560,7 +559,6 @@ function HomeContent() {
 
                     <FlowCanvas />
                     <PropertiesPanel />
-                    <SimulationLogs />
 
                     {/* Component Palette */}
                     <div className="absolute top-4 right-4 z-50">
