@@ -36,10 +36,22 @@ const AWS_SERVICES = [
             { name: "Lambda", service: "lambda", type: "aws-compute" },
             { name: "EKS", service: "eks", type: "aws-compute" },
             { name: "ECS", service: "ecs", type: "aws-compute" },
+            { name: "Fargate", service: "fargate", type: "aws-compute" },
             { name: "App Runner", service: "apprunner", type: "aws-compute" },
             { name: "Batch", service: "batch", type: "aws-compute" },
             { name: "Elastic Beanstalk", service: "elasticbeanstalk", type: "aws-compute" },
-            { name: "ECR", service: "ecr", type: "aws-compute" }, // Grouping ECR in Compute for now
+            { name: "Lightsail", service: "lightsail", type: "aws-compute" },
+        ]
+    },
+    {
+        category: "Containers",
+        items: [
+            { name: "ECR", service: "ecr", type: "aws-containers" },
+            { name: "ECS", service: "ecs", type: "aws-containers" },
+            { name: "EKS", service: "eks", type: "aws-containers" },
+            { name: "Fargate", service: "fargate", type: "aws-containers" },
+            { name: "EKS Anywhere", service: "eksanywhere", type: "aws-containers" },
+            { name: "ECS Anywhere", service: "ecsanywhere", type: "aws-containers" },
         ]
     },
     {
@@ -49,6 +61,12 @@ const AWS_SERVICES = [
             { name: "DynamoDB", service: "dynamodb", type: "aws-database" },
             { name: "ElastiCache", service: "elasticache", type: "aws-database" },
             { name: "Aurora", service: "rds", type: "aws-database" },
+            { name: "Neptune", service: "neptune", type: "aws-database" },
+            { name: "DocumentDB", service: "documentdb", type: "aws-database" },
+            { name: "Timestream", service: "timestream", type: "aws-database" },
+            { name: "Keyspaces", service: "keyspaces", type: "aws-database" },
+            { name: "MemoryDB", service: "memorydb", type: "aws-database" },
+            { name: "QLDB", service: "qldb", type: "aws-database" },
         ]
     },
     {
@@ -57,7 +75,10 @@ const AWS_SERVICES = [
             { name: "S3", service: "s3", type: "aws-storage" },
             { name: "EFS", service: "efs", type: "aws-storage" },
             { name: "EBS", service: "ebs", type: "aws-storage" },
-            { name: "Glacier", service: "s3-glacier", type: "aws-storage" },
+            { name: "Glacier", service: "glacier", type: "aws-storage" },
+            { name: "FSx", service: "fsx", type: "aws-storage" },
+            { name: "Backup", service: "backup", type: "aws-storage" },
+            { name: "Storage Gateway", service: "storagegateway", type: "aws-storage" },
         ]
     },
     {
@@ -71,6 +92,23 @@ const AWS_SERVICES = [
         ]
     },
     {
+        category: "AI & Machine Learning",
+        items: [
+            { name: "Bedrock", service: "bedrock", type: "aws-ai" },
+            { name: "SageMaker", service: "sagemaker", type: "aws-ai" },
+            { name: "Rekognition", service: "rekognition", type: "aws-ai" },
+            { name: "Comprehend", service: "comprehend", type: "aws-ai" },
+            { name: "Textract", service: "textract", type: "aws-ai" },
+            { name: "Translate", service: "translate", type: "aws-ai" },
+            { name: "Transcribe", service: "transcribe", type: "aws-ai" },
+            { name: "Polly", service: "polly", type: "aws-ai" },
+            { name: "Lex", service: "lex", type: "aws-ai" },
+            { name: "Personalize", service: "personalize", type: "aws-ai" },
+            { name: "Forecast", service: "forecast", type: "aws-ai" },
+            { name: "Kendra", service: "kendra", type: "aws-ai" },
+        ]
+    },
+    {
         category: "Application Integration",
         items: [
             { name: "SQS", service: "sqs", type: "aws-integration" },
@@ -79,22 +117,49 @@ const AWS_SERVICES = [
             { name: "EventBridge", service: "eventbridge", type: "aws-integration" },
             { name: "AppSync", service: "appsync", type: "aws-integration" },
             { name: "MQ", service: "mq", type: "aws-integration" },
-            { name: "DLQ", service: "sqs", type: "aws-integration" }, // Using SQS icon
         ]
     },
     {
         category: "Security",
         items: [
             { name: "IAM", service: "iam", type: "aws-security" },
+            { name: "Cognito", service: "cognito", type: "aws-security" },
+            { name: "Secrets Manager", service: "secretsmanager", type: "aws-security" },
             { name: "KMS", service: "kms", type: "aws-security" },
             { name: "WAF", service: "waf", type: "aws-security" },
+            { name: "GuardDuty", service: "guardduty", type: "aws-security" },
+            { name: "Inspector", service: "inspector", type: "aws-security" },
+            { name: "Macie", service: "macie", type: "aws-security" },
+            { name: "Security Hub", service: "securityhub", type: "aws-security" },
+            { name: "Certificate Manager", service: "certificatemanager", type: "aws-security" },
+            { name: "CloudHSM", service: "cloudhsm", type: "aws-security" },
+            { name: "Shield", service: "shield", type: "aws-security" },
         ]
     },
     {
-        category: "Management",
+        category: "Developer Tools",
+        items: [
+            { name: "CodePipeline", service: "codepipeline", type: "aws-devtools" },
+            { name: "CodeBuild", service: "codebuild", type: "aws-devtools" },
+            { name: "CodeDeploy", service: "codedeploy", type: "aws-devtools" },
+            { name: "CodeCommit", service: "codecommit", type: "aws-devtools" },
+            { name: "CodeArtifact", service: "codeartifact", type: "aws-devtools" },
+            { name: "Cloud9", service: "cloud9", type: "aws-devtools" },
+            { name: "X-Ray", service: "xray", type: "aws-devtools" },
+        ]
+    },
+    {
+        category: "Management & Governance",
         items: [
             { name: "CloudWatch", service: "cloudwatch", type: "aws-management" },
             { name: "CloudFormation", service: "cloudformation", type: "aws-management" },
+            { name: "Systems Manager", service: "systemsmanager", type: "aws-management" },
+            { name: "Config", service: "config", type: "aws-management" },
+            { name: "CloudTrail", service: "cloudtrail", type: "aws-management" },
+            { name: "Organizations", service: "organizations", type: "aws-management" },
+            { name: "Control Tower", service: "controltower", type: "aws-management" },
+            { name: "Service Catalog", service: "servicecatalog", type: "aws-management" },
+            { name: "Trusted Advisor", service: "trustedadvisor", type: "aws-management" },
         ]
     },
     {
@@ -108,6 +173,15 @@ const AWS_SERVICES = [
             { name: "QuickSight", service: "quicksight", type: "aws-analytics" },
             { name: "OpenSearch", service: "opensearch", type: "aws-analytics" },
             { name: "MSK", service: "msk", type: "aws-analytics" },
+        ]
+    },
+    {
+        category: "Migration & Transfer",
+        items: [
+            { name: "Database Migration Service", service: "dms", type: "aws-migration" },
+            { name: "DataSync", service: "datasync", type: "aws-migration" },
+            { name: "Transfer Family", service: "transferfamily", type: "aws-migration" },
+            { name: "Migration Hub", service: "migrationhub", type: "aws-migration" },
         ]
     },
 ];
