@@ -3,10 +3,16 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { getAwsIcon } from '@/lib/aws-icon-registry';
 
-const AWSNode = ({ data, selected }: NodeProps) => {
-    const Icon = getAwsIcon(data.service, data.type);
-    const label = data.label || 'AWS Resource';
-    const service = data.service || 'Service';
+import { AppNodeData } from '@/lib/store';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+
+const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
+    const { label, service, simulation } = data;
+    const isProcessing = simulation?.status === 'processing';
+    const isSuccess = simulation?.status === 'success';
+    const isError = simulation?.status === 'error';
+
+    const Icon = getAwsIcon(service || 'Service', data.type || '');
     // The main difference is styling: Official icons are colored SVGs, so we shouldn't tint them.
     // Lucide icons (fallbacks) need tinting.
 
@@ -20,12 +26,28 @@ const AWSNode = ({ data, selected }: NodeProps) => {
     return (
         <div
             className={cn(
-                "relative group flex flex-col items-center justify-center p-4 min-w-[120px] rounded-xl border-2 bg-card transition-all duration-200",
+                "relative group flex flex-col items-center justify-center p-4 min-w-[120px] rounded-xl border-2 transition-all duration-200",
                 selected
-                    ? "border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-105"
-                    : "border-border hover:border-primary/50 hover:shadow-lg"
+                    ? "border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-105 bg-card"
+                    : "border-border hover:border-primary/50 hover:shadow-lg bg-card",
+                isProcessing && "border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+                isSuccess && "border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]",
+                isError && "border-destructive shadow-[0_0_15px_rgba(239,68,68,0.5)]"
             )}
         >
+            {/* Simulation Status Badge */}
+            {simulation?.status && simulation.status !== 'idle' && (
+                <div className={cn(
+                    "absolute -top-3 -right-3 z-10 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] shadow-sm",
+                    isProcessing && "bg-blue-500",
+                    isSuccess && "bg-green-500",
+                    isError && "bg-destructive"
+                )}>
+                    {isProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {isSuccess && <CheckCircle className="w-3.5 h-3.5" />}
+                    {isError && <XCircle className="w-3.5 h-3.5" />}
+                </div>
+            )}
             {/* Input Handle */}
             <Handle
                 type="target"

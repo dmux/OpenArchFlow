@@ -17,8 +17,10 @@ import { Progress } from '@/components/ui/progress';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import { Button } from '@/components/ui/button';
-import { Cloud, Laptop, Download, Layout, Trash2, Play, Pause, FileText, LayoutGrid } from 'lucide-react';
+import { Cloud, Laptop, Download, Layout, Trash2, Play, Square, FileText, LayoutGrid } from 'lucide-react';
 import SpecificationDialog from '@/components/diagram/SpecificationDialog';
+import SimulationLogs from '@/components/diagram/SimulationLogs';
+import { SimulationEngine } from '@/lib/simulation';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -363,14 +365,20 @@ function HomeContent() {
                         <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => setIsPlaying(!isPlaying)}
+                            onClick={() => {
+                                if (isPlaying) {
+                                    SimulationEngine.getInstance().stop();
+                                } else {
+                                    SimulationEngine.getInstance().start();
+                                }
+                            }}
                             className={cn(
                                 "bg-background/80 backdrop-blur transition-all",
-                                isPlaying && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                                isPlaying && "bg-destructive/10 border-destructive text-destructive hover:bg-destructive/20"
                             )}
-                            title={isPlaying ? "Stop Animation" : "Play Animation"}
+                            title={isPlaying ? "Stop Simulation" : "Start Simulation"}
                         >
-                            {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
+                            {isPlaying ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                         </Button>
 
                         <h1 className="text-xl font-bold tracking-tighter text-foreground/80 pointer-events-none hidden md:block">
@@ -529,6 +537,7 @@ function HomeContent() {
 
                     <FlowCanvas />
                     <PropertiesPanel />
+                    <SimulationLogs />
 
                     {/* Component Palette */}
                     <div className="absolute top-4 right-4 z-50">

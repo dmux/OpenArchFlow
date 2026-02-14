@@ -23,6 +23,27 @@ const nodeTypes = {
     'aws-database': AWSNode,
     'aws-network': AWSNode,
     'aws-storage': AWSNode,
+    'aws-integration': AWSNode,
+    'aws-security': AWSNode,
+    'aws-management': AWSNode,
+    'aws-analytics': AWSNode,
+    'aws-developer': AWSNode, // Added
+    'aws-machine-learning': AWSNode, // Added
+    'aws-media-services': AWSNode, // Added
+    'aws-migration': AWSNode, // Added
+    'aws-robotics': AWSNode, // Added
+    'aws-satellite': AWSNode, // Added
+    'aws-blockchain': AWSNode, // Added
+    'aws-business-applications': AWSNode, // Added
+    'aws-customer-engagement': AWSNode, // Added
+    'aws-end-user-computing': AWSNode, // Added
+    'aws-front-end-web-mobile': AWSNode, // Added
+    'aws-game-tech': AWSNode, // Added
+    'aws-internet-of-things': AWSNode, // Added
+    'aws-quantum-technologies': AWSNode, // Added
+    'aws-serverless': AWSNode, // Added
+    'aws-containers': AWSNode, // Added
+    'client': AWSNode,
     'default': AWSNode,
 };
 

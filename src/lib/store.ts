@@ -17,8 +17,54 @@ import ELK from 'elkjs/lib/elk.bundled';
 
 const elk = new ELK();
 
-export type AppNode = Node;
+export type AppNode = Node<AppNodeData>;
 export type AppEdge = Edge;
+
+export interface NodeMockData {
+    enabled?: boolean;
+    latency?: number; // ms
+    failureRate?: number; // 0-100
+    // For Gateway / API
+    endpoints?: {
+        id: string;
+        method: string;
+        path: string;
+        status: number;
+        targetNodeId?: string; // NEW: Specific routing target
+    }[];
+    // For Compute
+    responseBody?: string;
+    // For Client
+    testRequests?: {
+        id: string;
+        method: string;
+        path: string;
+        body?: string;
+    }[];
+}
+
+export interface NodeSimulationStatus {
+    status: 'idle' | 'processing' | 'success' | 'error';
+    lastRun?: number;
+}
+
+export interface AppNodeData extends Record<string, unknown> {
+    label: string;
+    service: string;
+    type?: string;
+    metadata?: Record<string, any>;
+    mock?: NodeMockData;
+    simulation?: NodeSimulationStatus;
+}
+
+export interface SimulationLog {
+    id: string;
+    timestamp: number;
+    nodeId?: string;
+    nodeLabel?: string;
+    level: 'info' | 'success' | 'error' | 'warning';
+    message: string;
+}
 
 interface Diagram {
     id: string;
@@ -60,8 +106,18 @@ interface DiagramState {
     removeEdge: (id: string) => void;
     layout: () => Promise<void>;
     clear: () => void;
+
+    // Simulation State
     isPlaying: boolean;
     setIsPlaying: (isPlaying: boolean) => void;
+    simulationLogs: SimulationLog[];
+    addSimulationLog: (log: Omit<SimulationLog, 'id' | 'timestamp'>) => void;
+    clearSimulationLogs: () => void;
+
+    // Simulation Actions
+    updateNodeMock: (nodeId: string, mock: Partial<NodeMockData>) => void;
+    setNodeSimulationStatus: (nodeId: string, status: NodeSimulationStatus) => void;
+    resetSimulation: () => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -73,9 +129,93 @@ export const useDiagramStore = create<DiagramState>()(
             selectedEdgeId: null,
             geminiApiKey: null,
             isPlaying: false,
+            simulationLogs: [],
             generatedSpecification: null,
 
             setIsPlaying: (isPlaying) => set({ isPlaying }),
+
+            addSimulationLog: (log) => set((state) => ({
+                simulationLogs: [
+                    ...state.simulationLogs,
+                    { ...log, id: crypto.randomUUID(), timestamp: Date.now() }
+                ]
+            })),
+
+            clearSimulationLogs: () => set({ simulationLogs: [] }),
+
+            updateNodeMock: (nodeId, mock) => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+
+                set((state) => {
+                    const activeDiagram = state.diagrams[activeDiagramId];
+                    const newNodes = activeDiagram.nodes.map((node) => {
+                        if (node.id === nodeId) {
+                            const currentMock = node.data.mock || {};
+                            return {
+                                ...node,
+                                data: { ...node.data, mock: { ...currentMock, ...mock } }
+                            };
+                        }
+                        return node;
+                    });
+
+                    return {
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: { ...activeDiagram, nodes: newNodes, lastModified: Date.now() },
+                        },
+                    };
+                });
+            },
+
+            setNodeSimulationStatus: (nodeId, status) => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+
+                set((state) => {
+                    const activeDiagram = state.diagrams[activeDiagramId];
+                    const newNodes = activeDiagram.nodes.map((node) => {
+                        if (node.id === nodeId) {
+                            return {
+                                ...node,
+                                data: { ...node.data, simulation: status }
+                            };
+                        }
+                        return node;
+                    });
+
+                    return {
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: { ...activeDiagram, nodes: newNodes }
+                            // We don't update lastModified for simulation state to avoid "unsaved changes" if we implemented that
+                        },
+                    };
+                });
+            },
+
+            resetSimulation: () => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+
+                set((state) => {
+                    const activeDiagram = state.diagrams[activeDiagramId];
+                    const newNodes = activeDiagram.nodes.map((node) => ({
+                        ...node,
+                        data: { ...node.data, simulation: undefined }
+                    }));
+
+                    return {
+                        isPlaying: false,
+                        simulationLogs: [],
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: { ...activeDiagram, nodes: newNodes }
+                        },
+                    };
+                });
+            },
 
             createDiagram: (name = 'New Architecture') => {
                 const id = crypto.randomUUID();

@@ -20,6 +20,16 @@ import { cn } from "@/lib/utils";
 // Define categories and services
 const AWS_SERVICES = [
     {
+        category: "Client & Devices",
+        items: [
+            { name: "User", service: "user", type: "client" },
+            { name: "Browser", service: "browser", type: "client" },
+            { name: "Mobile App", service: "mobile", type: "client" },
+            { name: "Client App", service: "client", type: "client" },
+            { name: "IoT Device", service: "iot-device", type: "client" },
+        ]
+    },
+    {
         category: "Compute",
         items: [
             { name: "EC2", service: "ec2", type: "aws-compute" },

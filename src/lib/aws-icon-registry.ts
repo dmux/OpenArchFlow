@@ -39,7 +39,7 @@ import {
     ArchitectureServiceAWSAppSync,
     ArchitectureServiceAmazonMQ,
 } from 'aws-react-icons';
-import { Cloud, Box, LucideIcon } from 'lucide-react';
+import { Cloud, Box, LucideIcon, User, Smartphone, Globe, Monitor, Laptop, Cpu } from 'lucide-react';
 
 // Define a type that can be either an AWS Icon component or a Lucide Icon
 type IconComponent = React.ComponentType<any> | LucideIcon;
@@ -86,6 +86,12 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'ecr': ArchitectureServiceAmazonElasticContainerRegistry,
         'appsync': ArchitectureServiceAWSAppSync,
         'mq': ArchitectureServiceAmazonMQ,
+        // Client / Generic Mappings
+        'user': User,
+        'browser': Globe,
+        'mobile': Smartphone,
+        'client': Monitor,
+        'iot-device': Cpu,
     };
 
     // Check for exact match or partial match in service name
