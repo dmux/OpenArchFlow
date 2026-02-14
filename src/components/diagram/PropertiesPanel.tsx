@@ -190,7 +190,7 @@ export default function PropertiesPanel() {
                                                                         newEndpoints[idx].status = parseInt(e.target.value);
                                                                         updateNodeMock(selectedNodeId, { endpoints: newEndpoints });
                                                                     }}
-                                                                    className="h-7 w-[50px] text-xs text-center"
+                                                                    className="h-7 w-[70px] text-xs text-center"
                                                                     placeholder="200"
                                                                 />
                                                                 <Button
