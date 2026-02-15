@@ -87,15 +87,6 @@ export const metadata: Metadata = {
         apple: "/apple-touch-icon.png"
     },
     manifest: "/manifest.json",
-    viewport: {
-        width: "device-width",
-        initialScale: 1,
-        maximumScale: 5
-    },
-    themeColor: [
-        { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-        { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" }
-    ],
     category: "technology",
     applicationName: "OpenArchFlow",
     appleWebApp: {
@@ -106,6 +97,16 @@ export const metadata: Metadata = {
     formatDetection: {
         telephone: false
     }
+};
+
+export const viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    themeColor: [
+        { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+        { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" }
+    ],
 };
 
 export default function RootLayout({
