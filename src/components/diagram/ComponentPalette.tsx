@@ -23,6 +23,7 @@ const AWS_SERVICES = [
         category: "Diagram Tools",
         items: [
             { name: "Frame/Group", service: "frame", type: "frame" },
+            { name: "Sticky Note", service: "note", type: "note" },
         ]
     },
     {
@@ -267,6 +268,8 @@ export default function ComponentPalette() {
                                         if (item.type === 'frame') {
                                             Icon = Frame;
                                         } else if (item.type === 'annotation') {
+                                            Icon = MessageSquare;
+                                        } else if (item.type === 'note') {
                                             Icon = MessageSquare;
                                         } else {
                                             Icon = getAwsIcon(item.service, item.type);

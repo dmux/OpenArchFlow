@@ -51,6 +51,7 @@ export default function PropertiesPanel() {
         // Helper to determine node category
         const isFrame = type === 'frame';
         const isAnnotation = type === 'annotation';
+        const isNote = type === 'note';
         const isGateway = service?.toLowerCase().includes('gateway') || service?.toLowerCase().includes('balancer') || service?.toLowerCase().includes('appsync');
         const isCompute = service?.toLowerCase().includes('lambda') || service?.toLowerCase().includes('container') || service?.toLowerCase().includes('instance');
         const isDatabase = service?.toLowerCase().includes('dynamodb') || service?.toLowerCase().includes('rds') || service?.toLowerCase().includes('database') || service?.toLowerCase().includes('store') || type === 'database';
@@ -75,7 +76,9 @@ export default function PropertiesPanel() {
                             <div className="text-xs font-bold text-primary uppercase tracking-wider mb-1 flex items-center gap-2">
                                 {service} <span className="text-[10px] h-5 px-1.5 border border-border rounded-full flex items-center">{type}</span>
                             </div>
-                            <h2 className="text-xl font-bold text-card-foreground leading-tight">{label}</h2>
+                            <h2 className="text-xl font-bold text-card-foreground leading-tight">
+                                {type === 'note' ? 'Sticky Note' : label}
+                            </h2>
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 -mr-1" onClick={() => setSelectedNode(null)}>
                             <X size={18} />
@@ -101,6 +104,7 @@ export default function PropertiesPanel() {
                                                 onChange={(e) => {
                                                     const updateNode = useDiagramStore.getState().updateNode;
                                                     updateNode(selectedNodeId, {
+                                                        label: e.target.value,
                                                         metadata: { ...metadata, title: e.target.value }
                                                     });
                                                 }}
@@ -163,6 +167,7 @@ export default function PropertiesPanel() {
                                                 onChange={(e) => {
                                                     const updateNode = useDiagramStore.getState().updateNode;
                                                     updateNode(selectedNodeId, {
+                                                        label: e.target.value,
                                                         metadata: { ...metadata, text: e.target.value }
                                                     });
                                                 }}
@@ -221,8 +226,96 @@ export default function PropertiesPanel() {
                                 </div>
                             )}
 
+                            {/* Sticky Note-specific Properties */}
+                            {isNote && (
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Settings size={14} /> Sticky Note Properties
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-xs">Content</Label>
+                                            <textarea
+                                                value={metadata?.text || label || ''}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        label: e.target.value,
+                                                        metadata: { ...metadata, text: e.target.value }
+                                                    });
+                                                }}
+                                                placeholder="Write your note..."
+                                                className="w-full min-h-[100px] text-sm rounded-md border border-input bg-background px-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <Label className="text-xs">Background</Label>
+                                                <Input
+                                                    type="color"
+                                                    value={metadata?.backgroundColor || '#fef08a'}
+                                                    onChange={(e) => {
+                                                        const updateNode = useDiagramStore.getState().updateNode;
+                                                        updateNode(selectedNodeId, {
+                                                            metadata: { ...metadata, backgroundColor: e.target.value }
+                                                        });
+                                                    }}
+                                                    className="h-8 p-1"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-xs">Border</Label>
+                                                <Input
+                                                    type="color"
+                                                    value={metadata?.borderColor || '#facc15'}
+                                                    onChange={(e) => {
+                                                        const updateNode = useDiagramStore.getState().updateNode;
+                                                        updateNode(selectedNodeId, {
+                                                            metadata: { ...metadata, borderColor: e.target.value }
+                                                        });
+                                                    }}
+                                                    className="h-8 p-1"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Text Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.textColor || '#854d0e'}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, textColor: e.target.value }
+                                                    });
+                                                }}
+                                                className="h-8 p-1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Font Size</Label>
+                                            <select
+                                                value={metadata?.fontSize || '13px'}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, {
+                                                        metadata: { ...metadata, fontSize: e.target.value }
+                                                    });
+                                                }}
+                                                className="w-full h-8 text-xs rounded-md border border-input bg-background px-2"
+                                            >
+                                                <option value="11px">Small</option>
+                                                <option value="13px">Medium</option>
+                                                <option value="16px">Large</option>
+                                                <option value="20px">Extra Large</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Regular Metadata Section for other nodes */}
-                            {!isFrame && !isAnnotation && (
+                            {!isFrame && !isAnnotation && !isNote && (
                                 <>
                                     {metadata && Object.keys(metadata).length > 0 ? (
                                         <div className="space-y-3">

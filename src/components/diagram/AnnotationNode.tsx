@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { AppNodeData } from '@/lib/store';
+import { MessageSquare } from 'lucide-react';
 
 const AnnotationNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     const { label, metadata } = data;
@@ -86,24 +87,28 @@ const AnnotationNode = ({ data, selected }: NodeProps<AppNodeData>) => {
 
     return (
         <div className="relative">
-            {/* Label Box - Optional, can be hidden */}
-            {text && (
-                <div
-                    className={cn(
-                        "relative flex items-center gap-2 px-3 py-2 rounded-md border transition-all duration-200 shadow-md backdrop-blur-sm",
-                        selected && "scale-105 shadow-lg"
-                    )}
-                    style={{
-                        backgroundColor: `${color}15`, // 15% opacity
-                        borderColor: `${color}60`,
-                        color: color,
-                    }}
-                >
+            {/* Label Box or Icon */}
+            <div
+                className={cn(
+                    "relative flex items-center justify-center transition-all duration-200 shadow-md backdrop-blur-sm",
+                    selected
+                        ? "px-3 py-2 rounded-md border scale-105 shadow-lg"
+                        : "w-8 h-8 rounded-full border opacity-80 hover:opacity-100 scale-100"
+                )}
+                style={{
+                    backgroundColor: `${color}15`, // 15% opacity
+                    borderColor: `${color}60`,
+                    color: color,
+                }}
+            >
+                {selected ? (
                     <div className="font-medium text-xs leading-tight whitespace-nowrap">
                         {text}
                     </div>
-                </div>
-            )}
+                ) : (
+                    <MessageSquare className="w-4 h-4" />
+                )}
+            </div>
 
             {/* Laser Beam */}
             <div

@@ -19,6 +19,7 @@ import { useShallow } from 'zustand/react/shallow';
 import AWSNode from './AWSNode';
 import FrameNode from './FrameNode';
 import AnnotationNode from './AnnotationNode';
+import NoteNode from './NoteNode';
 import LaserPointer from './LaserPointer';
 import SimulationControls from '../simulation/SimulationControls';
 
@@ -52,6 +53,7 @@ const nodeTypes = {
     'client': AWSNode,
     'frame': FrameNode,
     'annotation': AnnotationNode,
+    'note': NoteNode,
     'default': AWSNode,
 };
 
