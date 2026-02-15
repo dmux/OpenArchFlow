@@ -245,7 +245,7 @@ export default function PropertiesPanel() {
                                                     });
                                                 }}
                                                 placeholder="Write your note..."
-                                                className="w-full min-h-[100px] text-sm rounded-md border border-input bg-background px-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                className="w-full min-h-[60px] text-sm rounded-md border border-input bg-background px-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">

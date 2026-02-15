@@ -80,7 +80,7 @@ export default function FloatingInput({ onSubmit, isLoading, disabled, placehold
     return (
         <div className={cn(
             "fixed bottom-8 left-24 z-50 transition-all duration-300 ease-in-out",
-            isCollapsed ? "w-12 h-12" : "w-full max-w-2xl"
+            isCollapsed ? "w-12 h-12" : "w-full max-w-lg"
         )} ref={dropdownRef}>
             {isCollapsed ? (
                 <Button
