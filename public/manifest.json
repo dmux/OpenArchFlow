@@ -1,0 +1,37 @@
+{
+    "name": "OpenArchFlow",
+    "short_name": "OpenArchFlow",
+    "description": "AI-Powered AWS Architecture Diagram Generator - Transform natural language into professional cloud architecture diagrams",
+    "start_url": "https://openarchflow.cloud/",
+    "display": "standalone",
+    "background_color": "#0a0a0a",
+    "theme_color": "#0a0a0a",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "developer tools",
+        "utilities"
+    ],
+    "screenshots": [
+        {
+            "src": "/docs/screenshot.png",
+            "sizes": "1200x630",
+            "type": "image/png",
+            "label": "OpenArchFlow main interface showing AWS architecture diagram"
+        }
+    ]
+}

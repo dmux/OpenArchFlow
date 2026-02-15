@@ -1,0 +1,42 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF5C00;stop-opacity:1" />
+    </linearGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Transparent background logo -->
+  <!-- Central "Flow" Node -->
+  <rect x="156" y="156" width="200" height="200" rx="50" fill="url(#brandGrad)" filter="url(#softGlow)" />
+  
+  <!-- Modern Geometric Architecture Elements -->
+  <g stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Inner Architecture Mark -->
+    <!-- Top small square -->
+    <rect x="231" y="196" width="50" height="35" rx="6" stroke-opacity="0.9" />
+    <!-- Bottom Left small square -->
+    <rect x="196" y="271" width="40" height="30" rx="4" stroke-opacity="0.7" />
+    <!-- Bottom Right small square -->
+    <rect x="276" y="271" width="40" height="30" rx="4" stroke-opacity="0.7" />
+    
+    <!-- Connection paths -->
+    <path d="M256 231 V251" stroke-opacity="0.5" />
+    <path d="M256 251 L216 271" stroke-opacity="0.5" />
+    <path d="M256 251 L296 271" stroke-opacity="0.5" />
+  </g>
+
+  <!-- External modern orbits (very subtle, visible on dark, not distracting on light) -->
+  <circle cx="256" cy="256" r="210" stroke="#FF9900" stroke-width="2" stroke-opacity="0.1" fill="none"/>
+  <circle cx="256" cy="256" r="240" stroke="#000" stroke-width="2" stroke-opacity="0.05" fill="none"/>
+  
+  <!-- AI Active sparkle -->
+  <path d="M400 120 L408 140 L428 148 L408 156 L400 176 L392 156 L372 148 L392 140 Z" fill="#FF9900" fill-opacity="0.8" />
+</svg>
