@@ -175,7 +175,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                                     activeDiagramId === diagram.id ? "bg-accent border-primary" : "bg-card"
                                 )}
                             >
-                                <div className="flex-1 min-w-0 mr-2">
+                                <div className="flex-1 min-w-0 mr-2 overflow-hidden max-w-[180px]">
                                     {editingId === diagram.id ? (
                                         <div onClick={(e) => e.stopPropagation()}>
                                             <Input
@@ -193,14 +193,14 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                                     ) : (
                                         <>
                                             <h3 className="font-medium text-sm truncate" title={diagram.name}>{diagram.name}</h3>
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground truncate">
                                                 {formatDate(diagram.lastModified)}
                                             </p>
                                         </>
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                     <Button
                                         variant="ghost"
                                         size="icon"
