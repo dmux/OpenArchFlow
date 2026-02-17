@@ -92,6 +92,9 @@ const AWS_SERVICES = [
         category: "Networking",
         items: [
             { name: "VPC", service: "vpc", type: "aws-network", description: "Provision a logically isolated section of the AWS Cloud." },
+            { name: "Direct Connect", service: "directconnect", type: "aws-network", description: "Establish a dedicated network connection from your premises to AWS." },
+            { name: "Client VPN", service: "clientvpn", type: "aws-network", description: "Securely access your AWS resources and on-premises network from any device, anywhere." },
+            { name: "Site-to-Site VPN", service: "sitetositevpn", type: "aws-network", description: "Securely connect your on-premises network or branch office site to your VPC." },
             { name: "CloudFront", service: "cloudfront", type: "aws-network", description: "Fast, highly secure and programmable content delivery network (CDN)." },
             { name: "Route 53", service: "route53", type: "aws-network", description: "Highly available and scalable cloud Domain Name System (DNS) web service." },
             { name: "API Gateway", service: "apigateway", type: "aws-network", description: "Fully managed service that makes it easy for developers to create, publish, maintain, monitor, and secure APIs." },
