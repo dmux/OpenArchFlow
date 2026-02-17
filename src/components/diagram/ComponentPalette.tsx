@@ -102,6 +102,7 @@ const AWS_SERVICES = [
             { name: "ALB", service: "alb", type: "aws-network", description: "Application Load Balancer: Operates at the application layer." },
             { name: "Nat Gateway", service: "natgateway", type: "aws-network", description: "Enables instances in a private subnet to connect to the internet or other AWS services." },
             { name: "Internet Gateway", service: "internetgateway", type: "aws-network", description: "Horizontally scaled, redundant, and highly available VPC component that allows communication between your VPC and the internet." },
+            { name: "Transit Gateway", service: "transitgateway", type: "aws-network", description: "Connects VPCs and on-premises networks through a central hub." },
             { name: "Private Subnet", service: "privatesubnet", type: "aws-network", description: "Subnet within a VPC that does not have a direct route to the internet." },
         ]
     },
