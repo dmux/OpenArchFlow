@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import {
     LayoutGrid,
+    Workflow,
     Plus,
     Sparkles,
     Play,
@@ -241,7 +242,7 @@ export function UnifiedToolbar({
     const actionTools = [
         {
             id: 'layout',
-            icon: LayoutGrid,
+            icon: Workflow,
             label: 'Auto Layout',
             onClick: handleAutoLayout,
             active: false
