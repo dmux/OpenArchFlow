@@ -61,7 +61,18 @@ const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                 selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5"
             )}>
                 {/* We pass size/strokeWidth props, but official icons might ignore strokeWidth if they are filled SVGs */}
-                <Icon size={48} className="w-12 h-12" />
+                {/* We pass size/strokeWidth props, but official icons might ignore strokeWidth if they are filled SVGs.
+                    For client/generic icons (Lucide), we want to ensure they are visible in dark mode.
+                    AWS icons usually ignore color props, but treating them differently is safer. */ }
+                <Icon
+                    size={48}
+                    className={cn(
+                        "w-12 h-12 transition-colors",
+                        (data.type === 'client' || !data.type || data.type === 'default')
+                            ? "text-blue-500"
+                            : ""
+                    )}
+                />
             </div>
 
             {/* Labels */}

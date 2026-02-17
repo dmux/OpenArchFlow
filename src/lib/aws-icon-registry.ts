@@ -302,5 +302,5 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
     }
 
     // 3. Last Resort Fallback
-    return Box;
+    return Cpu;
 };

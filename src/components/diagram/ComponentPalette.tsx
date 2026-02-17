@@ -292,7 +292,12 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                                                             className="flex flex-col items-center justify-center p-3 h-24 rounded-xl border border-border bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-sm transition-all text-center group"
                                                         >
                                                             <div className="p-2 rounded-full bg-muted group-hover:bg-background transition-colors mb-2">
-                                                                <Icon className="w-8 h-8" />
+                                                                <Icon
+                                                                    className={cn(
+                                                                        "w-8 h-8",
+                                                                        (item.type === 'client' || item.type === 'frame' || item.type === 'note' || item.type === 'annotation') && "text-primary"
+                                                                    )}
+                                                                />
                                                             </div>
                                                             <span className="text-xs font-medium truncate w-full px-1">
                                                                 {item.name}
