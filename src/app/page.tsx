@@ -6,11 +6,13 @@ import {
     Laptop,
     Github,
     KeyRound,
+    Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiagramStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getLayoutedElements } from '@/lib/layout-utils';
 
 // Components
 import FlowCanvas from '@/components/diagram/FlowCanvas';
@@ -111,7 +113,7 @@ function HomeContent() {
                     setGeminiApiKey(null); // Trigger setup dialog
                     throw new Error(geminiApiKey === 'offline' ? 'AI Features are disabled in Offline Mode. Please set an API Key.' : 'Please set your Gemini API Key first.');
                 }
-                const response = await fetch('/api/generate-architecture', {
+                const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt, apiKey: geminiApiKey }),
@@ -126,8 +128,9 @@ function HomeContent() {
             }
 
             if (result && result.nodes && result.edges) {
-                setNodes(result.nodes);
-                setEdges(result.edges);
+                const layouted = getLayoutedElements(result.nodes, result.edges);
+                setNodes(layouted.nodes);
+                setEdges(layouted.edges);
                 toast.success('Architecture generated successfully!');
                 setActivePanel(null); // Close AI panel on success
             }
@@ -238,8 +241,18 @@ function HomeContent() {
                     </div>
 
                     {/* Canvas */}
-                    <div className="flex-1 w-full h-full">
+                    <div className="flex-1 w-full h-full relative">
                         <FlowCanvas />
+                        {isLoading && (
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-300">
+                                <div className="flex flex-col items-center space-y-4 p-8 rounded-2xl bg-card border shadow-2xl">
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                    <p className="text-sm font-medium text-muted-foreground animate-pulse">
+                                        Generating Architecture...
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Overlays */}
