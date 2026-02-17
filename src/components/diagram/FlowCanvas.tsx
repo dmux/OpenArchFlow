@@ -21,7 +21,6 @@ import FrameNode from './FrameNode';
 import AnnotationNode from './AnnotationNode';
 import NoteNode from './NoteNode';
 import LaserPointer from './LaserPointer';
-import SimulationControls from '../simulation/SimulationControls';
 
 const nodeTypes = {
     'aws-compute': AWSNode,
@@ -134,9 +133,6 @@ function FlowCanvas() {
 
             {/* Laser Pointer Overlay */}
             <LaserPointer />
-
-            {/* Simulation Controls */}
-            <SimulationControls />
         </div>
     );
 }

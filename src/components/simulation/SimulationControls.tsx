@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/popover";
 import { cn } from '@/lib/utils';
 
-export default function SimulationControls() {
+interface SimulationControlsProps {
+    isOpen: boolean;
+}
+
+export default function SimulationControls({ isOpen }: SimulationControlsProps) {
     const {
         isPlaying,
         simulationSpeed,
@@ -48,8 +52,10 @@ export default function SimulationControls() {
         }
     }, [simulationLogs, isLogsOpen]);
 
+    if (!isOpen && !isPlaying) return null;
+
     return (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
 
             {/* Main Controls */}
             <div className="bg-background/80 backdrop-blur-md border border-border p-2 rounded-full shadow-lg flex items-center gap-2">

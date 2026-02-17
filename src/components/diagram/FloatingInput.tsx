@@ -12,10 +12,11 @@ interface FloatingInputProps {
     isLoading: boolean;
     disabled?: boolean;
     placeholder?: string;
-    defaultCollapsed?: boolean;
+    isOpen: boolean;
 }
 
 const EXAMPLE_PROMPTS = [
+    // ... same prompts ...
     {
         icon: Globe,
         title: "Static Website",
@@ -38,15 +39,16 @@ const EXAMPLE_PROMPTS = [
     }
 ];
 
-export default function FloatingInput({ onSubmit, isLoading, disabled, placeholder, defaultCollapsed = false }: FloatingInputProps) {
+export default function FloatingInput({
+    onSubmit,
+    isLoading,
+    disabled,
+    placeholder,
+    isOpen
+}: FloatingInputProps) {
     const [prompt, setPrompt] = useState('');
-    const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
     const [showExamples, setShowExamples] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setIsCollapsed(defaultCollapsed);
-    }, [defaultCollapsed]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -77,104 +79,87 @@ export default function FloatingInput({ onSubmit, isLoading, disabled, placehold
         setShowExamples(false);
     };
 
+    if (!isOpen) return null;
+
     return (
-        <div className={cn(
-            "fixed bottom-8 left-24 z-50 transition-all duration-300 ease-in-out",
-            isCollapsed ? "w-12 h-12" : "w-full max-w-lg"
-        )} ref={dropdownRef}>
-            {isCollapsed ? (
-                <Button
-                    onClick={() => setIsCollapsed(false)}
-                    className="h-12 w-12 rounded-full shadow-lg bg-background/80 backdrop-blur-lg border border-border p-0 hover:bg-background/90"
-                    title="Expand AI Input"
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-300" ref={dropdownRef}>
+            <div className="relative">
+                <form
+                    onSubmit={handleSubmit}
+                    className={`relative flex items-center w-full bg-background/90 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
                 >
-                    <Sparkles className="w-5 h-5 text-indigo-500" />
-                </Button>
-            ) : (
-                <div className="relative">
-                    <form
-                        onSubmit={handleSubmit}
-                        className={`relative flex items-center w-full bg-background/80 backdrop-blur-lg border border-border rounded-full shadow-lg p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+                    <div className="pl-3 text-muted-foreground">
+                        <Sparkles className="w-5 h-5 animate-pulse text-indigo-500" />
+                    </div>
+
+                    {/* Examples Button */}
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                            "h-9 w-9 rounded-xl ml-2 transition-colors",
+                            showExamples ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                        )}
+                        onClick={() => setShowExamples(!showExamples)}
+                        title="Example prompts"
                     >
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full ml-1 mr-1 text-muted-foreground hover:text-foreground"
-                            onClick={() => setIsCollapsed(true)}
-                            title="Collapse"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <div className="pl-1 text-muted-foreground">
-                            <Sparkles className="w-5 h-5 animate-pulse text-indigo-500" />
-                        </div>
+                        <Lightbulb className="w-5 h-5" />
+                    </Button>
 
-                        {/* Examples Button */}
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={cn(
-                                "h-8 w-8 rounded-full ml-1 transition-colors",
-                                showExamples ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
-                            )}
-                            onClick={() => setShowExamples(!showExamples)}
-                            title="Example prompts"
-                        >
-                            <Lightbulb className="w-4 h-4" />
-                        </Button>
+                    <Input
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={placeholder || "Describe your AWS architecture..."}
+                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 h-14 text-base shadow-none"
+                        disabled={isLoading || disabled}
+                        autoFocus
+                    />
+                    <Button
+                        type="submit"
+                        size="icon"
+                        className="rounded-xl h-11 w-11 shrink-0 mr-1 shadow-lg shadow-primary/20"
+                        disabled={isLoading || !prompt.trim() || disabled}
+                    >
+                        <CornerDownLeft className="h-5 w-5" />
+                    </Button>
+                </form>
 
-                        <Input
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={placeholder || "Describe your AWS architecture..."}
-                            className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 h-12 text-base shadow-none"
-                            disabled={isLoading || disabled}
-                        />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            className="rounded-full h-10 w-10 shrink-0 mr-1"
-                            disabled={isLoading || !prompt.trim() || disabled}
-                        >
-                            <CornerDownLeft className="h-4 w-4" />
-                        </Button>
-                    </form>
-
-                    {/* Examples Dropdown */}
-                    {showExamples && !disabled && (
-                        <div className="absolute bottom-full left-0 right-0 mb-2 bg-background/95 backdrop-blur-lg border border-border rounded-2xl shadow-xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
-                            <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Example prompts:</p>
-                            <div className="space-y-1">
-                                {EXAMPLE_PROMPTS.map((example, index) => {
-                                    const Icon = example.icon;
-                                    return (
-                                        <button
-                                            key={index}
-                                            type="button"
-                                            onClick={() => handleExampleClick(example.prompt)}
-                                            className="w-full group flex items-start gap-3 px-3 py-2.5 bg-background/40 hover:bg-background/80 border border-transparent hover:border-border/50 rounded-xl transition-all duration-200 text-left"
-                                        >
-                                            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors shrink-0 mt-0.5">
-                                                <Icon className="w-4 h-4 text-primary" />
+                {/* Examples Dropdown */}
+                {showExamples && !disabled && (
+                    <div className="absolute bottom-full left-0 right-0 mb-4 bg-background/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                        <p className="text-xs font-semibold text-muted-foreground mb-3 px-2 flex items-center gap-2">
+                            <Lightbulb className="w-3 h-3 text-yellow-500" />
+                            SUGGESTIONS:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {EXAMPLE_PROMPTS.map((example, index) => {
+                                const Icon = example.icon;
+                                return (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => handleExampleClick(example.prompt)}
+                                        className="w-full group flex items-start gap-3 px-3 py-3 bg-secondary/30 hover:bg-secondary/60 border border-transparent hover:border-border/50 rounded-xl transition-all duration-200 text-left"
+                                    >
+                                        <div className="p-2 bg-background rounded-lg group-hover:scale-110 transition-transform shrink-0 mt-0.5 border shadow-sm">
+                                            <Icon className="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                                                {example.title}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors mb-0.5">
-                                                    {example.title}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground line-clamp-2">
-                                                    {example.prompt}
-                                                </div>
+                                            <div className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                                {example.prompt}
                                             </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
-                    )}
-                </div>
-            )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

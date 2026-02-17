@@ -193,12 +193,17 @@ const AWS_SERVICES = [
     },
 ];
 
-export default function ComponentPalette() {
-    const [isOpen, setIsOpen] = useState(false);
+interface ComponentPaletteProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPaletteProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const addNode = useDiagramStore((state) => state.addNode);
 
     const filteredServices = AWS_SERVICES.map(category => ({
+        // ... same filtering logic ...
         ...category,
         items: category.items.filter(item =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -223,18 +228,8 @@ export default function ComponentPalette() {
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-                <Button
-                    variant="default"
-                    size="icon"
-                    className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-                    title="Add AWS Component"
-                >
-                    <Plus className="h-6 w-6" />
-                </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col p-0">
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="left" className="w-[400px] sm:w-[500px] flex flex-col p-0 ml-20 my-4 h-[calc(100vh-32px)] rounded-2xl shadow-2xl border-border bg-background/95 backdrop-blur-xl">
                 <SheetHeader className="p-6 pb-2 border-b">
                     <SheetTitle className="flex items-center gap-2">
                         <Box className="w-5 h-5 text-primary" />
