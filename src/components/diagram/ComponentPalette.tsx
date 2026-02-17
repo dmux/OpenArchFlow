@@ -99,6 +99,10 @@ const AWS_SERVICES = [
             { name: "Route 53", service: "route53", type: "aws-network", description: "Highly available and scalable cloud Domain Name System (DNS) web service." },
             { name: "API Gateway", service: "apigateway", type: "aws-network", description: "Fully managed service that makes it easy for developers to create, publish, maintain, monitor, and secure APIs." },
             { name: "ELB", service: "elb", type: "aws-network", description: "Automatically distributes incoming application traffic across multiple targets." },
+            { name: "ALB", service: "alb", type: "aws-network", description: "Application Load Balancer: Operates at the application layer." },
+            { name: "Nat Gateway", service: "natgateway", type: "aws-network", description: "Enables instances in a private subnet to connect to the internet or other AWS services." },
+            { name: "Internet Gateway", service: "internetgateway", type: "aws-network", description: "Horizontally scaled, redundant, and highly available VPC component that allows communication between your VPC and the internet." },
+            { name: "Private Subnet", service: "privatesubnet", type: "aws-network", description: "Subnet within a VPC that does not have a direct route to the internet." },
         ]
     },
     {
