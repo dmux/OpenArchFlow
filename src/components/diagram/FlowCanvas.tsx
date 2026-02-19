@@ -73,6 +73,7 @@ const selector = (state: any) => {
         setEdges: state.setEdges,
         setSelectedNode: state.setSelectedNode,
         isPlaying: state.isPlaying,
+        interactionMode: state.interactionMode,
     };
 };
 
@@ -87,16 +88,21 @@ function FlowCanvas() {
         setEdges,
         setSelectedNode,
         isPlaying,
+        interactionMode,
     } = useDiagramStore(useShallow(selector));
 
+    const isLaserMode = interactionMode === 'laser';
+
     const onNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
+        if (isLaserMode) return;
         setSelectedNode(node.id);
-    }, [setSelectedNode]);
+    }, [setSelectedNode, isLaserMode]);
 
     const onEdgeClick = useCallback((_event: React.MouseEvent, edge: any) => {
+        if (isLaserMode) return;
         // Stop propagation if needed, but ReactFlow handles this well usually
         useDiagramStore.getState().setSelectedEdge(edge.id);
-    }, []);
+    }, [isLaserMode]);
 
     const animatedEdges = React.useMemo(() => {
         if (!isPlaying) return edges;
@@ -123,6 +129,9 @@ function FlowCanvas() {
                 onConnect={onConnect}
                 fitView
                 attributionPosition="bottom-right"
+                nodesDraggable={!isLaserMode}
+                nodesConnectable={!isLaserMode}
+                elementsSelectable={!isLaserMode}
                 defaultEdgeOptions={{
                     type: 'smoothstep',
                     markerEnd: { type: MarkerType.ArrowClosed },

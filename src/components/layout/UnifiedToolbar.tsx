@@ -14,6 +14,7 @@ import {
     Download,
     FileText,
     Pointer,
+    MousePointer2,
     Loader2,
     Sun,
     Moon,
@@ -74,10 +75,10 @@ export function UnifiedToolbar({
     setIsGenerating,
     useLocalAI
 }: UnifiedToolbarProps) {
-    const { getNodes } = useReactFlow();
+    const { getNodes, fitView } = useReactFlow();
     const isPlaying = useDiagramStore((state) => state.isPlaying);
-    const laserPointerEnabled = useDiagramStore((state) => state.laserPointerEnabled);
-    const setLaserPointerEnabled = useDiagramStore((state) => state.setLaserPointerEnabled);
+    const interactionMode = useDiagramStore((state) => state.interactionMode);
+    const setInteractionMode = useDiagramStore((state) => state.setInteractionMode);
     const clear = useDiagramStore((state) => state.clear);
     const setNodes = useDiagramStore((state) => state.setNodes);
     const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
@@ -100,8 +101,14 @@ export function UnifiedToolbar({
         }
         const layouted = getLayoutedElements(nodes, edges, 'TB');
         setNodes(layouted.nodes);
+
+        // Center the view after layout
+        setTimeout(() => {
+            fitView({ padding: 0.2, duration: 800 });
+        }, 50); // Small delay to ensure state update
+
         toast.success('Layout organized automatically!');
-    }, [nodes, edges, setNodes]);
+    }, [nodes, edges, setNodes, fitView]);
 
     const handleExport = useCallback(async () => {
         const nodes = getNodes();
@@ -263,11 +270,18 @@ export function UnifiedToolbar({
             className: isGenerating ? "animate-spin" : ""
         },
         {
+            id: 'select',
+            icon: MousePointer2,
+            label: 'Select / Edit',
+            onClick: () => setInteractionMode('default'),
+            active: interactionMode === 'default'
+        },
+        {
             id: 'laser',
             icon: Pointer,
             label: 'Laser Pointer',
-            onClick: () => setLaserPointerEnabled(!laserPointerEnabled),
-            active: laserPointerEnabled
+            onClick: () => setInteractionMode(interactionMode === 'laser' ? 'default' : 'laser'),
+            active: interactionMode === 'laser'
         }
     ];
 
@@ -335,7 +349,7 @@ export function UnifiedToolbar({
                                         !tool.active && "hover:bg-accent hover:text-accent-foreground"
                                     )}
                                 >
-                                    <tool.icon className={cn("h-4.5 w-4.5", tool.id === 'laser' && tool.active && "text-red-600", tool.className)} />
+                                    <tool.icon className={cn("h-4.5 w-4.5", tool.id === 'laser' && tool.active && "text-red-500", tool.className)} />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="right" sideOffset={10}><p className="font-medium">{tool.label}</p></TooltipContent>

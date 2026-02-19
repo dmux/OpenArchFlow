@@ -257,7 +257,7 @@ export default function FloatingInput({
                         <div className="mt-4 pt-3 border-t border-border/50">
                             <p className="text-xs font-semibold text-muted-foreground mb-3 px-2 flex items-center gap-2">
                                 <Database className="w-3 h-3 text-emerald-500" />
-                                AWS Certified CloudOps Engineer - Associate:
+                                AWS Certified Data Engineer - Associate:
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 {AWS_DEA_PROMPTS.slice((deaPage - 1) * DEA_ITEMS_PER_PAGE, deaPage * DEA_ITEMS_PER_PAGE).map((example, index) => {

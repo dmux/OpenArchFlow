@@ -10,7 +10,8 @@ interface TrailPoint {
 }
 
 export default function LaserPointer() {
-    const laserPointerEnabled = useDiagramStore((state) => state.laserPointerEnabled);
+    const interactionMode = useDiagramStore((state) => state.interactionMode);
+    const laserPointerEnabled = interactionMode === 'laser';
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [trail, setTrail] = useState<TrailPoint[]>([]);
     const [isVisible, setIsVisible] = useState(false);

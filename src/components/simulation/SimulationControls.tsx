@@ -30,9 +30,12 @@ export default function SimulationControls({ isOpen }: SimulationControlsProps) 
         simulationLogs,
         clearSimulationLogs,
         resetSimulation,
-        laserPointerEnabled,
-        setLaserPointerEnabled
+        interactionMode,
+        setInteractionMode
     } = useDiagramStore();
+
+    const laserPointerEnabled = interactionMode === 'laser';
+    const setLaserPointerEnabled = (enabled: boolean) => setInteractionMode(enabled ? 'laser' : 'default');
 
     const [isLogsOpen, setIsLogsOpen] = React.useState(false);
     const scrollEndRef = useRef<HTMLDivElement>(null);
