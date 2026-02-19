@@ -17,7 +17,7 @@ import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLef
 import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // Simple date formatter to avoid extra dependency for now
 const formatDate = (timestamp: number) => {
@@ -37,16 +37,37 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 2; // Reduced for testing/verification
+    const [itemsPerPage, setItemsPerPage] = useState(4); // Default, will be calculated
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    // Calculate items per page based on available height
+    useEffect(() => {
+        const calculateItemsPerPage = () => {
+            if (scrollAreaRef.current) {
+                const height = scrollAreaRef.current.clientHeight;
+                // Estimate item height: 72px (item) + 8px (gap) = 80px
+                // Subtract some padding (32px for p-4)
+                const availableHeight = height - 32;
+                const calculated = Math.floor(availableHeight / 80);
+                setItemsPerPage(Math.max(2, calculated)); // Minimum 2 items
+            }
+        };
+
+        calculateItemsPerPage();
+
+        // Add resize listener
+        window.addEventListener('resize', calculateItemsPerPage);
+        return () => window.removeEventListener('resize', calculateItemsPerPage);
+    }, []);
 
     // ...
 
     // Sort diagrams by lastModified desc
     const sortedDiagrams = Object.values(diagrams).sort((a, b) => b.lastModified - a.lastModified);
-    const totalPages = Math.ceil(sortedDiagrams.length / ITEMS_PER_PAGE);
-    const paginatedDiagrams = sortedDiagrams.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(sortedDiagrams.length / itemsPerPage);
+    const paginatedDiagrams = sortedDiagrams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    // Reset to first page if current page becomes empty (e.g. after deletion)
+    // Reset to first page if current page becomes empty (e.g. after deletion or resize)
     if (currentPage > totalPages && totalPages > 0) {
         setCurrentPage(totalPages);
     }
@@ -173,99 +194,101 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
                 <Separator />
 
-                <ScrollArea className="flex-1">
-                    <div className="p-4 space-y-2">
-                        {paginatedDiagrams.map((diagram) => (
-                            <div
-                                key={diagram.id}
-                                onClick={() => setActiveDiagram(diagram.id)}
-                                className={cn(
-                                    "group flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors",
-                                    activeDiagramId === diagram.id ? "bg-accent border-primary" : "bg-card"
-                                )}
-                            >
-                                <div className="flex-1 min-w-0 mr-2 overflow-hidden max-w-[180px]">
-                                    {editingId === diagram.id ? (
-                                        <div onClick={(e) => e.stopPropagation()}>
-                                            <Input
-                                                value={editName}
-                                                onChange={(e) => setEditName(e.target.value)}
-                                                onBlur={saveEditing}
-                                                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                                                    if (e.key === 'Enter') saveEditing(e);
-                                                    if (e.key === 'Escape') cancelEditing(e);
-                                                }}
-                                                autoFocus
-                                                className="h-7 text-sm py-1 px-2"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <h3 className="font-medium text-sm truncate" title={diagram.name}>{diagram.name}</h3>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {formatDate(diagram.lastModified)}
-                                            </p>
-                                        </>
+                <div className="flex-1 min-h-0 relative" ref={scrollAreaRef}>
+                    <ScrollArea className="h-full">
+                        <div className="p-4 space-y-2">
+                            {paginatedDiagrams.map((diagram) => (
+                                <div
+                                    key={diagram.id}
+                                    onClick={() => setActiveDiagram(diagram.id)}
+                                    className={cn(
+                                        "group flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors",
+                                        activeDiagramId === diagram.id ? "bg-accent border-primary" : "bg-card"
                                     )}
-                                </div>
-
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                        onClick={(e) => handleExport(e, diagram)}
-                                        title="Export JSON"
-                                    >
-                                        <Download className="w-3.5 h-3.5" />
-                                    </Button>
-
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                        onClick={(e) => startEditing(e, diagram)}
-                                    >
-                                        <Pencil className="w-3.5 h-3.5" />
-                                    </Button>
-
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete Diagram?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Are you sure you want to delete "{diagram.name}"? This action cannot be undone.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteDiagram(diagram.id);
+                                >
+                                    <div className="flex-1 min-w-0 mr-2 overflow-hidden max-w-[180px]">
+                                        {editingId === diagram.id ? (
+                                            <div onClick={(e) => e.stopPropagation()}>
+                                                <Input
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    onBlur={saveEditing}
+                                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                        if (e.key === 'Enter') saveEditing(e);
+                                                        if (e.key === 'Escape') cancelEditing(e);
                                                     }}
-                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                    autoFocus
+                                                    className="h-7 text-sm py-1 px-2"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <h3 className="font-medium text-sm truncate" title={diagram.name}>{diagram.name}</h3>
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                    {formatDate(diagram.lastModified)}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                            onClick={(e) => handleExport(e, diagram)}
+                                            title="Export JSON"
+                                        >
+                                            <Download className="w-3.5 h-3.5" />
+                                        </Button>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                            onClick={(e) => startEditing(e, diagram)}
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </Button>
+
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    Delete
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete Diagram?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete "{diagram.name}"? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            deleteDiagram(diagram.id);
+                                                        }}
+                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                    >
+                                                        Delete
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </div>
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
