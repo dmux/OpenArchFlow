@@ -3,7 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CornerDownLeft, Sparkles, ChevronLeft, Globe, Zap, Box, Database, Lightbulb } from 'lucide-react';
+import { CornerDownLeft, Sparkles, ChevronLeft, ChevronRight, Globe, Zap, Box, Database, Lightbulb, BookOpen } from 'lucide-react';
+import { AWS_SAA_PROMPTS } from '@/lib/aws-saa-prompts';
+import { AWS_DEA_PROMPTS } from '@/lib/aws-dea-prompts';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +56,10 @@ export default function FloatingInput({
 }: FloatingInputProps) {
     const [prompt, setPrompt] = useState('');
     const [showExamples, setShowExamples] = useState(false);
+    const [saaPage, setSaaPage] = useState(1);
+    const [deaPage, setDeaPage] = useState(1);
+    const SAA_ITEMS_PER_PAGE = 2; // Updated to 2 as per user request
+    const DEA_ITEMS_PER_PAGE = 2; // 2 prompts per page for certifications
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -136,26 +148,185 @@ export default function FloatingInput({
                             {EXAMPLE_PROMPTS.map((example, index) => {
                                 const Icon = example.icon;
                                 return (
-                                    <button
-                                        key={index}
-                                        type="button"
-                                        onClick={() => handleExampleClick(example.prompt)}
-                                        className="w-full group flex items-start gap-3 px-3 py-3 bg-secondary/30 hover:bg-secondary/60 border border-transparent hover:border-border/50 rounded-xl transition-all duration-200 text-left"
-                                    >
-                                        <div className="p-2 bg-background rounded-lg group-hover:scale-110 transition-transform shrink-0 mt-0.5 border shadow-sm">
-                                            <Icon className="w-4 h-4 text-primary" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
-                                                {example.title}
-                                            </div>
-                                            <div className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                    <TooltipProvider key={`general-${index}`}>
+                                        <Tooltip delayDuration={300}>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleExampleClick(example.prompt)}
+                                                    className="w-full group flex items-start gap-3 px-3 py-3 bg-secondary/30 hover:bg-secondary/60 border border-transparent hover:border-border/50 rounded-xl transition-all duration-200 text-left"
+                                                >
+                                                    <div className="p-2 bg-background rounded-lg group-hover:scale-110 transition-transform shrink-0 mt-0.5 border shadow-sm">
+                                                        <Icon className="w-4 h-4 text-primary" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                                                            {example.title}
+                                                        </div>
+                                                        <div className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                                            {example.prompt}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right" className="max-w-[300px] text-xs">
                                                 {example.prompt}
-                                            </div>
-                                        </div>
-                                    </button>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
                                 );
                             })}
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-border/50">
+                            <p className="text-xs font-semibold text-muted-foreground mb-3 px-2 flex items-center gap-2">
+                                <BookOpen className="w-3 h-3 text-blue-500" />
+                                AWS Certified Solutions Architect - Associate:
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {AWS_SAA_PROMPTS.slice((saaPage - 1) * SAA_ITEMS_PER_PAGE, saaPage * SAA_ITEMS_PER_PAGE).map((example, index) => {
+                                    const Icon = example.icon;
+                                    return (
+                                        <TooltipProvider key={`saa-${index}`}>
+                                            <Tooltip delayDuration={300}>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleExampleClick(example.prompt)}
+                                                        className="w-full group flex items-start gap-3 px-3 py-3 bg-secondary/30 hover:bg-secondary/60 border border-transparent hover:border-border/50 rounded-xl transition-all duration-200 text-left"
+                                                    >
+                                                        <div className="p-2 bg-background rounded-lg group-hover:scale-110 transition-transform shrink-0 mt-0.5 border shadow-sm">
+                                                            <Icon className="w-4 h-4 text-primary" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                                                                {example.title}
+                                                            </div>
+                                                            <div className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                                                {example.prompt}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="right" className="max-w-[300px] text-xs">
+                                                    {example.prompt}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Pagination for SAA Prompts */}
+                            {Math.ceil(AWS_SAA_PROMPTS.length / SAA_ITEMS_PER_PAGE) > 1 && (
+                                <div className="flex items-center justify-between mt-3 px-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation(); // Prevent dropdown from closing
+                                            setSaaPage(Math.max(1, saaPage - 1));
+                                        }}
+                                        disabled={saaPage === 1}
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+                                    <span className="text-[10px] text-muted-foreground">
+                                        Page {saaPage} of {Math.ceil(AWS_SAA_PROMPTS.length / SAA_ITEMS_PER_PAGE)}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setSaaPage(Math.min(Math.ceil(AWS_SAA_PROMPTS.length / SAA_ITEMS_PER_PAGE), saaPage + 1));
+                                        }}
+                                        disabled={saaPage === Math.ceil(AWS_SAA_PROMPTS.length / SAA_ITEMS_PER_PAGE)}
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* DEA Prompts Section */}
+                        <div className="mt-4 pt-3 border-t border-border/50">
+                            <p className="text-xs font-semibold text-muted-foreground mb-3 px-2 flex items-center gap-2">
+                                <Database className="w-3 h-3 text-emerald-500" />
+                                AWS Certified CloudOps Engineer - Associate:
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {AWS_DEA_PROMPTS.slice((deaPage - 1) * DEA_ITEMS_PER_PAGE, deaPage * DEA_ITEMS_PER_PAGE).map((example, index) => {
+                                    const Icon = example.icon;
+                                    return (
+                                        <TooltipProvider key={`dea-${index}`}>
+                                            <Tooltip delayDuration={300}>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleExampleClick(example.prompt)}
+                                                        className="w-full group flex items-start gap-3 px-3 py-3 bg-secondary/30 hover:bg-secondary/60 border border-transparent hover:border-border/50 rounded-xl transition-all duration-200 text-left"
+                                                    >
+                                                        <div className="p-2 bg-background rounded-lg group-hover:scale-110 transition-transform shrink-0 mt-0.5 border shadow-sm">
+                                                            <Icon className="w-4 h-4 text-primary" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5">
+                                                                {example.title}
+                                                            </div>
+                                                            <div className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                                                {example.prompt}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="right" className="max-w-[300px] text-xs">
+                                                    {example.prompt}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Pagination for DEA Prompts */}
+                            {Math.ceil(AWS_DEA_PROMPTS.length / DEA_ITEMS_PER_PAGE) > 1 && (
+                                <div className="flex items-center justify-between mt-3 px-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation(); // Prevent dropdown from closing
+                                            setDeaPage(Math.max(1, deaPage - 1));
+                                        }}
+                                        disabled={deaPage === 1}
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+                                    <span className="text-[10px] text-muted-foreground">
+                                        Page {deaPage} of {Math.ceil(AWS_DEA_PROMPTS.length / DEA_ITEMS_PER_PAGE)}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setDeaPage(Math.min(Math.ceil(AWS_DEA_PROMPTS.length / DEA_ITEMS_PER_PAGE), deaPage + 1));
+                                        }}
+                                        disabled={deaPage === Math.ceil(AWS_DEA_PROMPTS.length / DEA_ITEMS_PER_PAGE)}
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

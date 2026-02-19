@@ -13,7 +13,7 @@ import { useDiagramStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson } from 'lucide-react';
+import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLeft, ChevronRight } from 'lucide-react';
 import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -36,11 +36,20 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 2; // Reduced for testing/verification
 
     // ...
 
     // Sort diagrams by lastModified desc
     const sortedDiagrams = Object.values(diagrams).sort((a, b) => b.lastModified - a.lastModified);
+    const totalPages = Math.ceil(sortedDiagrams.length / ITEMS_PER_PAGE);
+    const paginatedDiagrams = sortedDiagrams.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    // Reset to first page if current page becomes empty (e.g. after deletion)
+    if (currentPage > totalPages && totalPages > 0) {
+        setCurrentPage(totalPages);
+    }
 
     const handleCreate = () => {
         createDiagram('New Architecture');
@@ -166,7 +175,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
                 <ScrollArea className="flex-1">
                     <div className="p-4 space-y-2">
-                        {sortedDiagrams.map((diagram) => (
+                        {paginatedDiagrams.map((diagram) => (
                             <div
                                 key={diagram.id}
                                 onClick={() => setActiveDiagram(diagram.id)}
@@ -257,6 +266,33 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                         ))}
                     </div>
                 </ScrollArea>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="px-4 py-2 border-t flex items-center justify-between bg-card/50">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                            Page {currentPage} of {totalPages} ({sortedDiagrams.length} items)
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
+                )}
 
                 <div className="p-4 border-t space-y-2">
                     <div className="flex gap-2">
