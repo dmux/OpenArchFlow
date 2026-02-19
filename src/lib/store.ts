@@ -472,7 +472,21 @@ export const useDiagramStore = create<DiagramState>()(
 
             addNode: (node) => {
                 const { activeDiagramId } = get();
-                if (!activeDiagramId) return;
+
+                if (!activeDiagramId) {
+                    const id = get().createDiagram('New Architecture');
+                    set((state) => ({
+                        diagrams: {
+                            ...state.diagrams,
+                            [id]: {
+                                ...state.diagrams[id],
+                                nodes: [node],
+                                lastModified: Date.now()
+                            }
+                        }
+                    }));
+                    return;
+                }
 
                 set((state) => ({
                     diagrams: {

@@ -21,6 +21,7 @@ import FrameNode from './FrameNode';
 import AnnotationNode from './AnnotationNode';
 import NoteNode from './NoteNode';
 import LaserPointer from './LaserPointer';
+import GenericNode from './GenericNode';
 
 const nodeTypes = {
     'aws-compute': AWSNode,
@@ -53,6 +54,7 @@ const nodeTypes = {
     'frame': FrameNode,
     'annotation': AnnotationNode,
     'note': NoteNode,
+    'generic': GenericNode,
     'default': AWSNode,
 };
 

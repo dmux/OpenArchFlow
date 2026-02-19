@@ -10,7 +10,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Box, Frame, MessageSquare } from "lucide-react";
+import { Plus, Search, Box, Frame, MessageSquare, Database, File, User, Activity, Play, Square, Circle, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDiagramStore } from "@/lib/store";
@@ -24,6 +24,12 @@ const AWS_SERVICES = [
         items: [
             { name: "Frame/Group", service: "frame", type: "frame", description: "Groups multiple components together visually." },
             { name: "Sticky Note", service: "note", type: "note", description: "Add text notes or annotations to your diagram." },
+            { name: "Process", service: "generic", type: "generic", subtype: "process", description: "A generic process step or action." },
+            { name: "Database", service: "generic", type: "generic", subtype: "database", description: "A generic data store or database." },
+            { name: "File", service: "generic", type: "generic", subtype: "file", description: "Represents a file or document." },
+            { name: "Start/End", service: "generic", type: "generic", subtype: "start-end", description: "Start or end point of a flow." },
+            { name: "Decision", service: "generic", type: "generic", subtype: "decision", description: "A decision point or condition." },
+            { name: "Actor", service: "generic", type: "generic", subtype: "actor", description: "A user, actor, or lane." },
         ]
     },
     {
@@ -235,6 +241,7 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                 label: item.name,
                 service: item.service,
                 type: item.type,
+                subtype: (item as any).subtype,
             },
         };
         addNode(newNode);
@@ -280,6 +287,17 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                                                 Icon = MessageSquare;
                                             } else if (item.type === 'note') {
                                                 Icon = MessageSquare;
+                                            } else if (item.type === 'generic') {
+                                                // Generic tool icons
+                                                switch ((item as any).subtype) {
+                                                    case 'process': Icon = Square; break;
+                                                    case 'database': Icon = Database; break;
+                                                    case 'file': Icon = File; break;
+                                                    case 'start-end': Icon = Play; break;
+                                                    case 'decision': Icon = HelpCircle; break;
+                                                    case 'actor': Icon = User; break;
+                                                    default: Icon = Activity;
+                                                }
                                             } else {
                                                 Icon = getAwsIcon(item.service, item.type || '');
                                             }
