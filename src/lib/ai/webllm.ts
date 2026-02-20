@@ -31,9 +31,16 @@ export class WebLLMService {
         }
     }
 
-    public async generate(prompt: string): Promise<string> {
+    public async generate(prompt: string, currentNodes?: any[], currentEdges?: any[]): Promise<string> {
         if (!this.engine) {
             throw new Error("WebLLM Engine not initialized");
+        }
+
+        const hasExistingArchitecture = currentNodes && currentNodes.length > 0;
+        let serializedCurrent = "";
+
+        if (hasExistingArchitecture) {
+            serializedCurrent = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
         }
 
         const systemPrompt = `
@@ -47,9 +54,17 @@ export class WebLLMService {
 
       Edges:
       - id, source, target, label
-
-      Return ONLY valid JSON matching this schema:
-      { "nodes": [], "edges": [] }
+      
+      ${hasExistingArchitecture ?
+                `The user ALREADY HAS an existing architecture.
+      CURRENT ARCHITECTURE JSON:
+      ${serializedCurrent}
+      
+      Your task is to MODIFY this architecture based on the user's request.
+      IMPORTANT: Return the FULL updated JSON, containing EVERYTHING from the existing architecture PLUS any new nodes or edges you add or modifications you make. Maintain existing IDs.`
+                :
+                `Return ONLY valid JSON matching this schema:
+      { "nodes": [], "edges": [] }`}
     `;
 
         const response = await this.engine.chat.completions.create({

@@ -50,6 +50,14 @@ export default function Home() {
 function HomeContent() {
     const setNodes = useDiagramStore((state) => state.setNodes);
     const setEdges = useDiagramStore((state) => state.setEdges);
+
+    // Get current nodes and edges for incremental AI edits
+    const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
+    const diagrams = useDiagramStore((state) => state.diagrams);
+    const activeDiagram = activeDiagramId ? diagrams[activeDiagramId] : null;
+    const currentNodes = activeDiagram?.nodes || [];
+    const currentEdges = activeDiagram?.edges || [];
+
     const isOfflineMode = useDiagramStore((state) => state.isOfflineMode);
     const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
     const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
@@ -77,7 +85,7 @@ function HomeContent() {
                         toast.info('Loading AI model locally in your browser. This may take a minute...', {
                             duration: 5000,
                         });
-                        await service.initialize((status) => {
+                        await service.initialize((status: any) => {
                             console.log('Model init progress:', status.text);
                         });
                         toast.success('Local AI model ready!');
@@ -102,7 +110,7 @@ function HomeContent() {
                 const service = WebLLMService.getInstance();
                 if (!service.isReady()) throw new Error('Local model not ready yet.');
 
-                const rawJson = await service.generate(prompt);
+                const rawJson = await service.generate(prompt, currentNodes, currentEdges);
                 try {
                     result = JSON.parse(rawJson);
                 } catch (e) {
@@ -116,7 +124,12 @@ function HomeContent() {
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, apiKey: geminiApiKey }),
+                    body: JSON.stringify({
+                        prompt,
+                        apiKey: geminiApiKey,
+                        currentNodes: currentNodes,
+                        currentEdges: currentEdges
+                    }),
                 });
 
                 if (!response.ok) {
@@ -140,7 +153,7 @@ function HomeContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [geminiApiKey, setGeminiApiKey, setNodes, setEdges, useLocalAI]);
+    }, [geminiApiKey, setGeminiApiKey, setNodes, setEdges, useLocalAI, currentNodes, currentEdges]);
 
     return (
         <ReactFlowProvider>

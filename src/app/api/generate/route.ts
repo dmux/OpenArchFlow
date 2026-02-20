@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const { prompt, apiKey } = await req.json();
+        const { prompt, apiKey, currentNodes, currentEdges } = await req.json();
 
         if (!prompt) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
@@ -89,9 +89,16 @@ export async function POST(req: NextRequest) {
             generationConfig: { responseMimeType: "application/json" }
         });
 
+        const hasExistingArchitecture = currentNodes && currentNodes.length > 0;
+        let serializedCurrent = "";
+
+        if (hasExistingArchitecture) {
+            serializedCurrent = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
+        }
+
         const systemPrompt = `
       You are an AWS Certified Solutions Architect and DevOps Expert.
-      Your goal is to design a high-quality, production-ready AWS architecture based on the user's request.
+      Your goal is to design or modify a high-quality, production-ready AWS architecture based on the user's request.
       
       ${awsContext ? `\nIMPORTANT: Use the following AWS Documentation context to inform your design decisions and service selection:\n${awsContext}\n` : ""}
 
@@ -122,8 +129,18 @@ export async function POST(req: NextRequest) {
       - target: id of target node
       - label: description of connection (e.g., "sends logs", "queries")
 
-      **Example**:
-      If user asks for "Serverless API", include API Gateway -> Lambda -> DynamoDB, plus CloudWatch for logs.
+      ${hasExistingArchitecture ?
+                `**CRITICAL INSTRUCTION: EXISTING ARCHITECTURE**
+      The user ALREADY HAS an existing architecture.
+      CURRENT ARCHITECTURE JSON:
+      ${serializedCurrent}
+      
+      Your task is to MODIFY this architecture based on the user's request.
+      IMPORTANT: You MUST return the FULL updated JSON, containing EVERYTHING from the existing architecture PLUS any new nodes or edges you add or modifications you make.
+      DO NOT remove existing components unless requested. Maintain existing IDs.`
+                :
+                `**Example**:
+      If user asks for "Serverless API", include API Gateway -> Lambda -> DynamoDB, plus CloudWatch for logs.`}
     `;
 
         const result = await model.generateContent([systemPrompt, prompt]);
