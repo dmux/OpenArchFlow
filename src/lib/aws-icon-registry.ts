@@ -2,7 +2,10 @@ import React from 'react';
 import {
     SiKubernetes, SiArgo, SiPrometheus, SiGrafana, SiTerraform, SiHelm, SiIstio, SiDocker,
     SiVault, SiOpentelemetry, SiEnvoyproxy, SiNginx, SiConsul,
-    SiRedis, SiPostgresql, SiMongodb, SiApachekafka, SiElasticsearch
+    SiRedis, SiPostgresql, SiMongodb, SiApachekafka, SiElasticsearch,
+    SiGithubactions, SiGitlab, SiJenkins, SiKong, SiCloudflare,
+    SiRancher, SiPodman, SiDatadog, SiSentry, SiAnsible, SiPulumi,
+    SiGithub, SiGithubcopilot, SiOpenai, SiHuggingface, SiAnthropic, SiGooglegemini
 } from 'react-icons/si';
 import {
     ArchitectureServiceAmazonEC2,
@@ -259,6 +262,18 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'mobile': Smartphone,
         'client': Monitor,
         'iot-device': Cpu,
+        // GitHub Services
+        'github': SiGithub,
+        'githubcopilot': SiGithubcopilot,
+        'copilot': SiGithubcopilot,
+        'codespaces': SiGithub, // Fallback as no specific icon exists
+        // Alternative AI
+        'openai': SiOpenai,
+        'huggingface': SiHuggingface,
+        'anthropic': SiAnthropic,
+        'gemini': SiGooglegemini,
+        'googlegemini': SiGooglegemini,
+        'midjourney': Box, // Adding mapping even if fallback is needed depending on library version
         // Cloud Native
         'kubernetes': SiKubernetes,
         'k8s': SiKubernetes,
@@ -284,6 +299,21 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'mongo': SiMongodb,
         'kafka': SiApachekafka,
         'elasticsearch': SiElasticsearch,
+        // CI/CD & DevOps
+        'githubactions': SiGithubactions,
+        'gitlab': SiGitlab,
+        'jenkins': SiJenkins,
+        'ansible': SiAnsible,
+        'pulumi': SiPulumi,
+        // API Gateways & Networking
+        'kong': SiKong,
+        'cloudflare': SiCloudflare,
+        // Containers (Alternative)
+        'rancher': SiRancher,
+        'podman': SiPodman,
+        // Observability
+        'datadog': SiDatadog,
+        'sentry': SiSentry,
     };
 
     // Check for exact match or partial match in service name

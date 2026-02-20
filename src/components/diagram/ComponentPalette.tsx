@@ -65,6 +65,8 @@ const AWS_SERVICES = [
             { name: "Fargate", service: "fargate", type: "aws-containers", description: "Serverless compute for containers. Works with both ECS and EKS." },
             { name: "EKS Anywhere", service: "eksanywhere", description: "Create and operate Kubernetes clusters on your own infrastructure." },
             { name: "ECS Anywhere", service: "ecsanywhere", description: "Run and manage container workloads on-premises using the same APIs as ECS." },
+            { name: "Rancher", service: "rancher", type: "cloud-native", description: "Complete software stack for teams adopting containers." },
+            { name: "Podman", service: "podman", type: "cloud-native", description: "Daemonless, open source, Linux native tool designed to make it easy to find, run, build, share and deploy applications using OCI Containers and Container Images." },
         ]
     },
     {
@@ -114,6 +116,8 @@ const AWS_SERVICES = [
             { name: "Internet Gateway", service: "internetgateway", type: "aws-network", description: "Horizontally scaled, redundant, and highly available VPC component that allows communication between your VPC and the internet." },
             { name: "Transit Gateway", service: "transitgateway", type: "aws-network", description: "Connects VPCs and on-premises networks through a central hub." },
             { name: "Private Subnet", service: "privatesubnet", type: "aws-network", description: "Subnet within a VPC that does not have a direct route to the internet." },
+            { name: "Kong", service: "kong", type: "cloud-native", description: "Cloud-native API gateway and service mesh." },
+            { name: "Cloudflare", service: "cloudflare", type: "cloud-native", description: "Global network designed to make everything you connect to the Internet secure, private, fast, and reliable." },
         ]
     },
     {
@@ -131,6 +135,12 @@ const AWS_SERVICES = [
             { name: "Personalize", service: "personalize", description: "Create real-time personalized recommendations." },
             { name: "Forecast", service: "forecast", description: "Build accurate forecasting models based on machine learning." },
             { name: "Kendra", service: "kendra", description: "Highly accurate and easy-to-use enterprise search service powered by machine learning." },
+            // Additional AI Platforms
+            { name: "OpenAI", service: "openai", type: "aws-ai", description: "AI research and deployment company behind ChatGPT and DALL-E." },
+            { name: "Hugging Face", service: "huggingface", type: "aws-ai", description: "The AI community building the future." },
+            { name: "Anthropic", service: "anthropic", type: "aws-ai", description: "AI safety and research company behind Claude." },
+            { name: "Google Gemini", service: "gemini", type: "aws-ai", description: "Google's most capable AI model for multimodal tasks." },
+            { name: "Midjourney", service: "midjourney", type: "aws-ai", description: "Independent research lab producing an AI program that creates images from textual descriptions." },
         ]
     },
     {
@@ -172,6 +182,10 @@ const AWS_SERVICES = [
             { name: "CodeArtifact", service: "codeartifact", description: "Secure, scalable, and cost-effective artifact management for software development." },
             { name: "Cloud9", service: "cloud9", description: "Cloud-based integrated development environment (IDE) for writing, running, and debugging code." },
             { name: "X-Ray", service: "xray", description: "Analyze and debug production, distributed applications." },
+            // GitHub Developer Tools
+            { name: "GitHub", service: "github", type: "aws-devtools", description: "Internet hosting service for software development and version control using Git." },
+            { name: "GitHub Copilot", service: "githubcopilot", type: "aws-devtools", description: "Cloud-based AI tool to assist users by autocompleting code." },
+            { name: "Codespaces", service: "codespaces", type: "aws-devtools", description: "Instant, cloud-based development environment." },
         ]
     },
     {
@@ -227,6 +241,23 @@ const AWS_SERVICES = [
             { name: "Envoy", service: "envoy", type: "cloud-native", description: "Edge and service proxy designed for cloud-native applications." },
             { name: "Nginx", service: "nginx", type: "cloud-native", description: "Web server that can also be used as a reverse proxy, load balancer, mail proxy and HTTP cache." },
             { name: "Consul", service: "consul", type: "cloud-native", description: "Service networking solution to connect and secure services across any runtime platform and public or private cloud." },
+        ]
+    },
+    {
+        category: "CI/CD & DevOps",
+        items: [
+            { name: "GitHub Actions", service: "githubactions", type: "cloud-native", description: "Automate your workflow from idea to production." },
+            { name: "GitLab", service: "gitlab", type: "cloud-native", description: "The single DevOps platform." },
+            { name: "Jenkins", service: "jenkins", type: "cloud-native", description: "Open source automation server." },
+            { name: "Ansible", service: "ansible", type: "cloud-native", description: "Open-source software provisioning, configuration management, and application-deployment tool." },
+            { name: "Pulumi", service: "pulumi", type: "cloud-native", description: "Universal infrastructure as code." },
+        ]
+    },
+    {
+        category: "Observability",
+        items: [
+            { name: "Datadog", service: "datadog", type: "cloud-native", description: "Monitoring and security platform for cloud applications." },
+            { name: "Sentry", service: "sentry", type: "cloud-native", description: "Developer-first error tracking and performance monitoring." },
         ]
     },
 ];
