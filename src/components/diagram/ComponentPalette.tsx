@@ -258,6 +258,14 @@ const AWS_SERVICES = [
         items: [
             { name: "Datadog", service: "datadog", type: "cloud-native", description: "Monitoring and security platform for cloud applications." },
             { name: "Sentry", service: "sentry", type: "cloud-native", description: "Developer-first error tracking and performance monitoring." },
+            { name: "New Relic", service: "newrelic", type: "cloud-native", description: "Full-stack observability platform for software engineers." },
+            { name: "Dynatrace", service: "dynatrace", type: "cloud-native", description: "Software intelligence platform based on AI and automation." },
+            { name: "Splunk", service: "splunk", type: "cloud-native", description: "Data platform for searching, monitoring, and analyzing machine-generated big data." },
+            { name: "Elastic", service: "elastic", type: "cloud-native", description: "Search, observability, and security built on the Elastic Stack." },
+            { name: "Kibana", service: "kibana", type: "cloud-native", description: "Data visualization dashboard for Elasticsearch." },
+            { name: "Logstash", service: "logstash", type: "cloud-native", description: "Server-side data processing pipeline that ingests data from multiple sources simultaneously." },
+            { name: "Jaeger", service: "jaeger", type: "cloud-native", description: "Open source, end-to-end distributed tracing." },
+            { name: "Fluentd", service: "fluentd", type: "cloud-native", description: "Open source data collector for unified logging layer." },
         ]
     },
 ];

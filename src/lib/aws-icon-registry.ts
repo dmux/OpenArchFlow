@@ -5,7 +5,8 @@ import {
     SiRedis, SiPostgresql, SiMongodb, SiApachekafka, SiElasticsearch,
     SiGithubactions, SiGitlab, SiJenkins, SiKong, SiCloudflare,
     SiRancher, SiPodman, SiDatadog, SiSentry, SiAnsible, SiPulumi,
-    SiGithub, SiGithubcopilot, SiOpenai, SiHuggingface, SiAnthropic, SiGooglegemini
+    SiGithub, SiGithubcopilot, SiOpenai, SiHuggingface, SiAnthropic, SiGooglegemini,
+    SiNewrelic, SiDynatrace, SiSplunk, SiJaeger, SiFluentd, SiElastic, SiKibana, SiLogstash
 } from 'react-icons/si';
 import {
     ArchitectureServiceAmazonEC2,
@@ -314,6 +315,14 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         // Observability
         'datadog': SiDatadog,
         'sentry': SiSentry,
+        'newrelic': SiNewrelic,
+        'dynatrace': SiDynatrace,
+        'splunk': SiSplunk,
+        'jaeger': SiJaeger,
+        'fluentd': SiFluentd,
+        'elastic': SiElastic,
+        'kibana': SiKibana,
+        'logstash': SiLogstash,
     };
 
     // Check for exact match or partial match in service name
