@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     SiKubernetes, SiArgo, SiPrometheus, SiGrafana, SiTerraform, SiHelm, SiIstio, SiDocker,
     SiVault, SiOpentelemetry, SiEnvoyproxy, SiNginx, SiConsul,
@@ -6,7 +5,8 @@ import {
     SiGithubactions, SiGitlab, SiJenkins, SiKong, SiCloudflare,
     SiRancher, SiPodman, SiDatadog, SiSentry, SiAnsible, SiPulumi,
     SiGithub, SiGithubcopilot, SiOpenai, SiHuggingface, SiAnthropic, SiGooglegemini,
-    SiNewrelic, SiDynatrace, SiSplunk, SiJaeger, SiFluentd, SiElastic, SiKibana, SiLogstash
+    SiNewrelic, SiDynatrace, SiSplunk, SiJaeger, SiFluentd, SiElastic, SiKibana, SiLogstash,
+    SiStripe, SiPaypal, SiApplepay, SiGooglepay, SiShopify, SiSlack, SiDiscord, SiTwilio, SiSendgrid
 } from 'react-icons/si';
 import {
     ArchitectureServiceAmazonEC2,
@@ -129,7 +129,7 @@ import {
     CategoryApplicationIntegration,
     CategoryAnalytics,
 } from 'aws-react-icons';
-import { Cloud, Box, LucideIcon, User, Smartphone, Globe, Monitor, Laptop, Cpu, Layers } from 'lucide-react';
+import { Cloud, Box, LucideIcon, User, Smartphone, Globe, Monitor, Laptop, Cpu, Layers, Webhook, ShoppingCart } from 'lucide-react';
 
 // Define a type that can be either an AWS Icon component or a Lucide Icon
 type IconComponent = React.ComponentType<any> | LucideIcon;
@@ -323,6 +323,18 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'elastic': SiElastic,
         'kibana': SiKibana,
         'logstash': SiLogstash,
+        // Integrations & Payments
+        'stripe': SiStripe,
+        'paypal': SiPaypal,
+        'applepay': SiApplepay,
+        'googlepay': SiGooglepay,
+        'shopify': SiShopify,
+        'checkout': ShoppingCart,
+        'webhook': Webhook,
+        'slack': SiSlack,
+        'discord': SiDiscord,
+        'twilio': SiTwilio,
+        'sendgrid': SiSendgrid,
     };
 
     // Check for exact match or partial match in service name
