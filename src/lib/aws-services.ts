@@ -66,6 +66,12 @@ export const AWS_SERVICES = [
             { name: "PostgreSQL", service: "postgresql", type: "aws-database", description: "Advanced, enterprise-class, and open-source relational database system." },
             { name: "MongoDB", service: "mongodb", type: "aws-database", description: "Source-available cross-platform document-oriented database program." },
             { name: "Elasticsearch", service: "elasticsearch", type: "aws-database", description: "Distributed, free and open search and analytics engine for all types of data." },
+            // Modern Databases
+            { name: "Neon", service: "neon", type: "cloud-native", description: "Serverless Postgres built for the cloud." },
+            { name: "Supabase", service: "supabase", type: "cloud-native", description: "Open source Firebase alternative." },
+            { name: "PlanetScale", service: "planetscale", type: "cloud-native", description: "Serverless MySQL database." },
+            { name: "Turso", service: "turso", type: "cloud-native", description: "Edge database based on libSQL." },
+            { name: "Neo4j", service: "neo4j", type: "cloud-native", description: "Graph database management system." },
         ]
     },
     {
@@ -262,6 +268,16 @@ export const AWS_SERVICES = [
             { name: "Discord", service: "discord", type: "integration", description: "Voice, video and text communication service." },
             { name: "Twilio", service: "twilio", type: "integration", description: "Customer engagement platform used to build direct, personalized relationships." },
             { name: "SendGrid", service: "sendgrid", type: "integration", description: "Cloud-based customer communication platform." },
+        ]
+    },
+    {
+        category: "Hosting & PaaS",
+        items: [
+            { name: "Vercel", service: "vercel", type: "cloud-native", description: "Platform for frontend frameworks and static sites." },
+            { name: "Fly.io", service: "flyio", type: "cloud-native", description: "Deploy app servers close to your users." },
+            { name: "Heroku", service: "heroku", type: "cloud-native", description: "Cloud platform as a service supporting several programming languages." },
+            { name: "Netlify", service: "netlify", type: "cloud-native", description: "Hosting and serverless backend services for web applications." },
+            { name: "Cloudflare", service: "cloudflare", type: "cloud-native", description: "Global network designed to make everything you connect to the Internet secure, private, fast, and reliable." },
         ]
     },
 ];

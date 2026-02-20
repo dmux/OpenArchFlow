@@ -6,7 +6,9 @@ import {
     SiRancher, SiPodman, SiDatadog, SiSentry, SiAnsible, SiPulumi,
     SiGithub, SiGithubcopilot, SiOpenai, SiHuggingface, SiAnthropic, SiGooglegemini,
     SiNewrelic, SiDynatrace, SiSplunk, SiJaeger, SiFluentd, SiElastic, SiKibana, SiLogstash,
-    SiStripe, SiPaypal, SiApplepay, SiGooglepay, SiShopify, SiSlack, SiDiscord, SiTwilio, SiSendgrid
+    SiStripe, SiPaypal, SiApplepay, SiGooglepay, SiShopify, SiSlack, SiDiscord, SiTwilio, SiSendgrid,
+    SiVercel, SiFlydotio, SiHeroku, SiNetlify,
+    SiNeo4J, SiSupabase, SiPlanetscale, SiTurso
 } from 'react-icons/si';
 import {
     ArchitectureServiceAmazonEC2,
@@ -300,6 +302,11 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'mongo': SiMongodb,
         'kafka': SiApachekafka,
         'elasticsearch': SiElasticsearch,
+        'neon': SiPostgresql, // SiNeon not available in current react-icons version
+        'supabase': SiSupabase,
+        'planetscale': SiPlanetscale,
+        'turso': SiTurso,
+        'neo4j': SiNeo4J,
         // CI/CD & DevOps
         'githubactions': SiGithubactions,
         'gitlab': SiGitlab,
@@ -335,6 +342,11 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'discord': SiDiscord,
         'twilio': SiTwilio,
         'sendgrid': SiSendgrid,
+        // Hosting & PaaS
+        'vercel': SiVercel,
+        'flyio': SiFlydotio,
+        'heroku': SiHeroku,
+        'netlify': SiNetlify,
     };
 
     // Check for exact match or partial match in service name
