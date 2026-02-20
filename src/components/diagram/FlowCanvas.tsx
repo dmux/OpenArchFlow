@@ -78,6 +78,8 @@ const selector = (state: any) => {
     };
 };
 
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 function FlowCanvas() {
     const {
         nodes,
@@ -119,32 +121,34 @@ function FlowCanvas() {
 
     return (
         <div className="w-full h-full bg-background" style={{ width: '100vw', height: '100vh' }}>
-            <ReactFlow
-                nodeTypes={nodeTypes}
-                onNodeClick={onNodeClick}
-                onEdgeClick={onEdgeClick}
-                nodes={nodes}
-                edges={animatedEdges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                fitView
-                attributionPosition="bottom-right"
-                nodesDraggable={!isLaserMode}
-                nodesConnectable={!isLaserMode}
-                elementsSelectable={!isLaserMode}
-                defaultEdgeOptions={{
-                    type: 'smoothstep',
-                    markerEnd: { type: MarkerType.ArrowClosed },
-                }}
-            >
-                <Background gap={12} size={1} />
-                <Controls />
-                <MiniMap />
-            </ReactFlow>
+            <TooltipProvider delayDuration={300}>
+                <ReactFlow
+                    nodeTypes={nodeTypes}
+                    onNodeClick={onNodeClick}
+                    onEdgeClick={onEdgeClick}
+                    nodes={nodes}
+                    edges={animatedEdges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    fitView
+                    attributionPosition="bottom-right"
+                    nodesDraggable={!isLaserMode}
+                    nodesConnectable={!isLaserMode}
+                    elementsSelectable={!isLaserMode}
+                    defaultEdgeOptions={{
+                        type: 'smoothstep',
+                        markerEnd: { type: MarkerType.ArrowClosed },
+                    }}
+                >
+                    <Background gap={12} size={1} />
+                    <Controls />
+                    <MiniMap />
+                </ReactFlow>
 
-            {/* Laser Pointer Overlay */}
-            <LaserPointer />
+                {/* Laser Pointer Overlay */}
+                <LaserPointer />
+            </TooltipProvider>
         </div>
     );
 }

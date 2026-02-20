@@ -3,10 +3,13 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { AppNodeData } from '@/lib/store';
 import { Database, File, User, Activity, Play, Square, Circle, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { getAwsServiceDescription } from '@/lib/aws-services';
 
 const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     const { label, type } = data;
-    const subtype = data.subtype || 'process'; // process, database, file, start-end, decision, actor
+    const subtype = (data.subtype as string) || 'process'; // process, database, file, start-end, decision, actor
+    const description = getAwsServiceDescription('generic', subtype);
 
     // Define shapes and icons based on subtype
     let Icon = Activity;
@@ -50,81 +53,88 @@ const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     }
 
     return (
-        <div
-            className={cn(
-                "relative group flex flex-col items-center justify-center p-4 min-w-[120px] transition-all duration-200 bg-card",
-                shapeClasses,
-                "border-2",
-                selected
-                    ? "border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-105"
-                    : "border-border hover:border-primary/50 hover:shadow-lg",
-                subtype === 'decision' && "min-w-[100px] min-h-[100px]",
-                subtype === 'start-end' && "min-w-[80px] min-h-[80px] p-2"
-            )}
-        >
-            {/* Handles */}
-            <Handle
-                type="target"
-                position={Position.Top}
-                className={cn(
-                    "w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary",
-                    // Adjust handle position for rotated shapes if needed
-                )}
-            />
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div
+                    className={cn(
+                        "relative group flex flex-col items-center justify-center p-4 min-w-[120px] transition-all duration-200 bg-card",
+                        shapeClasses,
+                        "border-2",
+                        selected
+                            ? "border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-105"
+                            : "border-border hover:border-primary/50 hover:shadow-lg",
+                        subtype === 'decision' && "min-w-[100px] min-h-[100px]",
+                        subtype === 'start-end' && "min-w-[80px] min-h-[80px] p-2"
+                    )}
+                >
+                    {/* Handles */}
+                    <Handle
+                        type="target"
+                        position={Position.Top}
+                        className={cn(
+                            "w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary",
+                            // Adjust handle position for rotated shapes if needed
+                        )}
+                    />
 
-            {/* Icon / Shape Content */}
-            <div className={cn(
-                "p-2 rounded-full mb-2 transition-colors",
-                selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5",
-                subtype === 'decision' && "mb-0" // Centered for decision
-            )}>
-                <Icon
-                    size={subtype === 'start-end' || subtype === 'actor' ? 32 : 24}
-                    className={cn("text-foreground", iconColor)}
-                />
-            </div>
-
-            {/* Label */}
-            {(subtype !== 'decision' && subtype !== 'start-end') && (
-                <div className="text-center w-full">
-                    <div className="font-semibold text-sm text-foreground leading-tight truncate px-1">
-                        {label}
+                    {/* Icon / Shape Content */}
+                    <div className={cn(
+                        "p-2 rounded-full mb-2 transition-colors",
+                        selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5",
+                        subtype === 'decision' && "mb-0" // Centered for decision
+                    )}>
+                        <Icon
+                            size={subtype === 'start-end' || subtype === 'actor' ? 32 : 24}
+                            className={cn("text-foreground", iconColor)}
+                        />
                     </div>
+
+                    {/* Label */}
+                    {(subtype !== 'decision' && subtype !== 'start-end') && (
+                        <div className="text-center w-full">
+                            <div className="font-semibold text-sm text-foreground leading-tight truncate px-1">
+                                {label}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Label for Decision/Start-End */}
+                    {(subtype === 'decision' || subtype === 'start-end') && (
+                        <div className="text-center absolute -bottom-6 left-1/2 -translate-x-1/2 w-32">
+                            <div className="text-xs font-medium text-muted-foreground">
+                                {label}
+                            </div>
+                        </div>
+                    )}
+
+                    <Handle
+                        type="source"
+                        position={Position.Bottom}
+                        className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
+                    />
+
+                    {/* Adding Right/Left handles for Generic nodes as they are often used in flowcharts */}
+                    <Handle
+                        type="source"
+                        position={Position.Right}
+                        id="right"
+                        className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
+                    />
+                    <Handle
+                        type="target"
+                        position={Position.Left}
+                        id="left"
+                        className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
+                    />
                 </div>
+            </TooltipTrigger>
+            {description && (
+                <TooltipContent side="right" className="max-w-[200px]">
+                    <p className="font-semibold mb-1">{label}</p>
+                    <p className="text-xs">{description}</p>
+                </TooltipContent>
             )}
-
-            {/* Label for Decision/Start-End (Center overlay or just below?) 
-                If node is small (start/end), label might need to be outside? 
-                For now, keep inside but smaller.
-            */}
-            {(subtype === 'decision' || subtype === 'start-end') && (
-                <div className="text-center absolute -bottom-6 left-1/2 -translate-x-1/2 w-32">
-                    <div className="text-xs font-medium text-muted-foreground">
-                        {label}
-                    </div>
-                </div>
-            )}
-
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
-            />
-
-            {/* Adding Right/Left handles for Generic nodes as they are often used in flowcharts */}
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="right"
-                className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
-            />
-            <Handle
-                type="target"
-                position={Position.Left}
-                id="left"
-                className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
-            />
-        </div>
+        </Tooltip>
     );
 };
 
