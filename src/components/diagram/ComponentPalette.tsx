@@ -80,6 +80,10 @@ const AWS_SERVICES = [
             { name: "Keyspaces", service: "keyspaces", description: "Scalable, highly available, and managed Apache Cassandra-compatible database service." },
             { name: "MemoryDB", service: "memorydb", description: "Redis-compatible, durable, in-memory database service." },
             { name: "QLDB", service: "qldb", description: "Fully managed ledger database that provides a transparent, immutable, and cryptographically verifiable transaction log." },
+            { name: "Redis", service: "redis", type: "aws-database", description: "In-memory data structure store, used as a database, cache, and message broker." },
+            { name: "PostgreSQL", service: "postgresql", type: "aws-database", description: "Advanced, enterprise-class, and open-source relational database system." },
+            { name: "MongoDB", service: "mongodb", type: "aws-database", description: "Source-available cross-platform document-oriented database program." },
+            { name: "Elasticsearch", service: "elasticsearch", type: "aws-database", description: "Distributed, free and open search and analytics engine for all types of data." },
         ]
     },
     {
@@ -138,6 +142,7 @@ const AWS_SERVICES = [
             { name: "EventBridge", service: "eventbridge", type: "aws-integration", description: "Serverless event bus that helps you receive, filter, transform, route, and deliver events." },
             { name: "AppSync", service: "appsync", description: "Build serverless GraphQL and Pub/Sub APIs that simplify application development." },
             { name: "MQ", service: "mq", description: "Managed message broker service for Apache ActiveMQ and RabbitMQ." },
+            { name: "Kafka", service: "kafka", type: "aws-integration", description: "Distributed event streaming platform." },
         ]
     },
     {
@@ -203,6 +208,25 @@ const AWS_SERVICES = [
             { name: "DataSync", service: "datasync", description: "Simple, fast, and secure online data transfer." },
             { name: "Transfer Family", service: "transferfamily", description: "Fully managed support for SFTP, FTPS, and FTP." },
             { name: "Migration Hub", service: "migrationhub", description: "Simplify and accelerate the migration of your data centers to AWS." },
+        ]
+    },
+    {
+        category: "Cloud Native",
+        items: [
+            { name: "Kubernetes", service: "kubernetes", type: "cloud-native", description: "Open-source system for automating deployment, scaling, and management of containerized applications." },
+            { name: "ArgoCD", service: "argocd", type: "cloud-native", description: "Declarative, GitOps continuous delivery tool for Kubernetes." },
+            { name: "Crossplane", service: "crossplane", type: "cloud-native", description: "Open source, CNCF project built on the foundation of Kubernetes to orchestrate anything." },
+            { name: "Prometheus", service: "prometheus", type: "cloud-native", description: "Open-source systems monitoring and alerting toolkit." },
+            { name: "Grafana", service: "grafana", type: "cloud-native", description: "Open source analytics & monitoring solution for every database." },
+            { name: "Terraform", service: "terraform", type: "cloud-native", description: "Infrastructure as code software tool created by HashiCorp." },
+            { name: "Helm", service: "helm", type: "cloud-native", description: "The package manager for Kubernetes." },
+            { name: "Istio", service: "istio", type: "cloud-native", description: "Open platform for providing a uniform way to integrate microservices, manage traffic flow across microservices, enforce policies and aggregate telemetry data." },
+            { name: "Docker", service: "docker", type: "cloud-native", description: "Set of platform as a service products that use OS-level virtualization to deliver software in packages called containers." },
+            { name: "Vault", service: "vault", type: "cloud-native", description: "Tool for securely accessing secrets." },
+            { name: "OpenTelemetry", service: "opentelemetry", type: "cloud-native", description: "Collection of tools, APIs, and SDKs used to instrument, generate, collect, and export telemetry data." },
+            { name: "Envoy", service: "envoy", type: "cloud-native", description: "Edge and service proxy designed for cloud-native applications." },
+            { name: "Nginx", service: "nginx", type: "cloud-native", description: "Web server that can also be used as a reverse proxy, load balancer, mail proxy and HTTP cache." },
+            { name: "Consul", service: "consul", type: "cloud-native", description: "Service networking solution to connect and secure services across any runtime platform and public or private cloud." },
         ]
     },
 ];

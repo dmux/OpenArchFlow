@@ -50,6 +50,7 @@ const nodeTypes = {
     'aws-containers': AWSNode, // Added
     'aws-ai': AWSNode, // Added
     'aws-devtools': AWSNode, // Added
+    'cloud-native': AWSNode,
     'client': AWSNode,
     'frame': FrameNode,
     'annotation': AnnotationNode,

@@ -1,5 +1,10 @@
 import React from 'react';
 import {
+    SiKubernetes, SiArgo, SiPrometheus, SiGrafana, SiTerraform, SiHelm, SiIstio, SiDocker,
+    SiVault, SiOpentelemetry, SiEnvoyproxy, SiNginx, SiConsul,
+    SiRedis, SiPostgresql, SiMongodb, SiApachekafka, SiElasticsearch
+} from 'react-icons/si';
+import {
     ArchitectureServiceAmazonEC2,
     ArchitectureServiceAWSLambda,
     ArchitectureServiceAmazonDynamoDB,
@@ -120,7 +125,7 @@ import {
     CategoryApplicationIntegration,
     CategoryAnalytics,
 } from 'aws-react-icons';
-import { Cloud, Box, LucideIcon, User, Smartphone, Globe, Monitor, Laptop, Cpu } from 'lucide-react';
+import { Cloud, Box, LucideIcon, User, Smartphone, Globe, Monitor, Laptop, Cpu, Layers } from 'lucide-react';
 
 // Define a type that can be either an AWS Icon component or a Lucide Icon
 type IconComponent = React.ComponentType<any> | LucideIcon;
@@ -254,6 +259,31 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'mobile': Smartphone,
         'client': Monitor,
         'iot-device': Cpu,
+        // Cloud Native
+        'kubernetes': SiKubernetes,
+        'k8s': SiKubernetes,
+        'argocd': SiArgo,
+        'argo': SiArgo,
+        'crossplane': Layers,
+        'prometheus': SiPrometheus,
+        'grafana': SiGrafana,
+        'terraform': SiTerraform,
+        'helm': SiHelm,
+        'istio': SiIstio,
+        'docker': SiDocker,
+        'vault': SiVault,
+        'opentelemetry': SiOpentelemetry,
+        'envoy': SiEnvoyproxy,
+        'nginx': SiNginx,
+        'consul': SiConsul,
+        // Database & integration
+        'redis': SiRedis,
+        'postgresql': SiPostgresql,
+        'postgres': SiPostgresql,
+        'mongodb': SiMongodb,
+        'mongo': SiMongodb,
+        'kafka': SiApachekafka,
+        'elasticsearch': SiElasticsearch,
     };
 
     // Check for exact match or partial match in service name

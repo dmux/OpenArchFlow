@@ -68,7 +68,7 @@ const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                     size={48}
                     className={cn(
                         "w-12 h-12 transition-colors",
-                        (data.type === 'client' || !data.type || data.type === 'default')
+                        (data.type === 'client' || data.type === 'cloud-native' || !data.type || data.type === 'default')
                             ? "text-blue-500"
                             : ""
                     )}
