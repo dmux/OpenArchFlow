@@ -251,12 +251,23 @@ export const AWS_SERVICES = [
 ];
 
 export const getAwsServiceDescription = (service: string, subtype?: string): string => {
+    if (!service) return '';
+    const normalize = (str: string) => str.toLowerCase().replace(/[\s-]/g, '');
+    const normalizedService = normalize(service);
+
     for (const category of AWS_SERVICES) {
         for (const item of category.items) {
-            if (item.service === service) {
+            const itemServiceNormalized = normalize(item.service);
+            const itemNameNormalized = normalize(item.name);
+
+            if (itemServiceNormalized === normalizedService || itemNameNormalized === normalizedService) {
                 if (subtype && (item as any).subtype) {
-                    if ((item as any).subtype === subtype) return item.description;
-                } else {
+                    if (normalize((item as any).subtype) === normalize(subtype)) {
+                        return item.description;
+                    }
+                } else if (!subtype || !(item as any).subtype || normalize(subtype) === normalize((item as any).subtype) || subtype === 'aws-compute' || subtype.startsWith('aws-')) {
+                    // Also account for cases where type is passed as subtype, and item might be standard.
+                    // If no specific subtype is needed on the item, return its description.
                     return item.description;
                 }
             }
