@@ -1,0 +1,4584 @@
+{
+  "version": 1,
+  "type": "backup",
+  "data": [
+    {
+      "id": "c93cb0dc-7963-42dc-8061-ae697f2d8c18",
+      "name": "Microservices Architecture",
+      "nodes": [
+        {
+          "id": "node-vpc",
+          "type": "aws-network",
+          "data": {
+            "label": "Virtual Private Cloud",
+            "service": "VPC",
+            "metadata": {
+              "cidr_block": "10.0.0.0/16",
+              "description": "Isolated network environment"
+            }
+          },
+          "position": {
+            "x": 115,
+            "y": 1300
+          },
+          "width": 175,
+          "height": 157
+        },
+        {
+          "id": "node-igw",
+          "type": "aws-network",
+          "data": {
+            "label": "Internet Gateway",
+            "service": "Internet Gateway",
+            "metadata": {
+              "purpose": "Internet access for VPC"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 2050
+          },
+          "width": 162,
+          "height": 157
+        },
+        {
+          "id": "node-public-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Public Subnets (Multi-AZ)",
+            "service": "Subnet",
+            "metadata": {
+              "purpose": "ALB, NAT Gateway",
+              "availability_zones": "2+"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 1550
+          },
+          "width": 211,
+          "height": 157
+        },
+        {
+          "id": "node-nat-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "NAT Gateway (Multi-AZ)",
+            "service": "NAT Gateway",
+            "metadata": {
+              "purpose": "Egress for private subnets",
+              "availability_zones": "2+"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 1800
+          },
+          "width": 200,
+          "height": 157
+        },
+        {
+          "id": "node-private-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnets (Multi-AZ)",
+            "service": "Subnet",
+            "metadata": {
+              "purpose": "ECS Fargate, RDS, ElastiCache",
+              "availability_zones": "2+"
+            }
+          },
+          "position": {
+            "x": 740,
+            "y": 1550
+          },
+          "width": 217,
+          "height": 157
+        },
+        {
+          "id": "node-waf",
+          "type": "aws-network",
+          "data": {
+            "label": "Web Application Firewall",
+            "service": "WAF",
+            "metadata": {
+              "protection": "Common web exploits, bot control, DDoS",
+              "associated_resource": "External ALB"
+            }
+          },
+          "position": {
+            "x": 295,
+            "y": 50
+          },
+          "width": 202,
+          "height": 157
+        },
+        {
+          "id": "node-alb-external",
+          "type": "aws-network",
+          "data": {
+            "label": "External Application Load Balancer",
+            "service": "Application Load Balancer",
+            "metadata": {
+              "scheme": "internet-facing",
+              "listeners": "HTTP, HTTPS",
+              "purpose": "Entry point for client traffic"
+            }
+          },
+          "position": {
+            "x": 295,
+            "y": 300
+          },
+          "width": 271,
+          "height": 157
+        },
+        {
+          "id": "node-ecs-cluster",
+          "type": "aws-compute",
+          "data": {
+            "label": "ECS Cluster",
+            "service": "ECS",
+            "metadata": {
+              "launch_type": "Fargate",
+              "description": "Orchestrates microservices"
+            }
+          },
+          "position": {
+            "x": 1035,
+            "y": 300
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-microservice-frontend",
+          "type": "aws-compute",
+          "data": {
+            "label": "Frontend Microservice",
+            "service": "ECS Fargate Task",
+            "metadata": {
+              "task_definition": "frontend-app",
+              "desired_count": "auto-scaling, min:2, max:10",
+              "iam_role": "ecsTaskRole-frontend"
+            }
+          },
+          "position": {
+            "x": 805,
+            "y": 550
+          },
+          "width": 188,
+          "height": 157
+        },
+        {
+          "id": "node-microservice-backend",
+          "type": "aws-compute",
+          "data": {
+            "label": "Backend Microservice",
+            "service": "ECS Fargate Task",
+            "metadata": {
+              "task_definition": "backend-app",
+              "desired_count": "auto-scaling, min:2, max:10",
+              "iam_role": "ecsTaskRole-backend"
+            }
+          },
+          "position": {
+            "x": 1060,
+            "y": 1050
+          },
+          "width": 185,
+          "height": 157
+        },
+        {
+          "id": "node-microservice-processor",
+          "type": "aws-compute",
+          "data": {
+            "label": "Data Processor Microservice",
+            "service": "ECS Fargate Task",
+            "metadata": {
+              "task_definition": "data-processor-app",
+              "desired_count": "auto-scaling, min:1, max:5",
+              "iam_role": "ecsTaskRole-processor"
+            }
+          },
+          "position": {
+            "x": 1515,
+            "y": 550
+          },
+          "width": 230,
+          "height": 157
+        },
+        {
+          "id": "node-ecr",
+          "type": "aws-storage",
+          "data": {
+            "label": "Elastic Container Registry",
+            "service": "ECR",
+            "metadata": {
+              "repository": "microservices-repo",
+              "purpose": "Stores Docker images"
+            }
+          },
+          "position": {
+            "x": 1035,
+            "y": 50
+          },
+          "width": 210,
+          "height": 157
+        },
+        {
+          "id": "node-cloud-map",
+          "type": "aws-network",
+          "data": {
+            "label": "Cloud Map",
+            "service": "Cloud Map",
+            "metadata": {
+              "type": "DNS-based service discovery",
+              "purpose": "Registers and discovers microservice endpoints"
+            }
+          },
+          "position": {
+            "x": 800,
+            "y": 1300
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-alb-internal",
+          "type": "aws-network",
+          "data": {
+            "label": "Internal Application Load Balancer",
+            "service": "Application Load Balancer",
+            "metadata": {
+              "scheme": "internal",
+              "listeners": "HTTP, HTTPS",
+              "purpose": "Service-to-service communication"
+            }
+          },
+          "position": {
+            "x": 750,
+            "y": 800
+          },
+          "width": 267,
+          "height": 157
+        },
+        {
+          "id": "node-rds",
+          "type": "aws-database",
+          "data": {
+            "label": "RDS Aurora (Multi-AZ)",
+            "service": "RDS",
+            "metadata": {
+              "engine": "PostgreSQL compatible, MySQL compatible",
+              "multi_az": "yes",
+              "instance_type": "db.t3.medium",
+              "storage_type": "Aurora Serverless v2"
+            }
+          },
+          "position": {
+            "x": 1120,
+            "y": 1300
+          },
+          "width": 188,
+          "height": 157
+        },
+        {
+          "id": "node-elasticache",
+          "type": "aws-database",
+          "data": {
+            "label": "ElastiCache Redis (Multi-AZ)",
+            "service": "ElastiCache",
+            "metadata": {
+              "engine": "Redis",
+              "multi_az": "yes",
+              "node_type": "cache.t3.small",
+              "purpose": "In-memory caching"
+            }
+          },
+          "position": {
+            "x": 1600,
+            "y": 1300
+          },
+          "width": 230,
+          "height": 157
+        },
+        {
+          "id": "node-cloudwatch",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "monitoring": "Container logs, metrics",
+              "alarms": "CPU utilization, memory utilization, request counts",
+              "logs": "ECS Fargate logs"
+            }
+          },
+          "position": {
+            "x": 1070,
+            "y": 800
+          },
+          "width": 150,
+          "height": 156
+        },
+        {
+          "id": "node-iam-roles",
+          "type": "default",
+          "data": {
+            "label": "IAM Roles",
+            "service": "IAM",
+            "metadata": {
+              "purpose": "Fine-grained access control for services and tasks",
+              "roles": "ECS Task Execution Role, ECS Task Role"
+            }
+          },
+          "position": {
+            "x": 1695,
+            "y": 300
+          },
+          "width": 150,
+          "height": 156
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-igw-to-vpc",
+          "source": "node-igw",
+          "target": "node-vpc",
+          "label": "attaches to"
+        },
+        {
+          "id": "edge-vpc-to-public-subnets",
+          "source": "node-vpc",
+          "target": "node-public-subnets",
+          "label": "contains"
+        },
+        {
+          "id": "edge-vpc-to-private-subnets",
+          "source": "node-vpc",
+          "target": "node-private-subnets",
+          "label": "contains"
+        },
+        {
+          "id": "edge-public-subnets-to-nat",
+          "source": "node-public-subnets",
+          "target": "node-nat-gateway",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-nat-to-igw",
+          "source": "node-nat-gateway",
+          "target": "node-igw",
+          "label": "routes egress via"
+        },
+        {
+          "id": "edge-waf-to-alb-external",
+          "source": "node-waf",
+          "target": "node-alb-external",
+          "label": "protects traffic to"
+        },
+        {
+          "id": "edge-alb-external-to-public-subnets",
+          "source": "node-alb-external",
+          "target": "node-public-subnets",
+          "label": "deployed in"
+        },
+        {
+          "id": "edge-alb-external-to-microservice-frontend",
+          "source": "node-alb-external",
+          "target": "node-microservice-frontend",
+          "label": "routes traffic to"
+        },
+        {
+          "id": "edge-ecs-cluster-to-private-subnets",
+          "source": "node-ecs-cluster",
+          "target": "node-private-subnets",
+          "label": "deploys tasks in"
+        },
+        {
+          "id": "edge-ecs-cluster-to-microservice-frontend",
+          "source": "node-ecs-cluster",
+          "target": "node-microservice-frontend",
+          "label": "manages"
+        },
+        {
+          "id": "edge-ecs-cluster-to-microservice-backend",
+          "source": "node-ecs-cluster",
+          "target": "node-microservice-backend",
+          "label": "manages"
+        },
+        {
+          "id": "edge-ecs-cluster-to-microservice-processor",
+          "source": "node-ecs-cluster",
+          "target": "node-microservice-processor",
+          "label": "manages"
+        },
+        {
+          "id": "edge-ecr-to-ecs-cluster",
+          "source": "node-ecr",
+          "target": "node-ecs-cluster",
+          "label": "provides images to"
+        },
+        {
+          "id": "edge-microservice-frontend-to-cloud-map",
+          "source": "node-microservice-frontend",
+          "target": "node-cloud-map",
+          "label": "registers endpoint with"
+        },
+        {
+          "id": "edge-microservice-backend-to-cloud-map",
+          "source": "node-microservice-backend",
+          "target": "node-cloud-map",
+          "label": "registers endpoint with"
+        },
+        {
+          "id": "edge-microservice-processor-to-cloud-map",
+          "source": "node-microservice-processor",
+          "target": "node-cloud-map",
+          "label": "registers endpoint with"
+        },
+        {
+          "id": "edge-microservice-frontend-to-alb-internal",
+          "source": "node-microservice-frontend",
+          "target": "node-alb-internal",
+          "label": "sends requests via"
+        },
+        {
+          "id": "edge-alb-internal-to-microservice-backend",
+          "source": "node-alb-internal",
+          "target": "node-microservice-backend",
+          "label": "routes requests to"
+        },
+        {
+          "id": "edge-microservice-backend-to-rds",
+          "source": "node-microservice-backend",
+          "target": "node-rds",
+          "label": "queries database"
+        },
+        {
+          "id": "edge-microservice-backend-to-elasticache",
+          "source": "node-microservice-backend",
+          "target": "node-elasticache",
+          "label": "accesses cache"
+        },
+        {
+          "id": "edge-rds-to-private-subnets",
+          "source": "node-rds",
+          "target": "node-private-subnets",
+          "label": "deployed in"
+        },
+        {
+          "id": "edge-elasticache-to-private-subnets",
+          "source": "node-elasticache",
+          "target": "node-private-subnets",
+          "label": "deployed in"
+        },
+        {
+          "id": "edge-microservices-to-cloudwatch",
+          "source": "node-microservice-frontend",
+          "target": "node-cloudwatch",
+          "label": "sends logs and metrics"
+        },
+        {
+          "id": "edge-ecs-to-cloudwatch",
+          "source": "node-ecs-cluster",
+          "target": "node-cloudwatch",
+          "label": "sends cluster metrics"
+        },
+        {
+          "id": "edge-iam-roles-to-ecs-tasks",
+          "source": "node-iam-roles",
+          "target": "node-microservice-frontend",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "edge-iam-roles-to-ecs-backend",
+          "source": "node-iam-roles",
+          "target": "node-microservice-backend",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "edge-iam-roles-to-ecs-processor",
+          "source": "node-iam-roles",
+          "target": "node-microservice-processor",
+          "label": "grants permissions to"
+        }
+      ],
+      "lastModified": 1771611284168
+    },
+    {
+      "id": "b9bf4dec-cd39-4d6b-b6d7-7de972b2b2b4",
+      "name": "Hybrid Cloud Architecture",
+      "nodes": [
+        {
+          "id": "node-onprem-dc",
+          "type": "default",
+          "data": {
+            "label": "On-Premises Data Center",
+            "service": "On-Premises",
+            "metadata": {
+              "description": "Existing local infrastructure, applications, and data."
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 50
+          },
+          "width": 150,
+          "height": 210
+        },
+        {
+          "id": "node-aws-vpc",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS VPC",
+            "service": "VPC",
+            "metadata": {
+              "description": "Isolated virtual network in AWS",
+              "security": "Private Subnets,Network ACLs,Security Groups"
+            }
+          },
+          "position": {
+            "x": 80,
+            "y": 1050
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-vpn-cgw",
+          "type": "default",
+          "data": {
+            "label": "Customer Gateway (On-Prem)",
+            "service": "Customer Gateway",
+            "metadata": {
+              "description": "Represents physical device or software application on-premises",
+              "connectivity": "Configured for Site-to-Site VPN"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 550
+          },
+          "width": 150,
+          "height": 227
+        },
+        {
+          "id": "node-vpn-vpg",
+          "type": "aws-network",
+          "data": {
+            "label": "Virtual Private Gateway (VPG)",
+            "service": "VPN",
+            "metadata": {
+              "description": "VPN concentrator on the AWS side of the Site-to-Site VPN connection",
+              "security": "Encrypted tunnel over public internet"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 800
+          },
+          "width": 238,
+          "height": 157
+        },
+        {
+          "id": "node-dx-customer-router",
+          "type": "default",
+          "data": {
+            "label": "Customer Router (Direct Connect)",
+            "service": "Customer Router",
+            "metadata": {
+              "description": "On-premises router connected to a Direct Connect location",
+              "connectivity": "Private dedicated network connection"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 300
+          },
+          "width": 150,
+          "height": 244
+        },
+        {
+          "id": "node-dx-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "Direct Connect Gateway (DXGW)",
+            "service": "Direct Connect",
+            "metadata": {
+              "description": "Enables connection to multiple VPCs across different regions",
+              "performance": "Consistent network performance,Lower latency,Reduced data transfer costs"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 550
+          },
+          "width": 258,
+          "height": 157
+        },
+        {
+          "id": "node-transit-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS Transit Gateway",
+            "service": "Transit Gateway",
+            "metadata": {
+              "description": "Network hub for connecting VPCs and on-premises networks",
+              "scalability": "Simplifies network topology,Supports thousands of connections",
+              "reliability": "Redundant,High availability"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 800
+          },
+          "width": 180,
+          "height": 157,
+          "selected": true,
+          "dragging": false
+        },
+        {
+          "id": "node-storage-gateway",
+          "type": "aws-storage",
+          "data": {
+            "label": "AWS Storage Gateway",
+            "service": "Storage Gateway",
+            "metadata": {
+              "description": "Hybrid cloud storage service",
+              "type": "File Gateway,Volume Gateway,Tape Gateway",
+              "integration": "On-premises applications access cloud storage"
+            }
+          },
+          "position": {
+            "x": 690,
+            "y": 800
+          },
+          "width": 187,
+          "height": 157
+        },
+        {
+          "id": "node-cloudwatch",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "description": "Monitoring and observability service",
+              "function": "Collects logs,metrics,events for AWS resources"
+            }
+          },
+          "position": {
+            "x": 530,
+            "y": 1300
+          },
+          "width": 176,
+          "height": 157
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-onprem-to-cgw",
+          "source": "node-onprem-dc",
+          "target": "node-vpn-cgw",
+          "label": "Connects to"
+        },
+        {
+          "id": "edge-cgw-to-vpg",
+          "source": "node-vpn-cgw",
+          "target": "node-vpn-vpg",
+          "label": "Site-to-Site VPN Connection (Encrypted over Internet)"
+        },
+        {
+          "id": "edge-vpg-to-vpc",
+          "source": "node-vpn-vpg",
+          "target": "node-aws-vpc",
+          "label": "Attaches to VPC"
+        },
+        {
+          "id": "edge-onprem-to-dx-router",
+          "source": "node-onprem-dc",
+          "target": "node-dx-customer-router",
+          "label": "Connects to"
+        },
+        {
+          "id": "edge-dx-router-to-dxgw",
+          "source": "node-dx-customer-router",
+          "target": "node-dx-gateway",
+          "label": "AWS Direct Connect (Private Fiber Connection)"
+        },
+        {
+          "id": "edge-dxgw-to-tgw",
+          "source": "node-dx-gateway",
+          "target": "node-transit-gateway",
+          "label": "Associated with"
+        },
+        {
+          "id": "edge-tgw-to-vpc",
+          "source": "node-transit-gateway",
+          "target": "node-aws-vpc",
+          "label": "Attaches to VPC"
+        },
+        {
+          "id": "edge-onprem-to-storage-gateway",
+          "source": "node-onprem-dc",
+          "target": "node-storage-gateway",
+          "label": "Accesses via iSCSI/NFS/SMB"
+        },
+        {
+          "id": "edge-storage-gateway-to-vpc",
+          "source": "node-storage-gateway",
+          "target": "node-aws-vpc",
+          "label": "Resides in/Uses network in VPC"
+        },
+        {
+          "id": "edge-vpc-to-cloudwatch",
+          "source": "node-aws-vpc",
+          "target": "node-cloudwatch",
+          "label": "Sends VPC Flow Logs,Metrics"
+        },
+        {
+          "id": "edge-tgw-to-cloudwatch",
+          "source": "node-transit-gateway",
+          "target": "node-cloudwatch",
+          "label": "Sends Flow Logs,Metrics"
+        },
+        {
+          "id": "edge-storage-gateway-to-cloudwatch",
+          "source": "node-storage-gateway",
+          "target": "node-cloudwatch",
+          "label": "Sends Metrics,Logs"
+        }
+      ],
+      "lastModified": 1771296820955
+    },
+    {
+      "id": "1056dcc2-a70f-4fcb-a248-9ba6766246e7",
+      "name": "Event-Driven Architecture",
+      "nodes": [
+        {
+          "id": "node-1",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon VPC",
+            "service": "VPC",
+            "metadata": {
+              "description": "Logically isolated section of the AWS Cloud.",
+              "cidrs": "10.0.0.0/16"
+            }
+          },
+          "position": {
+            "x": 200,
+            "y": 550
+          },
+          "width": 123,
+          "height": 157
+        },
+        {
+          "id": "node-2",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnet A",
+            "service": "VPC",
+            "metadata": {
+              "description": "Hosts application components in a private network, isolated from the internet.",
+              "availabilityZone": "us-east-1a"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 300
+          },
+          "width": 149,
+          "height": 157
+        },
+        {
+          "id": "node-3",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnet B",
+            "service": "VPC",
+            "metadata": {
+              "description": "Hosts application components in a different AZ for high availability.",
+              "availabilityZone": "us-east-1b"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 300
+          },
+          "width": 148,
+          "height": 157
+        },
+        {
+          "id": "node-4",
+          "type": "aws-compute",
+          "data": {
+            "label": "Producer Service (EC2 ASG)",
+            "service": "EC2",
+            "metadata": {
+              "instanceType": "t3.medium",
+              "scaling": "Auto Scaling Group, min 2 instances across multiple AZs for reliability",
+              "description": "Generates events (e.g., 'Order Placed', 'User Registered') and publishes them to EventBridge. Resides in private subnets for security."
+            }
+          },
+          "position": {
+            "x": 680,
+            "y": 50
+          },
+          "width": 227,
+          "height": 157
+        },
+        {
+          "id": "node-5",
+          "type": "default",
+          "data": {
+            "label": "IAM Role (Producer EC2)",
+            "service": "IAM",
+            "metadata": {
+              "permissions": "Allows EC2 instances to publish events to EventBridge and send logs to CloudWatch Logs."
+            }
+          },
+          "position": {
+            "x": 690,
+            "y": 300
+          },
+          "width": 150,
+          "height": 173
+        },
+        {
+          "id": "node-6",
+          "type": "default",
+          "data": {
+            "label": "Amazon EventBridge",
+            "service": "EventBridge",
+            "metadata": {
+              "description": "Serverless event bus for routing events from sources to targets based on rules.",
+              "rules": "Rule 1: Routes 'Order Placed' events to SQS. Rule 2: Routes 'User Registered' events to SNS."
+            }
+          },
+          "position": {
+            "x": 1210,
+            "y": 300
+          },
+          "width": 150,
+          "height": 173
+        },
+        {
+          "id": "node-7",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon SQS Queue (Order Processor)",
+            "service": "SQS",
+            "metadata": {
+              "queueType": "Standard Queue",
+              "description": "Buffers 'Order Placed' events for asynchronous processing, ensuring reliability and decoupling from the producer."
+            }
+          },
+          "position": {
+            "x": 1370,
+            "y": 800
+          },
+          "width": 296,
+          "height": 157
+        },
+        {
+          "id": "node-8",
+          "type": "default",
+          "data": {
+            "label": "Amazon SNS Topic (User Events)",
+            "service": "SNS",
+            "metadata": {
+              "topicType": "Standard Topic",
+              "description": "Publishes 'User Registered' events to multiple subscribers (fan-out pattern)."
+            }
+          },
+          "position": {
+            "x": 1935,
+            "y": 550
+          },
+          "width": 150,
+          "height": 190
+        },
+        {
+          "id": "node-9",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon SQS Queue (Email Notifications)",
+            "service": "SQS",
+            "metadata": {
+              "queueType": "Standard Queue",
+              "description": "Subscribes to SNS Topic, buffering events for an email notification service."
+            }
+          },
+          "position": {
+            "x": 1785,
+            "y": 800
+          },
+          "width": 312,
+          "height": 157
+        },
+        {
+          "id": "node-10",
+          "type": "aws-compute",
+          "data": {
+            "label": "Lambda (Order Processor)",
+            "service": "Lambda",
+            "metadata": {
+              "runtime": "Node.js 18.x",
+              "trigger": "SQS (Order Processor) events",
+              "description": "Serverless function that consumes 'Order Placed' events from SQS and processes them (e.g., updates a database)."
+            }
+          },
+          "position": {
+            "x": 1615,
+            "y": 550
+          },
+          "width": 216,
+          "height": 157
+        },
+        {
+          "id": "node-11",
+          "type": "default",
+          "data": {
+            "label": "IAM Role (Lambda Order Processor)",
+            "service": "IAM",
+            "metadata": {
+              "permissions": "Allows Lambda to read messages from SQS Queue and write logs to CloudWatch Logs."
+            }
+          },
+          "position": {
+            "x": 1050,
+            "y": 800
+          },
+          "width": 150,
+          "height": 190
+        },
+        {
+          "id": "node-12",
+          "type": "aws-compute",
+          "data": {
+            "label": "Lambda (User Event Notifier)",
+            "service": "Lambda",
+            "metadata": {
+              "runtime": "Python 3.9",
+              "trigger": "SNS Topic (User Events)",
+              "description": "Serverless function subscribed directly to SNS for real-time processing of user events (e.g., sending welcome emails)."
+            }
+          },
+          "position": {
+            "x": 2200,
+            "y": 800
+          },
+          "width": 233,
+          "height": 157
+        },
+        {
+          "id": "node-13",
+          "type": "default",
+          "data": {
+            "label": "IAM Role (Lambda User Notifier)",
+            "service": "IAM",
+            "metadata": {
+              "permissions": "Allows Lambda to be invoked by SNS Topic and write logs to CloudWatch Logs."
+            }
+          },
+          "position": {
+            "x": 2210,
+            "y": 1050
+          },
+          "width": 150,
+          "height": 190
+        },
+        {
+          "id": "node-14",
+          "type": "default",
+          "data": {
+            "label": "Amazon CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "description": "Comprehensive monitoring and logging service for all AWS resources.",
+              "features": "CloudWatch Logs for service logs, CloudWatch Metrics for performance data, Alarms for notifications."
+            }
+          },
+          "position": {
+            "x": 1710,
+            "y": 1050
+          },
+          "width": 150,
+          "height": 173
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-2",
+          "target": "node-1",
+          "label": "part of"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-3",
+          "target": "node-1",
+          "label": "part of"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-4",
+          "target": "node-2",
+          "label": "deployed in"
+        },
+        {
+          "id": "edge-4",
+          "source": "node-4",
+          "target": "node-3",
+          "label": "deployed in"
+        },
+        {
+          "id": "edge-5",
+          "source": "node-4",
+          "target": "node-5",
+          "label": "assumes"
+        },
+        {
+          "id": "edge-6",
+          "source": "node-4",
+          "target": "node-6",
+          "label": "publishes events to"
+        },
+        {
+          "id": "edge-7",
+          "source": "node-6",
+          "target": "node-7",
+          "label": "routes 'Order Placed' events (Rule 1)"
+        },
+        {
+          "id": "edge-8",
+          "source": "node-10",
+          "target": "node-7",
+          "label": "consumes from"
+        },
+        {
+          "id": "edge-9",
+          "source": "node-10",
+          "target": "node-11",
+          "label": "assumes"
+        },
+        {
+          "id": "edge-10",
+          "source": "node-6",
+          "target": "node-8",
+          "label": "routes 'User Registered' events (Rule 2)"
+        },
+        {
+          "id": "edge-11",
+          "source": "node-8",
+          "target": "node-9",
+          "label": "publishes to (SQS subscriber)"
+        },
+        {
+          "id": "edge-12",
+          "source": "node-8",
+          "target": "node-12",
+          "label": "publishes to (Lambda subscriber)"
+        },
+        {
+          "id": "edge-13",
+          "source": "node-12",
+          "target": "node-13",
+          "label": "assumes"
+        },
+        {
+          "id": "edge-14",
+          "source": "node-4",
+          "target": "node-14",
+          "label": "sends logs/metrics to"
+        },
+        {
+          "id": "edge-15",
+          "source": "node-6",
+          "target": "node-14",
+          "label": "sends metrics to"
+        },
+        {
+          "id": "edge-16",
+          "source": "node-7",
+          "target": "node-14",
+          "label": "sends metrics to"
+        },
+        {
+          "id": "edge-17",
+          "source": "node-8",
+          "target": "node-14",
+          "label": "sends metrics to"
+        },
+        {
+          "id": "edge-18",
+          "source": "node-9",
+          "target": "node-14",
+          "label": "sends metrics to"
+        },
+        {
+          "id": "edge-19",
+          "source": "node-10",
+          "target": "node-14",
+          "label": "sends logs/metrics to"
+        },
+        {
+          "id": "edge-20",
+          "source": "node-12",
+          "target": "node-14",
+          "label": "sends logs/metrics to"
+        }
+      ],
+      "lastModified": 1771500687633
+    },
+    {
+      "id": "c5a3035a-497f-47e6-8fe3-654b6e2cc0e4",
+      "name": "Serverless Architecture",
+      "nodes": [
+        {
+          "id": "node-cloudfront",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon CloudFront",
+            "service": "CloudFront",
+            "metadata": {
+              "purpose": "Content Delivery Network, edge caching, HTTPS termination",
+              "performance_optimization": "Global CDN, reduced latency",
+              "security": "Integrates with WAF, HTTPS",
+              "reliability": "Distributed, high availability"
+            }
+          },
+          "position": {
+            "x": 925,
+            "y": 50
+          },
+          "width": 170,
+          "height": 157
+        },
+        {
+          "id": "node-waf",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS WAF",
+            "service": "WAF",
+            "metadata": {
+              "purpose": "Web application firewall to filter malicious traffic",
+              "protection_targets": "CloudFront, API Gateway",
+              "security_rules": "OWASP Top 10, custom rules, rate limiting"
+            }
+          },
+          "position": {
+            "x": 765,
+            "y": 300
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-s3-frontend",
+          "type": "aws-storage",
+          "data": {
+            "label": "Amazon S3 (Frontend)",
+            "service": "S3",
+            "metadata": {
+              "purpose": "Host static website assets (HTML, CSS, JS, images)",
+              "scalability": "Infinitely scalable",
+              "cost_optimization": "Pay-per-use storage",
+              "reliability": "High durability, multi-AZ by default"
+            }
+          },
+          "position": {
+            "x": 1010,
+            "y": 1050
+          },
+          "width": 188,
+          "height": 157
+        },
+        {
+          "id": "node-cognito",
+          "type": "default",
+          "data": {
+            "label": "Amazon Cognito",
+            "service": "Cognito",
+            "metadata": {
+              "purpose": "User sign-up, sign-in, and access control",
+              "features": "User Pools, Identity Pools, MFA",
+              "security": "Industry-standard authentication protocols",
+              "scalability": "Auto-scaling to millions of users"
+            }
+          },
+          "position": {
+            "x": 690,
+            "y": 1050
+          },
+          "width": 150,
+          "height": 156
+        },
+        {
+          "id": "node-api-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon API Gateway",
+            "service": "API Gateway",
+            "metadata": {
+              "purpose": "Serverless API endpoint, request routing, caching",
+              "authentication": "Cognito Authorizers, IAM, Lambda Authorizers",
+              "scalability": "Automatic scaling",
+              "cost_optimization": "Pay-per-request"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 550
+          },
+          "width": 179,
+          "height": 157
+        },
+        {
+          "id": "node-lambda",
+          "type": "aws-compute",
+          "data": {
+            "label": "AWS Lambda",
+            "service": "Lambda",
+            "metadata": {
+              "purpose": "Execute business logic without managing servers",
+              "runtime": "Node.js, Python, Java, Go, C#, Ruby",
+              "scalability": "Automatic, event-driven scaling",
+              "cost_optimization": "Pay-per-execution and duration"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 800
+          },
+          "width": 126,
+          "height": 157
+        },
+        {
+          "id": "node-dynamodb",
+          "type": "aws-database",
+          "data": {
+            "label": "Amazon DynamoDB",
+            "service": "DynamoDB",
+            "metadata": {
+              "purpose": "NoSQL database for high-performance, low-latency applications",
+              "scalability": "Automatic scaling (on-demand or provisioned)",
+              "reliability": "Multi-AZ, ACID transactions, point-in-time recovery",
+              "cost_optimization": "Pay-per-request or provisioned capacity"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 1050
+          },
+          "width": 169,
+          "height": 157
+        },
+        {
+          "id": "node-cloudwatch",
+          "type": "default",
+          "data": {
+            "label": "Amazon CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "purpose": "Monitoring and logging for all AWS services",
+              "features": "Logs, Metrics, Alarms, Dashboards",
+              "operational_excellence": "Centralized observability, proactive alerting"
+            }
+          },
+          "position": {
+            "x": 765,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 173
+        },
+        {
+          "id": "node-iam",
+          "type": "default",
+          "data": {
+            "label": "AWS IAM",
+            "service": "IAM",
+            "metadata": {
+              "purpose": "Manage access to AWS services and resources securely",
+              "security_best_practices": "Least privilege, temporary credentials, MFA",
+              "features": "Roles, Users, Policies, Groups"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 1050
+          },
+          "width": 150,
+          "height": 156
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-client-cloudfront",
+          "source": "node-cloudfront",
+          "target": "node-waf",
+          "label": "routes traffic through"
+        },
+        {
+          "id": "edge-cloudfront-s3",
+          "source": "node-cloudfront",
+          "target": "node-s3-frontend",
+          "label": "serves static assets from"
+        },
+        {
+          "id": "edge-cloudfront-api-gateway",
+          "source": "node-cloudfront",
+          "target": "node-api-gateway",
+          "label": "forwards API requests to"
+        },
+        {
+          "id": "edge-waf-api-gateway",
+          "source": "node-waf",
+          "target": "node-api-gateway",
+          "label": "protects"
+        },
+        {
+          "id": "edge-api-gateway-cognito",
+          "source": "node-api-gateway",
+          "target": "node-cognito",
+          "label": "authenticates via"
+        },
+        {
+          "id": "edge-api-gateway-lambda",
+          "source": "node-api-gateway",
+          "target": "node-lambda",
+          "label": "invokes backend functions"
+        },
+        {
+          "id": "edge-lambda-dynamodb",
+          "source": "node-lambda",
+          "target": "node-dynamodb",
+          "label": "reads/writes data to"
+        },
+        {
+          "id": "edge-lambda-iam",
+          "source": "node-lambda",
+          "target": "node-iam",
+          "label": "assumes role for permissions"
+        },
+        {
+          "id": "edge-api-gateway-cloudwatch",
+          "source": "node-api-gateway",
+          "target": "node-cloudwatch",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-lambda-cloudwatch",
+          "source": "node-lambda",
+          "target": "node-cloudwatch",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-dynamodb-cloudwatch",
+          "source": "node-dynamodb",
+          "target": "node-cloudwatch",
+          "label": "sends metrics to"
+        },
+        {
+          "id": "edge-cognito-cloudwatch",
+          "source": "node-cognito",
+          "target": "node-cloudwatch",
+          "label": "sends metrics to"
+        },
+        {
+          "id": "edge-s3-cloudwatch",
+          "source": "node-s3-frontend",
+          "target": "node-cloudwatch",
+          "label": "sends access logs and metrics to"
+        },
+        {
+          "id": "edge-waf-cloudwatch",
+          "source": "node-waf",
+          "target": "node-cloudwatch",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-cloudfront-cloudwatch",
+          "source": "node-cloudfront",
+          "target": "node-cloudwatch",
+          "label": "sends access logs and metrics to"
+        }
+      ],
+      "lastModified": 1771469040758
+    },
+    {
+      "id": "4565d9ad-a5e0-4e86-8a1c-a9a5878f91c9",
+      "name": "High Availability & Fault Tolerance (Multi-Tier)",
+      "nodes": [
+        {
+          "id": "vpc-1",
+          "type": "aws-network",
+          "data": {
+            "label": "Virtual Private Cloud (VPC)",
+            "service": "VPC",
+            "metadata": {
+              "CIDR Block": "10.0.0.0/16",
+              "Description": "Secure and Isolated Network Environment for Multi-Tier Application"
+            }
+          },
+          "position": {
+            "x": 290,
+            "y": 550
+          },
+          "width": 219,
+          "height": 157
+        },
+        {
+          "id": "igw-1",
+          "type": "aws-network",
+          "data": {
+            "label": "Internet Gateway",
+            "service": "Internet Gateway",
+            "metadata": {
+              "Purpose": "Enables internet connectivity for the VPC"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 800
+          },
+          "width": 162,
+          "height": 157
+        },
+        {
+          "id": "waf-1",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS WAF",
+            "service": "WAF",
+            "metadata": {
+              "Protection": "Web Application Firewall protecting ALB",
+              "Security": "Filters malicious traffic, prevents common web exploits (e.g., SQL injection, XSS)"
+            }
+          },
+          "position": {
+            "x": 1210,
+            "y": 50
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "alb-1",
+          "type": "aws-network",
+          "data": {
+            "label": "Application Load Balancer",
+            "service": "ALB",
+            "metadata": {
+              "Type": "Application Load Balancer",
+              "Visibility": "Internet-facing",
+              "Listener Protocols": "HTTP, HTTPS",
+              "Reliability": "Distributes traffic across multiple Availability Zones"
+            }
+          },
+          "position": {
+            "x": 1210,
+            "y": 300
+          },
+          "width": 212,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "pub-sub-az1",
+          "type": "aws-network",
+          "data": {
+            "label": "Public Subnet (AZ1)",
+            "service": "Subnet",
+            "metadata": {
+              "Availability Zone": "AZ1",
+              "Purpose": "Houses internet-facing resources like ALB, NAT Gateway"
+            }
+          },
+          "position": {
+            "x": 190,
+            "y": 1050
+          },
+          "width": 170,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "pub-sub-az2",
+          "type": "aws-network",
+          "data": {
+            "label": "Public Subnet (AZ2)",
+            "service": "Subnet",
+            "metadata": {
+              "Availability Zone": "AZ2",
+              "Purpose": "Houses internet-facing resources like ALB, NAT Gateway"
+            }
+          },
+          "position": {
+            "x": 510,
+            "y": 1050
+          },
+          "width": 172,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "nat-gw-az1",
+          "type": "aws-network",
+          "data": {
+            "label": "NAT Gateway (AZ1)",
+            "service": "NAT Gateway",
+            "metadata": {
+              "Availability Zone": "AZ1",
+              "Purpose": "Enables outbound internet access for private instances in AZ1 (e.g., for updates, patches)",
+              "Cost Optimization": "Provisioned in each AZ for high availability"
+            }
+          },
+          "position": {
+            "x": 475,
+            "y": 1300
+          },
+          "width": 167,
+          "height": 157
+        },
+        {
+          "id": "nat-gw-az2",
+          "type": "aws-network",
+          "data": {
+            "label": "NAT Gateway (AZ2)",
+            "service": "NAT Gateway",
+            "metadata": {
+              "Availability Zone": "AZ2",
+              "Purpose": "Enables outbound internet access for private instances in AZ2 (e.g., for updates, patches)",
+              "Cost Optimization": "Provisioned in each AZ for high availability"
+            }
+          },
+          "position": {
+            "x": 795,
+            "y": 1300
+          },
+          "width": 169,
+          "height": 157
+        },
+        {
+          "id": "priv-sub-az1",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnet (AZ1)",
+            "service": "Subnet",
+            "metadata": {
+              "Availability Zone": "AZ1",
+              "Purpose": "Houses application servers (EC2 Auto Scaling Group) and cache nodes"
+            }
+          },
+          "position": {
+            "x": 830,
+            "y": 1050
+          },
+          "width": 176,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "priv-sub-az2",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnet (AZ2)",
+            "service": "Subnet",
+            "metadata": {
+              "Availability Zone": "AZ2",
+              "Purpose": "Houses application servers (EC2 Auto Scaling Group) and cache nodes"
+            }
+          },
+          "position": {
+            "x": 1150,
+            "y": 1050
+          },
+          "width": 178,
+          "height": 157,
+          "selected": true,
+          "dragging": false
+        },
+        {
+          "id": "ec2-asg-1",
+          "type": "aws-compute",
+          "data": {
+            "label": "EC2 Auto Scaling Group",
+            "service": "EC2 Auto Scaling Group",
+            "metadata": {
+              "Instances": "Web/Application Servers",
+              "Instance Type": "t3.medium, m5.large (cost optimized and performance balanced, scalable)",
+              "Deployment Strategy": "Multi-AZ, minimum 2 instances, scales up to 10 instances",
+              "Reliability": "Automatic instance replacement, health checks across AZs",
+              "Performance": "Scales based on demand (e.g., CPU Utilization, ALB Request Count)",
+              "Security": "Instances in private subnets, controlled by Security Groups"
+            }
+          },
+          "position": {
+            "x": 1315,
+            "y": 550
+          },
+          "width": 201,
+          "height": 157
+        },
+        {
+          "id": "elasticache-1",
+          "type": "aws-database",
+          "data": {
+            "label": "ElastiCache for Redis",
+            "service": "ElastiCache",
+            "metadata": {
+              "Engine": "Redis",
+              "Deployment": "Multi-AZ with replication groups",
+              "Purpose": "Session caching, data caching to improve application responsiveness",
+              "Performance": "Reduces database load, improves response times",
+              "Security": "Deployed in private subnets"
+            }
+          },
+          "position": {
+            "x": 1635,
+            "y": 800
+          },
+          "width": 179,
+          "height": 157
+        },
+        {
+          "id": "rds-1",
+          "type": "aws-database",
+          "data": {
+            "label": "RDS Multi-AZ Deployment",
+            "service": "RDS",
+            "metadata": {
+              "Engine": "PostgreSQL, MySQL, Aurora (example)",
+              "Deployment": "Multi-AZ Standby for High Availability",
+              "Reliability": "Synchronous replication, automatic failover to standby in another AZ",
+              "Durability": "Automated backups, point-in-time recovery",
+              "Instance Type": "db.t3.medium, db.m5.large (cost optimized and performance balanced, scalable)",
+              "Security": "Deployed in private subnets, controlled by Security Groups"
+            }
+          },
+          "position": {
+            "x": 1315,
+            "y": 800
+          },
+          "width": 213,
+          "height": 157
+        },
+        {
+          "id": "cloudwatch-1",
+          "type": "default",
+          "data": {
+            "label": "Amazon CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "Operational Excellence": "Centralized monitoring, logging, and alarming",
+              "Monitoring": "Collects metrics and logs from ALB, EC2, RDS, ElastiCache, NAT Gateways",
+              "Alarms": "Automated notifications and actions based on thresholds"
+            }
+          },
+          "position": {
+            "x": 1595,
+            "y": 1550
+          },
+          "width": 150,
+          "height": 195
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "vpc-1",
+          "target": "igw-1",
+          "label": "Attached to"
+        },
+        {
+          "id": "edge-2",
+          "source": "igw-1",
+          "target": "pub-sub-az1",
+          "label": "Routes Internet Traffic to"
+        },
+        {
+          "id": "edge-3",
+          "source": "igw-1",
+          "target": "pub-sub-az2",
+          "label": "Routes Internet Traffic to"
+        },
+        {
+          "id": "edge-4",
+          "source": "waf-1",
+          "target": "alb-1",
+          "label": "Protects"
+        },
+        {
+          "id": "edge-5",
+          "source": "alb-1",
+          "target": "pub-sub-az1",
+          "label": "Deployed in"
+        },
+        {
+          "id": "edge-6",
+          "source": "alb-1",
+          "target": "pub-sub-az2",
+          "label": "Deployed in"
+        },
+        {
+          "id": "edge-7",
+          "source": "pub-sub-az1",
+          "target": "nat-gw-az1",
+          "label": "Houses"
+        },
+        {
+          "id": "edge-8",
+          "source": "pub-sub-az2",
+          "target": "nat-gw-az2",
+          "label": "Houses"
+        },
+        {
+          "id": "edge-9",
+          "source": "alb-1",
+          "target": "ec2-asg-1",
+          "label": "Distributes traffic to"
+        },
+        {
+          "id": "edge-10",
+          "source": "ec2-asg-1",
+          "target": "priv-sub-az1",
+          "label": "Instances reside in"
+        },
+        {
+          "id": "edge-11",
+          "source": "ec2-asg-1",
+          "target": "priv-sub-az2",
+          "label": "Instances reside in"
+        },
+        {
+          "id": "edge-12",
+          "source": "priv-sub-az1",
+          "target": "nat-gw-az1",
+          "label": "Routes outbound traffic via"
+        },
+        {
+          "id": "edge-13",
+          "source": "priv-sub-az2",
+          "target": "nat-gw-az2",
+          "label": "Routes outbound traffic via"
+        },
+        {
+          "id": "edge-14",
+          "source": "ec2-asg-1",
+          "target": "rds-1",
+          "label": "Queries database"
+        },
+        {
+          "id": "edge-15",
+          "source": "ec2-asg-1",
+          "target": "elasticache-1",
+          "label": "Utilizes cache"
+        },
+        {
+          "id": "edge-16",
+          "source": "elasticache-1",
+          "target": "priv-sub-az1",
+          "label": "Deployed in"
+        },
+        {
+          "id": "edge-17",
+          "source": "elasticache-1",
+          "target": "priv-sub-az2",
+          "label": "Deployed in"
+        },
+        {
+          "id": "edge-18",
+          "source": "rds-1",
+          "target": "priv-sub-az1",
+          "label": "Primary instance in"
+        },
+        {
+          "id": "edge-19",
+          "source": "rds-1",
+          "target": "priv-sub-az2",
+          "label": "Standby instance in"
+        },
+        {
+          "id": "edge-20",
+          "source": "alb-1",
+          "target": "cloudwatch-1",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-21",
+          "source": "ec2-asg-1",
+          "target": "cloudwatch-1",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-22",
+          "source": "rds-1",
+          "target": "cloudwatch-1",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-23",
+          "source": "elasticache-1",
+          "target": "cloudwatch-1",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-24",
+          "source": "nat-gw-az1",
+          "target": "cloudwatch-1",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-25",
+          "source": "nat-gw-az2",
+          "target": "cloudwatch-1",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-26",
+          "source": "vpc-1",
+          "target": "pub-sub-az1",
+          "label": "Contains"
+        },
+        {
+          "id": "edge-27",
+          "source": "vpc-1",
+          "target": "pub-sub-az2",
+          "label": "Contains"
+        },
+        {
+          "id": "edge-28",
+          "source": "vpc-1",
+          "target": "priv-sub-az1",
+          "label": "Contains"
+        },
+        {
+          "id": "edge-29",
+          "source": "vpc-1",
+          "target": "priv-sub-az2",
+          "label": "Contains"
+        }
+      ],
+      "lastModified": 1771296821755
+    },
+    {
+      "id": "57c5336a-b424-443a-9061-066ca6b26347",
+      "name": "Global Multi-Region Content Delivery",
+      "nodes": [
+        {
+          "id": "node-1",
+          "type": "default",
+          "data": {
+            "label": "Internet User",
+            "service": "User",
+            "metadata": {
+              "Location": "Global"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 50
+          },
+          "width": 150,
+          "height": 178
+        },
+        {
+          "id": "node-2",
+          "type": "aws-network",
+          "data": {
+            "label": "Global DNS",
+            "service": "Route 53",
+            "metadata": {
+              "Routing Policy": "Geolocation, Latency-based",
+              "Health Checks": "Enabled"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 300
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-3",
+          "type": "aws-network",
+          "data": {
+            "label": "Global Traffic Accelerator",
+            "service": "Global Accelerator",
+            "metadata": {
+              "Endpoint Groups": "Multi-Region",
+              "Static IP Addresses": "Anycast",
+              "Endpoint Health Checks": "Enabled",
+              "Protection": "DDoS Protected by Shield Advanced"
+            }
+          },
+          "position": {
+            "x": 605,
+            "y": 800
+          },
+          "width": 209,
+          "height": 157
+        },
+        {
+          "id": "node-4",
+          "type": "aws-network",
+          "data": {
+            "label": "Global CDN",
+            "service": "CloudFront",
+            "metadata": {
+              "Origin Shield": "Enabled",
+              "Caching Policy": "Optimized for dynamic and static content",
+              "Security": "WAF integrated",
+              "Compression": "Enabled"
+            }
+          },
+          "position": {
+            "x": 350,
+            "y": 550
+          },
+          "width": 128,
+          "height": 157
+        },
+        {
+          "id": "node-5",
+          "type": "aws-compute",
+          "data": {
+            "label": "Edge Logic",
+            "service": "Lambda",
+            "metadata": {
+              "Runtime": "Node.js, Python",
+              "Triggers": "Viewer Request, Origin Request",
+              "Functionality": "Content customization, A/B testing, Authentication",
+              "Cost Optimization": "Pay-per-use"
+            }
+          },
+          "position": {
+            "x": 60,
+            "y": 800
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-6",
+          "type": "default",
+          "data": {
+            "label": "Web Application Firewall",
+            "service": "WAF",
+            "metadata": {
+              "Scope": "CloudFront, API Gateway",
+              "Rules": "OWASP Top 10, Custom rules, Rate limiting",
+              "Protection": "Common web exploits, bots"
+            }
+          },
+          "position": {
+            "x": 925,
+            "y": 800
+          },
+          "width": 150,
+          "height": 212
+        },
+        {
+          "id": "node-7",
+          "type": "default",
+          "data": {
+            "label": "Global Monitoring & Logging",
+            "service": "CloudWatch",
+            "metadata": {
+              "Logs": "Centralized across all services",
+              "Metrics": "Performance, availability, resource utilization",
+              "Alarms": "Configured for critical thresholds",
+              "Dashboards": "Operational visibility"
+            }
+          },
+          "position": {
+            "x": 585,
+            "y": 2050
+          },
+          "width": 150,
+          "height": 212
+        },
+        {
+          "id": "node-8",
+          "type": "aws-network",
+          "data": {
+            "label": "Regional API Gateway (US-East)",
+            "service": "API Gateway",
+            "metadata": {
+              "Type": "Regional",
+              "Security": "IAM authorization, Cognito integration, WAF integrated",
+              "Throttling": "Configured",
+              "Caching": "Enabled for frequently accessed data"
+            }
+          },
+          "position": {
+            "x": 670,
+            "y": 1050
+          },
+          "width": 253,
+          "height": 157
+        },
+        {
+          "id": "node-9",
+          "type": "aws-compute",
+          "data": {
+            "label": "Regional App Logic (US-East)",
+            "service": "Lambda",
+            "metadata": {
+              "Runtime": "Node.js, Python",
+              "Concurrency": "Auto Scaling, Provisioned Concurrency",
+              "VPC Integration": "Enabled for private resource access",
+              "Memory": "Optimized per function",
+              "Cost Optimization": "Pay-per-use"
+            }
+          },
+          "position": {
+            "x": 745,
+            "y": 1300
+          },
+          "width": 235,
+          "height": 157
+        },
+        {
+          "id": "node-10",
+          "type": "aws-storage",
+          "data": {
+            "label": "Object Storage (US-East)",
+            "service": "S3",
+            "metadata": {
+              "Versioning": "Enabled",
+              "Encryption": "SSE-S3, KMS",
+              "Lifecycle Policy": "Configured for cost optimization",
+              "Cross-Region Replication": "Configured as Source",
+              "Availability": "99.999999999%"
+            }
+          },
+          "position": {
+            "x": 735,
+            "y": 1550
+          },
+          "width": 208,
+          "height": 157
+        },
+        {
+          "id": "node-11",
+          "type": "aws-network",
+          "data": {
+            "label": "Regional API Gateway (EU-West)",
+            "service": "API Gateway",
+            "metadata": {
+              "Type": "Regional",
+              "Security": "IAM authorization, Cognito integration, WAF integrated",
+              "Throttling": "Configured",
+              "Caching": "Enabled for frequently accessed data"
+            }
+          },
+          "position": {
+            "x": 1065,
+            "y": 1300
+          },
+          "width": 257,
+          "height": 157
+        },
+        {
+          "id": "node-12",
+          "type": "aws-compute",
+          "data": {
+            "label": "Regional App Logic (EU-West)",
+            "service": "Lambda",
+            "metadata": {
+              "Runtime": "Node.js, Python",
+              "Concurrency": "Auto Scaling, Provisioned Concurrency",
+              "VPC Integration": "Enabled for private resource access",
+              "Memory": "Optimized per function",
+              "Cost Optimization": "Pay-per-use"
+            }
+          },
+          "position": {
+            "x": 1055,
+            "y": 1550
+          },
+          "width": 239,
+          "height": 157
+        },
+        {
+          "id": "node-13",
+          "type": "aws-storage",
+          "data": {
+            "label": "Object Storage (EU-West)",
+            "service": "S3",
+            "metadata": {
+              "Versioning": "Enabled",
+              "Encryption": "SSE-S3, KMS",
+              "Lifecycle Policy": "Configured for cost optimization",
+              "Cross-Region Replication": "Configured as Destination",
+              "Availability": "99.999999999%"
+            }
+          },
+          "position": {
+            "x": 895,
+            "y": 1800
+          },
+          "width": 212,
+          "height": 157
+        },
+        {
+          "id": "node-14",
+          "type": "aws-database",
+          "data": {
+            "label": "Global Database",
+            "service": "DynamoDB",
+            "metadata": {
+              "Replication": "Multi-Region (Active-Active) Global Tables",
+              "Consistency": "Eventually Consistent (default), Strongly Consistent (optional)",
+              "Provisioned Capacity": "On-Demand (Cost Optimized)",
+              "Backups": "Point-in-Time Recovery, On-demand",
+              "Encryption": "At rest and in transit"
+            }
+          },
+          "position": {
+            "x": 1310,
+            "y": 1800
+          },
+          "width": 147,
+          "height": 157
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-1",
+          "target": "node-2",
+          "label": "resolves DNS query"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-2",
+          "target": "node-4",
+          "label": "directs traffic to CloudFront (CDN)"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-4",
+          "target": "node-6",
+          "label": "forwards requests to WAF"
+        },
+        {
+          "id": "edge-4",
+          "source": "node-6",
+          "target": "node-4",
+          "label": "returns filtered requests to CloudFront"
+        },
+        {
+          "id": "edge-5",
+          "source": "node-4",
+          "target": "node-5",
+          "label": "triggers Lambda@Edge for processing"
+        },
+        {
+          "id": "edge-6",
+          "source": "node-5",
+          "target": "node-4",
+          "label": "returns modified response to CloudFront"
+        },
+        {
+          "id": "edge-7",
+          "source": "node-4",
+          "target": "node-3",
+          "label": "retrieves dynamic content from origin (Global Accelerator)"
+        },
+        {
+          "id": "edge-8",
+          "source": "node-3",
+          "target": "node-8",
+          "label": "routes optimized traffic to nearest regional API Gateway"
+        },
+        {
+          "id": "edge-9",
+          "source": "node-3",
+          "target": "node-11",
+          "label": "routes optimized traffic to nearest regional API Gateway"
+        },
+        {
+          "id": "edge-10",
+          "source": "node-8",
+          "target": "node-9",
+          "label": "invokes application logic"
+        },
+        {
+          "id": "edge-11",
+          "source": "node-11",
+          "target": "node-12",
+          "label": "invokes application logic"
+        },
+        {
+          "id": "edge-12",
+          "source": "node-9",
+          "target": "node-14",
+          "label": "reads/writes data to Global Table"
+        },
+        {
+          "id": "edge-13",
+          "source": "node-12",
+          "target": "node-14",
+          "label": "reads/writes data to Global Table"
+        },
+        {
+          "id": "edge-14",
+          "source": "node-9",
+          "target": "node-10",
+          "label": "stores/retrieves objects"
+        },
+        {
+          "id": "edge-15",
+          "source": "node-12",
+          "target": "node-13",
+          "label": "stores/retrieves objects"
+        },
+        {
+          "id": "edge-16",
+          "source": "node-10",
+          "target": "node-13",
+          "label": "Cross-Region Replication (CRR)"
+        },
+        {
+          "id": "edge-17",
+          "source": "node-2",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-18",
+          "source": "node-3",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-19",
+          "source": "node-4",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-20",
+          "source": "node-5",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-21",
+          "source": "node-6",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-22",
+          "source": "node-8",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-23",
+          "source": "node-9",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-24",
+          "source": "node-10",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-25",
+          "source": "node-11",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-26",
+          "source": "node-12",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-27",
+          "source": "node-13",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        },
+        {
+          "id": "edge-28",
+          "source": "node-14",
+          "target": "node-7",
+          "label": "sends logs/metrics"
+        }
+      ],
+      "lastModified": 1771296817446
+    },
+    {
+      "id": "79faaf68-56d1-4537-9840-44a3f67f0e2c",
+      "name": "Data Lake & Analytics Architecture",
+      "nodes": [
+        {
+          "id": "node-1",
+          "type": "aws-storage",
+          "data": {
+            "label": "Amazon S3",
+            "service": "S3",
+            "metadata": {
+              "description": "Central Data Lake storage for raw, processed, and curated data zones",
+              "features": "Scalable, Durable, Highly Available, Versioning, Lifecycle Policies",
+              "well_architected_pillar": "Reliability, Cost Optimization, Performance"
+            }
+          },
+          "position": {
+            "x": 1230,
+            "y": 800
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-2",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon Kinesis Data Streams",
+            "service": "Kinesis Data Streams",
+            "metadata": {
+              "description": "Ingests real-time streaming data",
+              "features": "High-throughput, Low-latency data capture",
+              "well_architected_pillar": "Performance, Reliability"
+            }
+          },
+          "position": {
+            "x": 1760,
+            "y": 300
+          },
+          "width": 238,
+          "height": 157
+        },
+        {
+          "id": "node-3",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon Kinesis Data Firehose",
+            "service": "Kinesis Data Firehose",
+            "metadata": {
+              "description": "Prepares and loads real-time data to S3",
+              "features": "Automatic scaling, Batching, Compression, Encryption, Data Transformation",
+              "well_architected_pillar": "Performance, Operational Excellence"
+            }
+          },
+          "position": {
+            "x": 1760,
+            "y": 550
+          },
+          "width": 239,
+          "height": 157
+        },
+        {
+          "id": "node-4",
+          "type": "aws-compute",
+          "data": {
+            "label": "AWS DataSync",
+            "service": "DataSync",
+            "metadata": {
+              "description": "Secure, fast online data transfer service for bulk ingestion",
+              "features": "On-premises to S3, Automated, Encrypted",
+              "well_architected_pillar": "Operational Excellence, Security"
+            }
+          },
+          "position": {
+            "x": 1420,
+            "y": 550
+          },
+          "width": 136,
+          "height": 157
+        },
+        {
+          "id": "node-5",
+          "type": "aws-compute",
+          "data": {
+            "label": "AWS Glue (ETL)",
+            "service": "Glue",
+            "metadata": {
+              "description": "Serverless ETL service for data transformation and preparation",
+              "features": "Spark-based ETL jobs, Data preparation, Schema inference",
+              "well_architected_pillar": "Operational Excellence, Performance, Cost Optimization"
+            }
+          },
+          "position": {
+            "x": 1125,
+            "y": 1050
+          },
+          "width": 143,
+          "height": 157
+        },
+        {
+          "id": "node-6",
+          "type": "aws-database",
+          "data": {
+            "label": "AWS Glue Data Catalog",
+            "service": "Glue Data Catalog",
+            "metadata": {
+              "description": "Central metadata repository for all data in the Data Lake",
+              "features": "Table definitions, Schema versions, Integration with Athena/Redshift Spectrum",
+              "well_architected_pillar": "Operational Excellence"
+            }
+          },
+          "position": {
+            "x": 785,
+            "y": 1300
+          },
+          "width": 193,
+          "height": 157
+        },
+        {
+          "id": "node-7",
+          "type": "aws-compute",
+          "data": {
+            "label": "Amazon Athena",
+            "service": "Athena",
+            "metadata": {
+              "description": "Serverless interactive query service for S3 data",
+              "features": "Ad-hoc SQL queries, Pay-per-query, Presto engine",
+              "well_architected_pillar": "Performance, Cost Optimization, Operational Excellence"
+            }
+          },
+          "position": {
+            "x": 775,
+            "y": 550
+          },
+          "width": 142,
+          "height": 157
+        },
+        {
+          "id": "node-8",
+          "type": "aws-database",
+          "data": {
+            "label": "Amazon Redshift",
+            "service": "Redshift",
+            "metadata": {
+              "description": "Petabyte-scale cloud data warehouse for complex analytics",
+              "features": "Massively Parallel Processing (MPP), Redshift Spectrum for S3 integration, Multi-AZ possible",
+              "well_architected_pillar": "Performance, Reliability, Cost Optimization"
+            }
+          },
+          "position": {
+            "x": 455,
+            "y": 550
+          },
+          "width": 151,
+          "height": 157
+        },
+        {
+          "id": "node-9",
+          "type": "aws-compute",
+          "data": {
+            "label": "Amazon QuickSight",
+            "service": "QuickSight",
+            "metadata": {
+              "description": "Serverless business intelligence service for data visualization",
+              "features": "Interactive dashboards, ML-powered insights, SPICE caching, Pay-per-session pricing",
+              "well_architected_pillar": "Performance, Cost Optimization"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 300
+          },
+          "width": 168,
+          "height": 157
+        },
+        {
+          "id": "node-10",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "description": "Monitoring and observability for AWS resources and applications",
+              "features": "Metrics, Logs, Alarms, Dashboards, Events",
+              "well_architected_pillar": "Operational Excellence"
+            }
+          },
+          "position": {
+            "x": 1105,
+            "y": 1300
+          },
+          "width": 176,
+          "height": 157
+        },
+        {
+          "id": "node-11",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS IAM",
+            "service": "IAM",
+            "metadata": {
+              "description": "Manages access to AWS services and resources",
+              "features": "Roles, Policies, Least Privilege Principle, Multi-factor Authentication",
+              "well_architected_pillar": "Security"
+            }
+          },
+          "position": {
+            "x": 995,
+            "y": 50
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-12",
+          "type": "aws-network",
+          "data": {
+            "label": "Amazon VPC",
+            "service": "VPC",
+            "metadata": {
+              "description": "Isolated virtual network for Redshift cluster",
+              "features": "Private Subnets, Security Groups, Network ACLs",
+              "well_architected_pillar": "Security"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 300
+          },
+          "width": 123,
+          "height": 157
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-2",
+          "target": "node-3",
+          "label": "streams data to"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-3",
+          "target": "node-1",
+          "label": "delivers real-time data to"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-4",
+          "target": "node-1",
+          "label": "transfers bulk data to"
+        },
+        {
+          "id": "edge-4",
+          "source": "node-5",
+          "target": "node-1",
+          "label": "processes and stores transformed data in"
+        },
+        {
+          "id": "edge-5",
+          "source": "node-1",
+          "target": "node-5",
+          "label": "data source for ETL jobs, scanned by crawlers"
+        },
+        {
+          "id": "edge-6",
+          "source": "node-5",
+          "target": "node-6",
+          "label": "updates and uses metadata in"
+        },
+        {
+          "id": "edge-7",
+          "source": "node-7",
+          "target": "node-6",
+          "label": "queries schema from"
+        },
+        {
+          "id": "edge-8",
+          "source": "node-7",
+          "target": "node-1",
+          "label": "queries data in"
+        },
+        {
+          "id": "edge-9",
+          "source": "node-8",
+          "target": "node-6",
+          "label": "uses Spectrum schema from"
+        },
+        {
+          "id": "edge-10",
+          "source": "node-8",
+          "target": "node-1",
+          "label": "queries S3 data via Redshift Spectrum"
+        },
+        {
+          "id": "edge-11",
+          "source": "node-9",
+          "target": "node-7",
+          "label": "connects to for visualization"
+        },
+        {
+          "id": "edge-12",
+          "source": "node-9",
+          "target": "node-8",
+          "label": "connects to for visualization"
+        },
+        {
+          "id": "edge-13",
+          "source": "node-11",
+          "target": "node-1",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-14",
+          "source": "node-11",
+          "target": "node-2",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-15",
+          "source": "node-11",
+          "target": "node-3",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-16",
+          "source": "node-11",
+          "target": "node-4",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-17",
+          "source": "node-11",
+          "target": "node-5",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-18",
+          "source": "node-11",
+          "target": "node-6",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-19",
+          "source": "node-11",
+          "target": "node-7",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-20",
+          "source": "node-11",
+          "target": "node-8",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-21",
+          "source": "node-11",
+          "target": "node-9",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-22",
+          "source": "node-11",
+          "target": "node-10",
+          "label": "provides access control for"
+        },
+        {
+          "id": "edge-23",
+          "source": "node-1",
+          "target": "node-10",
+          "label": "sends access logs and metrics to"
+        },
+        {
+          "id": "edge-24",
+          "source": "node-2",
+          "target": "node-10",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-25",
+          "source": "node-3",
+          "target": "node-10",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-26",
+          "source": "node-4",
+          "target": "node-10",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-27",
+          "source": "node-5",
+          "target": "node-10",
+          "label": "sends job logs and metrics to"
+        },
+        {
+          "id": "edge-28",
+          "source": "node-7",
+          "target": "node-10",
+          "label": "sends query logs and metrics to"
+        },
+        {
+          "id": "edge-29",
+          "source": "node-8",
+          "target": "node-10",
+          "label": "sends cluster logs and metrics to"
+        },
+        {
+          "id": "edge-30",
+          "source": "node-9",
+          "target": "node-10",
+          "label": "sends usage metrics to"
+        },
+        {
+          "id": "edge-31",
+          "source": "node-12",
+          "target": "node-8",
+          "label": "hosts"
+        }
+      ],
+      "lastModified": 1771296815748
+    },
+    {
+      "id": "e38122c1-06e7-48f7-b63e-ef87a278baac",
+      "name": "Saga Orchestration-Based (State Machine)",
+      "nodes": [
+        {
+          "id": "node-api-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "API Gateway",
+            "service": "API Gateway",
+            "metadata": {
+              "type": "REST API",
+              "security": "IAM,Cognito Authorizers,WAF,VPC Link",
+              "performance": "Caching,Throttling",
+              "reliability": "Multi-AZ",
+              "cost_optimization": "Pay-per-request"
+            }
+          },
+          "position": {
+            "x": 465,
+            "y": 50
+          },
+          "width": 126,
+          "height": 157
+        },
+        {
+          "id": "node-step-functions",
+          "type": "aws-compute",
+          "data": {
+            "label": "Saga Orchestrator",
+            "service": "AWS Step Functions",
+            "metadata": {
+              "type": "Express/Standard Workflow",
+              "orchestrator": "State Machine",
+              "reliability": "Highly Available,Fault Tolerant",
+              "cost_optimization": "Pay-per-transition",
+              "operational_excellence": "Retries,Error Handling,Monitoring via CloudWatch",
+              "security": "IAM Role"
+            }
+          },
+          "position": {
+            "x": 465,
+            "y": 300
+          },
+          "width": 176,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-lambda-reserve-inventory",
+          "type": "aws-compute",
+          "data": {
+            "label": "Reserve Inventory (Microservice)",
+            "service": "AWS Lambda",
+            "metadata": {
+              "runtime": "Node.js/Python",
+              "memory": "128MB-256MB",
+              "timeout": "30s",
+              "security": "IAM Role,VPC for private access",
+              "reliability": "Auto-scaling,High Availability",
+              "cost_optimization": "Pay-per-execution,Serverless",
+              "operational_excellence": "Logging to CloudWatch"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 550
+          },
+          "width": 260,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-dynamodb-inventory",
+          "type": "aws-database",
+          "data": {
+            "label": "Inventory DB",
+            "service": "DynamoDB",
+            "metadata": {
+              "mode": "On-Demand",
+              "reliability": "Multi-AZ,Global Tables",
+              "security": "IAM Policies,Encryption at Rest,VPC Endpoints",
+              "performance": "Low Latency,Scalable",
+              "cost_optimization": "Pay-per-request,Storage"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 800
+          },
+          "width": 123,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-lambda-process-payment",
+          "type": "aws-compute",
+          "data": {
+            "label": "Process Payment (Microservice)",
+            "service": "AWS Lambda",
+            "metadata": {
+              "runtime": "Node.js/Python",
+              "memory": "128MB-256MB",
+              "timeout": "30s",
+              "security": "IAM Role,VPC for private access",
+              "reliability": "Auto-scaling,High Availability",
+              "cost_optimization": "Pay-per-execution,Serverless",
+              "operational_excellence": "Logging to CloudWatch"
+            }
+          },
+          "position": {
+            "x": 720,
+            "y": 550
+          },
+          "width": 255,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-dynamodb-payments",
+          "type": "aws-database",
+          "data": {
+            "label": "Payments DB",
+            "service": "DynamoDB",
+            "metadata": {
+              "mode": "On-Demand",
+              "reliability": "Multi-AZ,Global Tables",
+              "security": "IAM Policies,Encryption at Rest,VPC Endpoints",
+              "performance": "Low Latency,Scalable",
+              "cost_optimization": "Pay-per-request,Storage"
+            }
+          },
+          "position": {
+            "x": 965,
+            "y": 800
+          },
+          "width": 126,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-lambda-ship-order",
+          "type": "aws-compute",
+          "data": {
+            "label": "Ship Order (Microservice)",
+            "service": "AWS Lambda",
+            "metadata": {
+              "runtime": "Node.js/Python",
+              "memory": "128MB-256MB",
+              "timeout": "30s",
+              "security": "IAM Role,VPC for private access",
+              "reliability": "Auto-scaling,High Availability",
+              "cost_optimization": "Pay-per-execution,Serverless",
+              "operational_excellence": "Logging to CloudWatch"
+            }
+          },
+          "position": {
+            "x": 1050,
+            "y": 550
+          },
+          "width": 210,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-dynamodb-shipping",
+          "type": "aws-database",
+          "data": {
+            "label": "Shipping DB",
+            "service": "DynamoDB",
+            "metadata": {
+              "mode": "On-Demand",
+              "reliability": "Multi-AZ,Global Tables",
+              "security": "IAM Policies,Encryption at Rest,VPC Endpoints",
+              "performance": "Low Latency,Scalable",
+              "cost_optimization": "Pay-per-request,Storage"
+            }
+          },
+          "position": {
+            "x": 1285,
+            "y": 800
+          },
+          "width": 120,
+          "height": 157,
+          "selected": true,
+          "dragging": false
+        },
+        {
+          "id": "node-lambda-cancel-reservation",
+          "type": "aws-compute",
+          "data": {
+            "label": "Cancel Reservation (Compensation)",
+            "service": "AWS Lambda",
+            "metadata": {
+              "runtime": "Node.js/Python",
+              "memory": "128MB-256MB",
+              "timeout": "30s",
+              "security": "IAM Role,VPC for private access",
+              "reliability": "Auto-scaling,High Availability",
+              "cost_optimization": "Pay-per-execution,Serverless",
+              "operational_excellence": "Logging to CloudWatch"
+            }
+          },
+          "position": {
+            "x": 400,
+            "y": 550
+          },
+          "width": 279,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-lambda-refund-payment",
+          "type": "aws-compute",
+          "data": {
+            "label": "Refund Payment (Compensation)",
+            "service": "AWS Lambda",
+            "metadata": {
+              "runtime": "Node.js/Python",
+              "memory": "128MB-256MB",
+              "timeout": "30s",
+              "security": "IAM Role,VPC for private access",
+              "reliability": "Auto-scaling,High Availability",
+              "cost_optimization": "Pay-per-execution,Serverless",
+              "operational_excellence": "Logging to CloudWatch"
+            }
+          },
+          "position": {
+            "x": 1370,
+            "y": 550
+          },
+          "width": 260,
+          "height": 157,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-cloudwatch-logs",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch Logs",
+            "service": "CloudWatch",
+            "metadata": {
+              "monitoring": "Logs,Metrics,Alarms",
+              "operational_excellence": "Centralized logging,Real-time monitoring,Dashboarding",
+              "security": "IAM Policies",
+              "cost_optimization": "Pay-per-ingestion,Storage"
+            }
+          },
+          "position": {
+            "x": 550,
+            "y": 800
+          },
+          "width": 150,
+          "height": 195,
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-api-to-sf",
+          "source": "node-api-gateway",
+          "target": "node-step-functions",
+          "label": "triggers saga execution"
+        },
+        {
+          "id": "edge-sf-to-reserve",
+          "source": "node-step-functions",
+          "target": "node-lambda-reserve-inventory",
+          "label": "invokes ReserveInventory step"
+        },
+        {
+          "id": "edge-reserve-to-db",
+          "source": "node-lambda-reserve-inventory",
+          "target": "node-dynamodb-inventory",
+          "label": "updates inventory status"
+        },
+        {
+          "id": "edge-sf-to-process",
+          "source": "node-step-functions",
+          "target": "node-lambda-process-payment",
+          "label": "invokes ProcessPayment step"
+        },
+        {
+          "id": "edge-process-to-db",
+          "source": "node-lambda-process-payment",
+          "target": "node-dynamodb-payments",
+          "label": "updates payment status"
+        },
+        {
+          "id": "edge-sf-to-ship",
+          "source": "node-step-functions",
+          "target": "node-lambda-ship-order",
+          "label": "invokes ShipOrder step"
+        },
+        {
+          "id": "edge-ship-to-db",
+          "source": "node-lambda-ship-order",
+          "target": "node-dynamodb-shipping",
+          "label": "updates shipping status"
+        },
+        {
+          "id": "edge-sf-to-cancel",
+          "source": "node-step-functions",
+          "target": "node-lambda-cancel-reservation",
+          "label": "invokes CancelReservation (on failure)"
+        },
+        {
+          "id": "edge-cancel-to-db",
+          "source": "node-lambda-cancel-reservation",
+          "target": "node-dynamodb-inventory",
+          "label": "reverts inventory reservation"
+        },
+        {
+          "id": "edge-sf-to-refund",
+          "source": "node-step-functions",
+          "target": "node-lambda-refund-payment",
+          "label": "invokes RefundPayment (on failure)"
+        },
+        {
+          "id": "edge-refund-to-db",
+          "source": "node-lambda-refund-payment",
+          "target": "node-dynamodb-payments",
+          "label": "reverts payment transaction"
+        },
+        {
+          "id": "edge-sf-to-cw",
+          "source": "node-step-functions",
+          "target": "node-cloudwatch-logs",
+          "label": "sends execution logs"
+        },
+        {
+          "id": "edge-lambda-inv-to-cw",
+          "source": "node-lambda-reserve-inventory",
+          "target": "node-cloudwatch-logs",
+          "label": "sends function logs"
+        },
+        {
+          "id": "edge-lambda-pay-to-cw",
+          "source": "node-lambda-process-payment",
+          "target": "node-cloudwatch-logs",
+          "label": "sends function logs"
+        },
+        {
+          "id": "edge-lambda-ship-to-cw",
+          "source": "node-lambda-ship-order",
+          "target": "node-cloudwatch-logs",
+          "label": "sends function logs"
+        },
+        {
+          "id": "edge-lambda-cancel-to-cw",
+          "source": "node-lambda-cancel-reservation",
+          "target": "node-cloudwatch-logs",
+          "label": "sends function logs"
+        },
+        {
+          "id": "edge-lambda-refund-to-cw",
+          "source": "node-lambda-refund-payment",
+          "target": "node-cloudwatch-logs",
+          "label": "sends function logs"
+        }
+      ],
+      "lastModified": 1771296814396
+    },
+    {
+      "id": "c880d1aa-f7a0-470c-93b6-ed06548d7faf",
+      "name": "Saga Choreography-Based (Event-Driven)",
+      "nodes": [
+        {
+          "id": "api-gateway-1",
+          "type": "aws-network",
+          "data": {
+            "label": "API Gateway",
+            "service": "API Gateway",
+            "metadata": {
+              "type": "REST API",
+              "purpose": "Entry point for Order creation",
+              "integration": "Lambda Proxy"
+            }
+          },
+          "position": {
+            "x": 420,
+            "y": 300
+          },
+          "width": 126,
+          "height": 157
+        },
+        {
+          "id": "eventbridge-1",
+          "type": "aws-network",
+          "data": {
+            "label": "Event Bus",
+            "service": "EventBridge",
+            "metadata": {
+              "bus": "Default Event Bus",
+              "purpose": "Decoupled communication for Saga workflow",
+              "rules": "Event filtering for microservices"
+            }
+          },
+          "position": {
+            "x": 750,
+            "y": 800
+          },
+          "width": 129,
+          "height": 157
+        },
+        {
+          "id": "lambda-order-service",
+          "type": "aws-compute",
+          "data": {
+            "label": "Order Service Lambda",
+            "service": "Lambda",
+            "metadata": {
+              "runtime": "Node.js 18.x",
+              "role": "IAM Role for Order Service",
+              "function": "Processes orders, publishes 'Order Created', compensates on failures"
+            }
+          },
+          "position": {
+            "x": 835,
+            "y": 550
+          },
+          "width": 187,
+          "height": 157
+        },
+        {
+          "id": "dynamodb-order-service",
+          "type": "aws-database",
+          "data": {
+            "label": "Order Service DB",
+            "service": "DynamoDB",
+            "metadata": {
+              "table": "OrdersTable",
+              "consistency": "Eventual, strong",
+              "billing_mode": "On-demand"
+            }
+          },
+          "position": {
+            "x": 230,
+            "y": 800
+          },
+          "width": 152,
+          "height": 157
+        },
+        {
+          "id": "lambda-payment-service",
+          "type": "aws-compute",
+          "data": {
+            "label": "Payment Service Lambda",
+            "service": "Lambda",
+            "metadata": {
+              "runtime": "Node.js 18.x",
+              "role": "IAM Role for Payment Service",
+              "function": "Processes payments, publishes 'Payment Succeeded/Failed', compensates on failures"
+            }
+          },
+          "position": {
+            "x": 580,
+            "y": 1050
+          },
+          "width": 207,
+          "height": 157
+        },
+        {
+          "id": "dynamodb-payment-service",
+          "type": "aws-database",
+          "data": {
+            "label": "Payment Service DB",
+            "service": "DynamoDB",
+            "metadata": {
+              "table": "PaymentsTable",
+              "consistency": "Eventual, strong",
+              "billing_mode": "On-demand"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 1300
+          },
+          "width": 172,
+          "height": 157
+        },
+        {
+          "id": "lambda-shipping-service",
+          "type": "aws-compute",
+          "data": {
+            "label": "Shipping Service Lambda",
+            "service": "Lambda",
+            "metadata": {
+              "runtime": "Node.js 18.x",
+              "role": "IAM Role for Shipping Service",
+              "function": "Manages shipping, publishes 'Shipping Succeeded/Failed', compensates on failures"
+            }
+          },
+          "position": {
+            "x": 1090,
+            "y": 1050
+          },
+          "width": 207,
+          "height": 157
+        },
+        {
+          "id": "dynamodb-shipping-service",
+          "type": "aws-database",
+          "data": {
+            "label": "Shipping Service DB",
+            "service": "DynamoDB",
+            "metadata": {
+              "table": "ShippingTable",
+              "consistency": "Eventual, strong",
+              "billing_mode": "On-demand"
+            }
+          },
+          "position": {
+            "x": 1250,
+            "y": 1300
+          },
+          "width": 173,
+          "height": 157
+        },
+        {
+          "id": "cloudwatch-1",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "metrics": "Lambda invocations, errors, duration",
+              "logs": "Application logs from Lambda, EventBridge"
+            }
+          },
+          "position": {
+            "x": 590,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 178
+        },
+        {
+          "id": "iam-roles",
+          "type": "default",
+          "data": {
+            "label": "IAM Roles",
+            "service": "IAM",
+            "metadata": {
+              "policies": "Least privilege access for Lambda to DynamoDB, EventBridge, CloudWatch",
+              "management": "Roles for each microservice"
+            }
+          },
+          "position": {
+            "x": 930,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 178
+        },
+        {
+          "id": "vpc-1",
+          "type": "aws-network",
+          "data": {
+            "label": "VPC",
+            "service": "VPC",
+            "metadata": {
+              "ip_range": "10.0.0.0/16",
+              "purpose": "Isolated network environment",
+              "deployment": "Multi-AZ"
+            }
+          },
+          "position": {
+            "x": 890,
+            "y": 50
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "private-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnets",
+            "service": "VPC",
+            "metadata": {
+              "deployment": "Multi-AZ for high availability",
+              "purpose": "Secure compute (Lambda ENIs) and private access to managed services (DynamoDB via VPC Endpoint)"
+            }
+          },
+          "position": {
+            "x": 890,
+            "y": 300
+          },
+          "width": 143,
+          "height": 157
+        },
+        {
+          "id": "waf-1",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS WAF",
+            "service": "WAF",
+            "metadata": {
+              "rules": "Common web exploits protection, rate limiting",
+              "association": "API Gateway"
+            }
+          },
+          "position": {
+            "x": 420,
+            "y": 50
+          },
+          "width": 120,
+          "height": 157
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "api-gateway-1",
+          "target": "lambda-order-service",
+          "label": "triggers 'Create Order' function"
+        },
+        {
+          "id": "edge-2",
+          "source": "lambda-order-service",
+          "target": "dynamodb-order-service",
+          "label": "writes/reads order state"
+        },
+        {
+          "id": "edge-3",
+          "source": "lambda-order-service",
+          "target": "eventbridge-1",
+          "label": "publishes 'Order Created' event"
+        },
+        {
+          "id": "edge-4",
+          "source": "eventbridge-1",
+          "target": "lambda-payment-service",
+          "label": "routes 'Order Created' event"
+        },
+        {
+          "id": "edge-5",
+          "source": "lambda-payment-service",
+          "target": "dynamodb-payment-service",
+          "label": "writes/reads payment state"
+        },
+        {
+          "id": "edge-6",
+          "source": "lambda-payment-service",
+          "target": "eventbridge-1",
+          "label": "publishes 'Payment Succeeded/Failed' event"
+        },
+        {
+          "id": "edge-7",
+          "source": "eventbridge-1",
+          "target": "lambda-shipping-service",
+          "label": "routes 'Payment Succeeded' event"
+        },
+        {
+          "id": "edge-8",
+          "source": "lambda-shipping-service",
+          "target": "dynamodb-shipping-service",
+          "label": "writes/reads shipping state"
+        },
+        {
+          "id": "edge-9",
+          "source": "lambda-shipping-service",
+          "target": "eventbridge-1",
+          "label": "publishes 'Shipping Succeeded/Failed' event"
+        },
+        {
+          "id": "edge-10",
+          "source": "eventbridge-1",
+          "target": "lambda-order-service",
+          "label": "routes 'Payment/Shipping Failed' for compensation"
+        },
+        {
+          "id": "edge-11",
+          "source": "eventbridge-1",
+          "target": "lambda-payment-service",
+          "label": "routes 'Shipping Failed' for compensation"
+        },
+        {
+          "id": "edge-12",
+          "source": "lambda-order-service",
+          "target": "cloudwatch-1",
+          "label": "sends logs and metrics"
+        },
+        {
+          "id": "edge-13",
+          "source": "lambda-payment-service",
+          "target": "cloudwatch-1",
+          "label": "sends logs and metrics"
+        },
+        {
+          "id": "edge-14",
+          "source": "lambda-shipping-service",
+          "target": "cloudwatch-1",
+          "label": "sends logs and metrics"
+        },
+        {
+          "id": "edge-15",
+          "source": "lambda-order-service",
+          "target": "iam-roles",
+          "label": "assumes IAM role"
+        },
+        {
+          "id": "edge-16",
+          "source": "lambda-payment-service",
+          "target": "iam-roles",
+          "label": "assumes IAM role"
+        },
+        {
+          "id": "edge-17",
+          "source": "lambda-shipping-service",
+          "target": "iam-roles",
+          "label": "assumes IAM role"
+        },
+        {
+          "id": "edge-18",
+          "source": "waf-1",
+          "target": "api-gateway-1",
+          "label": "protects"
+        },
+        {
+          "id": "edge-19",
+          "source": "private-subnets",
+          "target": "lambda-order-service",
+          "label": "hosts Lambda ENI (VPC-enabled Lambda)"
+        },
+        {
+          "id": "edge-20",
+          "source": "private-subnets",
+          "target": "lambda-payment-service",
+          "label": "hosts Lambda ENI (VPC-enabled Lambda)"
+        },
+        {
+          "id": "edge-21",
+          "source": "private-subnets",
+          "target": "lambda-shipping-service",
+          "label": "hosts Lambda ENI (VPC-enabled Lambda)"
+        },
+        {
+          "id": "edge-22",
+          "source": "private-subnets",
+          "target": "dynamodb-order-service",
+          "label": "accesses (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-23",
+          "source": "private-subnets",
+          "target": "dynamodb-payment-service",
+          "label": "accesses (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-24",
+          "source": "private-subnets",
+          "target": "dynamodb-shipping-service",
+          "label": "accesses (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-25",
+          "source": "vpc-1",
+          "target": "private-subnets",
+          "label": "contains"
+        }
+      ],
+      "lastModified": 1771296778061
+    },
+    {
+      "id": "03598489-4e3b-43a1-b8b2-77d45ba1f63f",
+      "name": "New Architecture",
+      "nodes": [
+        {
+          "id": "node-1",
+          "type": "aws-storage",
+          "data": {
+            "label": "S3 Landing Zone",
+            "service": "S3",
+            "metadata": {
+              "Description": "Raw data landing area",
+              "Encryption": "SSE-S3",
+              "Versioning": "Enabled",
+              "Security": "IAM Policies"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 300
+          },
+          "width": 149,
+          "height": 157
+        },
+        {
+          "id": "node-2",
+          "type": "aws-compute",
+          "data": {
+            "label": "Glue Crawler",
+            "service": "AWS Glue",
+            "metadata": {
+              "Description": "Scans S3 Landing Zone for schema inference",
+              "Triggers": "Triggered by Glue Workflow",
+              "Output": "Glue Data Catalog"
+            }
+          },
+          "position": {
+            "x": 380,
+            "y": 550
+          },
+          "width": 123,
+          "height": 157
+        },
+        {
+          "id": "node-3",
+          "type": "aws-database",
+          "data": {
+            "label": "Glue Data Catalog",
+            "service": "AWS Glue",
+            "metadata": {
+              "Description": "Central metadata repository",
+              "Content": "Schema for S3 Landing Zone,Schema for S3 Processed Data"
+            }
+          },
+          "position": {
+            "x": 805,
+            "y": 800
+          },
+          "width": 158,
+          "height": 157
+        },
+        {
+          "id": "node-4",
+          "type": "aws-compute",
+          "data": {
+            "label": "Glue Workflow",
+            "service": "AWS Glue",
+            "metadata": {
+              "Description": "Orchestrates the ETL pipeline",
+              "States": "Starts Crawler,Triggers Jobs based on events"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 300
+          },
+          "width": 134,
+          "height": 157
+        },
+        {
+          "id": "node-5",
+          "type": "aws-compute",
+          "data": {
+            "label": "Glue Job (Transform)",
+            "service": "AWS Glue",
+            "metadata": {
+              "Description": "Cleans and transforms raw data using PySpark",
+              "Language": "PySpark",
+              "Input": "Glue Data Catalog",
+              "Output": "S3 Processed Data"
+            }
+          },
+          "position": {
+            "x": 380,
+            "y": 1050
+          },
+          "width": 180,
+          "height": 157
+        },
+        {
+          "id": "node-6",
+          "type": "aws-storage",
+          "data": {
+            "label": "S3 Processed Data",
+            "service": "S3",
+            "metadata": {
+              "Description": "Cleaned and transformed data storage",
+              "Encryption": "SSE-S3",
+              "Versioning": "Enabled",
+              "Security": "IAM Policies"
+            }
+          },
+          "position": {
+            "x": 1145,
+            "y": 1300
+          },
+          "width": 164,
+          "height": 157
+        },
+        {
+          "id": "node-7",
+          "type": "aws-compute",
+          "data": {
+            "label": "Glue Job (Load to Redshift)",
+            "service": "AWS Glue",
+            "metadata": {
+              "Description": "Loads processed data into Redshift",
+              "Input": "S3 Processed Data,Glue Data Catalog",
+              "Output": "Redshift Data Warehouse"
+            }
+          },
+          "position": {
+            "x": 1240,
+            "y": 1550
+          },
+          "width": 221,
+          "height": 157,
+          "selected": true,
+          "dragging": false
+        },
+        {
+          "id": "node-8",
+          "type": "aws-database",
+          "data": {
+            "label": "Redshift Data Warehouse",
+            "service": "Amazon Redshift",
+            "metadata": {
+              "Description": "Analytical data warehouse",
+              "Deployment": "Multi-AZ,VPC Private Subnet",
+              "Security": "IAM Integration,Security Groups",
+              "Scalability": "Concurrency Scaling"
+            }
+          },
+          "position": {
+            "x": 1420,
+            "y": 1800
+          },
+          "width": 207,
+          "height": 157
+        },
+        {
+          "id": "node-9",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch Logs & Metrics",
+            "service": "Amazon CloudWatch",
+            "metadata": {
+              "Description": "Centralized monitoring and logging",
+              "Monitors": "Glue Crawler,Glue Jobs,Redshift",
+              "Features": "Alarms,Dashboards"
+            }
+          },
+          "position": {
+            "x": 445,
+            "y": 2050
+          },
+          "width": 150,
+          "height": 188
+        },
+        {
+          "id": "node-10",
+          "type": "default",
+          "data": {
+            "label": "IAM Roles",
+            "service": "IAM",
+            "metadata": {
+              "Description": "Granular permissions for AWS services",
+              "Principle": "Least Privilege",
+              "Applicability": "Glue,S3,Redshift"
+            }
+          },
+          "position": {
+            "x": 975,
+            "y": 50
+          },
+          "width": 150,
+          "height": 156
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-1",
+          "target": "node-2",
+          "label": "Scans data in"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-2",
+          "target": "node-3",
+          "label": "Updates schema in"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-4",
+          "target": "node-2",
+          "label": "Starts"
+        },
+        {
+          "id": "edge-4",
+          "source": "node-4",
+          "target": "node-5",
+          "label": "Triggers (on Crawler completion)"
+        },
+        {
+          "id": "edge-5",
+          "source": "node-4",
+          "target": "node-7",
+          "label": "Triggers (on Transform Job success)"
+        },
+        {
+          "id": "edge-6",
+          "source": "node-3",
+          "target": "node-5",
+          "label": "Reads schema from"
+        },
+        {
+          "id": "edge-7",
+          "source": "node-5",
+          "target": "node-6",
+          "label": "Writes transformed data to"
+        },
+        {
+          "id": "edge-8",
+          "source": "node-6",
+          "target": "node-7",
+          "label": "Reads processed data from"
+        },
+        {
+          "id": "edge-9",
+          "source": "node-3",
+          "target": "node-7",
+          "label": "Reads schema from"
+        },
+        {
+          "id": "edge-10",
+          "source": "node-7",
+          "target": "node-8",
+          "label": "Loads data into"
+        },
+        {
+          "id": "edge-11",
+          "source": "node-2",
+          "target": "node-9",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-12",
+          "source": "node-5",
+          "target": "node-9",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-13",
+          "source": "node-7",
+          "target": "node-9",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-14",
+          "source": "node-8",
+          "target": "node-9",
+          "label": "Sends logs/metrics to"
+        },
+        {
+          "id": "edge-15",
+          "source": "node-10",
+          "target": "node-2",
+          "label": "Provides permissions for"
+        },
+        {
+          "id": "edge-16",
+          "source": "node-10",
+          "target": "node-5",
+          "label": "Provides permissions for"
+        },
+        {
+          "id": "edge-17",
+          "source": "node-10",
+          "target": "node-7",
+          "label": "Provides permissions for"
+        },
+        {
+          "id": "edge-18",
+          "source": "node-10",
+          "target": "node-8",
+          "label": "Provides permissions for"
+        },
+        {
+          "id": "edge-19",
+          "source": "node-10",
+          "target": "node-1",
+          "label": "Provides access to"
+        },
+        {
+          "id": "edge-20",
+          "source": "node-10",
+          "target": "node-6",
+          "label": "Provides access to"
+        }
+      ],
+      "lastModified": 1771462982552
+    },
+    {
+      "id": "1f9b88fc-98a4-432f-bc62-495df54e67f4",
+      "name": "New Architecture",
+      "nodes": [
+        {
+          "id": "node-1",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region VPC",
+            "service": "VPC",
+            "metadata": {
+              "region": "Primary AWS Region",
+              "purpose": "Isolate network resources"
+            }
+          },
+          "position": {
+            "x": 630,
+            "y": 50
+          },
+          "width": 171,
+          "height": 157
+        },
+        {
+          "id": "node-2",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region Public Subnets",
+            "service": "VPC",
+            "metadata": {
+              "availability": "Multi-AZ",
+              "purpose": "Host public-facing resources"
+            }
+          },
+          "position": {
+            "x": 475,
+            "y": 300
+          },
+          "width": 243,
+          "height": 157
+        },
+        {
+          "id": "node-3",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region Private Subnets",
+            "service": "VPC",
+            "metadata": {
+              "availability": "Multi-AZ",
+              "purpose": "Host private application and database resources"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814550
+            }
+          },
+          "position": {
+            "x": 175,
+            "y": 1800
+          },
+          "width": 249,
+          "height": 157
+        },
+        {
+          "id": "node-4",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region Internet Gateway",
+            "service": "Internet Gateway",
+            "metadata": {
+              "connectivity": "Internet access for public subnets"
+            }
+          },
+          "position": {
+            "x": 985,
+            "y": 550
+          },
+          "width": 258,
+          "height": 157
+        },
+        {
+          "id": "node-5",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region NAT Gateway",
+            "service": "NAT Gateway",
+            "metadata": {
+              "connectivity": "Outbound internet access for private subnets",
+              "cost_optimization": "Allocated in public subnets"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814543
+            }
+          },
+          "position": {
+            "x": 175,
+            "y": 2050
+          },
+          "width": 233,
+          "height": 157
+        },
+        {
+          "id": "node-6",
+          "type": "aws-network",
+          "data": {
+            "label": "Route 53",
+            "service": "Route 53",
+            "metadata": {
+              "type": "DNS Service",
+              "feature": "Latency-based routing, Failover routing, Health checks"
+            }
+          },
+          "position": {
+            "x": 1450,
+            "y": 50
+          },
+          "width": 120,
+          "height": 157
+        },
+        {
+          "id": "node-7",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region WAF",
+            "service": "WAF",
+            "metadata": {
+              "security": "Web application firewall, DDoS protection, Common exploits protection"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814510
+            }
+          },
+          "position": {
+            "x": 825,
+            "y": 800
+          },
+          "width": 173,
+          "height": 157
+        },
+        {
+          "id": "node-8",
+          "type": "aws-network",
+          "data": {
+            "label": "Primary Region Application Load Balancer",
+            "service": "Application Load Balancer",
+            "metadata": {
+              "availability": "Multi-AZ",
+              "performance": "Distributes incoming traffic, SSL termination",
+              "security": "Integrated with WAF, HTTPS listener"
+            }
+          },
+          "position": {
+            "x": 315,
+            "y": 550
+          },
+          "width": 318,
+          "height": 157
+        },
+        {
+          "id": "node-9",
+          "type": "aws-compute",
+          "data": {
+            "label": "Primary Region EC2 Auto Scaling Group",
+            "service": "Auto Scaling",
+            "metadata": {
+              "reliability": "Scales application tier automatically, Multi-AZ",
+              "instance_type": "t3.medium (Production capacity)",
+              "cost_optimization": "Scales based on demand"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814512
+            }
+          },
+          "position": {
+            "x": 155,
+            "y": 800
+          },
+          "width": 303,
+          "height": 157
+        },
+        {
+          "id": "node-10",
+          "type": "aws-compute",
+          "data": {
+            "label": "Primary Region EC2 Instances",
+            "service": "EC2",
+            "metadata": {
+              "role": "Application Servers, Web Servers",
+              "security": "Security Group, IAM Role, Private IP",
+              "reliability": "Part of Auto Scaling Group"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814549
+            }
+          },
+          "position": {
+            "x": 70,
+            "y": 1050
+          },
+          "width": 239,
+          "height": 157
+        },
+        {
+          "id": "node-11",
+          "type": "aws-database",
+          "data": {
+            "label": "Primary Region RDS Database",
+            "service": "RDS",
+            "metadata": {
+              "engine": "PostgreSQL, MySQL",
+              "deployment": "Multi-AZ",
+              "reliability": "Automated backups, Point-in-time recovery",
+              "security": "Security Group, IAM database authentication"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814552
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 1550
+          },
+          "width": 239,
+          "height": 157
+        },
+        {
+          "id": "node-12",
+          "type": "default",
+          "data": {
+            "label": "Primary Region CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "operational_excellence": "Monitoring, Logging, Alarms",
+              "monitors": "EC2, RDS, ALB, VPC Flow Logs"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814553
+            }
+          },
+          "position": {
+            "x": 495,
+            "y": 1800
+          },
+          "width": 150,
+          "height": 173
+        },
+        {
+          "id": "node-13",
+          "type": "default",
+          "data": {
+            "label": "IAM Roles & Policies",
+            "service": "IAM",
+            "metadata": {
+              "security": "Least privilege access control, Resource permissions"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814554
+            }
+          },
+          "position": {
+            "x": 485,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 173
+        },
+        {
+          "id": "node-101",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region VPC",
+            "service": "VPC",
+            "metadata": {
+              "region": "DR AWS Region",
+              "purpose": "Isolate DR network resources"
+            }
+          },
+          "position": {
+            "x": 1970,
+            "y": 50
+          },
+          "width": 138,
+          "height": 157
+        },
+        {
+          "id": "node-102",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region Public Subnets",
+            "service": "VPC",
+            "metadata": {
+              "availability": "Multi-AZ",
+              "purpose": "Host public-facing resources for DR failover"
+            }
+          },
+          "position": {
+            "x": 1875,
+            "y": 300
+          },
+          "width": 210,
+          "height": 157
+        },
+        {
+          "id": "node-103",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region Private Subnets",
+            "service": "VPC",
+            "metadata": {
+              "availability": "Multi-AZ",
+              "purpose": "Host private application and database resources for DR failover"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814546
+            }
+          },
+          "position": {
+            "x": 1290,
+            "y": 2050
+          },
+          "width": 216,
+          "height": 157
+        },
+        {
+          "id": "node-104",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region Internet Gateway",
+            "service": "Internet Gateway",
+            "metadata": {
+              "connectivity": "Internet access for public subnets"
+            }
+          },
+          "position": {
+            "x": 1865,
+            "y": 550
+          },
+          "width": 225,
+          "height": 157
+        },
+        {
+          "id": "node-105",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region NAT Gateway",
+            "service": "NAT Gateway",
+            "metadata": {
+              "connectivity": "Outbound internet access for private subnets",
+              "cost_optimization": "Allocated in public subnets"
+            }
+          },
+          "position": {
+            "x": 1290,
+            "y": 2300
+          },
+          "width": 199,
+          "height": 157
+        },
+        {
+          "id": "node-106",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region WAF",
+            "service": "WAF",
+            "metadata": {
+              "security": "Web application firewall, DDoS protection, Common exploits protection"
+            }
+          },
+          "position": {
+            "x": 1535,
+            "y": 300
+          },
+          "width": 140,
+          "height": 157
+        },
+        {
+          "id": "node-107",
+          "type": "aws-network",
+          "data": {
+            "label": "DR Region Application Load Balancer",
+            "service": "Application Load Balancer",
+            "metadata": {
+              "availability": "Multi-AZ",
+              "performance": "Traffic distribution on failover",
+              "security": "Integrated with WAF, HTTPS listener"
+            }
+          },
+          "position": {
+            "x": 1545,
+            "y": 550
+          },
+          "width": 285,
+          "height": 157
+        },
+        {
+          "id": "node-108",
+          "type": "aws-compute",
+          "data": {
+            "label": "DR Region EC2 Auto Scaling Group (Warm Standby)",
+            "service": "Auto Scaling",
+            "metadata": {
+              "reliability": "Scales application tier on failover",
+              "instance_type": "t3.small, t3.micro",
+              "cost_optimization": "Desired capacity 0 or 1 for warm standby",
+              "purpose": "Ready for scale-up during DR event"
+            }
+          },
+          "position": {
+            "x": 1460,
+            "y": 800
+          },
+          "width": 384,
+          "height": 157
+        },
+        {
+          "id": "node-109",
+          "type": "aws-compute",
+          "data": {
+            "label": "DR Region EC2 Instances (Stopped/Minimal)",
+            "service": "EC2",
+            "metadata": {
+              "role": "Application Servers, Web Servers",
+              "security": "Security Group, IAM Role, Private IP",
+              "cost_optimization": "Stopped or minimal instances for standby"
+            }
+          },
+          "position": {
+            "x": 1460,
+            "y": 1050
+          },
+          "width": 334,
+          "height": 157
+        },
+        {
+          "id": "node-110",
+          "type": "aws-database",
+          "data": {
+            "label": "DR Region RDS Read Replica",
+            "service": "RDS",
+            "metadata": {
+              "engine": "PostgreSQL, MySQL",
+              "deployment": "Cross-Region Read Replica",
+              "reliability": "Data replication from Primary, Promoted to primary on DR event",
+              "security": "Security Group"
+            }
+          },
+          "position": {
+            "x": 815,
+            "y": 1800
+          },
+          "width": 228,
+          "height": 157
+        },
+        {
+          "id": "node-111",
+          "type": "default",
+          "data": {
+            "label": "DR Region CloudWatch",
+            "service": "CloudWatch",
+            "metadata": {
+              "operational_excellence": "Monitoring, Logging, Alarms",
+              "monitors": "EC2, RDS, ALB, VPC Flow Logs"
+            },
+            "simulation": {
+              "status": "processing",
+              "lastRun": 1771466814548
+            }
+          },
+          "position": {
+            "x": 1945,
+            "y": 2050
+          },
+          "width": 150,
+          "height": 173
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-1",
+          "target": "node-2",
+          "label": "contains"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-1",
+          "target": "node-3",
+          "label": "contains"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-1",
+          "target": "node-4",
+          "label": "attaches to"
+        },
+        {
+          "id": "edge-4",
+          "source": "node-2",
+          "target": "node-4",
+          "label": "routes traffic via"
+        },
+        {
+          "id": "edge-5",
+          "source": "node-3",
+          "target": "node-5",
+          "label": "routes outbound via"
+        },
+        {
+          "id": "edge-6",
+          "source": "node-2",
+          "target": "node-8",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-7",
+          "source": "node-8",
+          "target": "node-7",
+          "label": "protected by"
+        },
+        {
+          "id": "edge-8",
+          "source": "node-7",
+          "target": "node-8",
+          "label": "forwards traffic to"
+        },
+        {
+          "id": "edge-9",
+          "source": "node-8",
+          "target": "node-9",
+          "label": "distributes traffic to"
+        },
+        {
+          "id": "edge-10",
+          "source": "node-9",
+          "target": "node-10",
+          "label": "manages"
+        },
+        {
+          "id": "edge-11",
+          "source": "node-10",
+          "target": "node-3",
+          "label": "resides in"
+        },
+        {
+          "id": "edge-12",
+          "source": "node-10",
+          "target": "node-11",
+          "label": "queries"
+        },
+        {
+          "id": "edge-13",
+          "source": "node-11",
+          "target": "node-3",
+          "label": "resides in"
+        },
+        {
+          "id": "edge-14",
+          "source": "node-10",
+          "target": "node-12",
+          "label": "sends logs to"
+        },
+        {
+          "id": "edge-15",
+          "source": "node-11",
+          "target": "node-12",
+          "label": "sends logs to"
+        },
+        {
+          "id": "edge-16",
+          "source": "node-8",
+          "target": "node-12",
+          "label": "sends metrics/logs to"
+        },
+        {
+          "id": "edge-17",
+          "source": "node-13",
+          "target": "node-9",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "edge-18",
+          "source": "node-13",
+          "target": "node-10",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "edge-19",
+          "source": "node-13",
+          "target": "node-11",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "edge-20",
+          "source": "node-6",
+          "target": "node-7",
+          "label": "primary DNS points to"
+        },
+        {
+          "id": "edge-21",
+          "source": "node-101",
+          "target": "node-102",
+          "label": "contains"
+        },
+        {
+          "id": "edge-22",
+          "source": "node-101",
+          "target": "node-103",
+          "label": "contains"
+        },
+        {
+          "id": "edge-23",
+          "source": "node-101",
+          "target": "node-104",
+          "label": "attaches to"
+        },
+        {
+          "id": "edge-24",
+          "source": "node-102",
+          "target": "node-104",
+          "label": "routes traffic via"
+        },
+        {
+          "id": "edge-25",
+          "source": "node-103",
+          "target": "node-105",
+          "label": "routes outbound via"
+        },
+        {
+          "id": "edge-26",
+          "source": "node-102",
+          "target": "node-107",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-27",
+          "source": "node-107",
+          "target": "node-106",
+          "label": "protected by"
+        },
+        {
+          "id": "edge-28",
+          "source": "node-106",
+          "target": "node-107",
+          "label": "forwards traffic to"
+        },
+        {
+          "id": "edge-29",
+          "source": "node-107",
+          "target": "node-108",
+          "label": "distributes traffic to"
+        },
+        {
+          "id": "edge-30",
+          "source": "node-108",
+          "target": "node-109",
+          "label": "manages"
+        },
+        {
+          "id": "edge-31",
+          "source": "node-109",
+          "target": "node-103",
+          "label": "resides in"
+        },
+        {
+          "id": "edge-32",
+          "source": "node-109",
+          "target": "node-110",
+          "label": "queries"
+        },
+        {
+          "id": "edge-33",
+          "source": "node-110",
+          "target": "node-103",
+          "label": "resides in"
+        },
+        {
+          "id": "edge-34",
+          "source": "node-109",
+          "target": "node-111",
+          "label": "sends logs to"
+        },
+        {
+          "id": "edge-35",
+          "source": "node-110",
+          "target": "node-111",
+          "label": "sends logs to"
+        },
+        {
+          "id": "edge-36",
+          "source": "node-107",
+          "target": "node-111",
+          "label": "sends metrics/logs to"
+        },
+        {
+          "id": "edge-37",
+          "source": "node-6",
+          "target": "node-106",
+          "label": "failover DNS points to (WAF in front of ALB)"
+        },
+        {
+          "id": "edge-38",
+          "source": "node-11",
+          "target": "node-110",
+          "label": "replicates data to (Cross-Region)"
+        },
+        {
+          "id": "edge-39",
+          "source": "node-10",
+          "target": "node-13",
+          "label": "assumes"
+        },
+        {
+          "id": "edge-40",
+          "source": "node-109",
+          "target": "node-13",
+          "label": "assumes"
+        }
+      ],
+      "lastModified": 1771468078493
+    },
+    {
+      "id": "c2ef3a2e-d334-4a0c-b454-f2c0578d83a0",
+      "name": "New Architecture",
+      "nodes": [],
+      "edges": [],
+      "lastModified": 1771468348047
+    }
+  ],
+  "timestamp": 1771611285719
+}
