@@ -2,9 +2,37 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { AppNodeData } from '@/lib/store';
-import { Loader2, CheckCircle, XCircle, Database, File, User, Activity, Play, Square, Circle, HelpCircle } from 'lucide-react';
+import {
+    Loader2, CheckCircle, XCircle, Database, File, User, Activity, Play,
+    Square, Circle, HelpCircle, Server, Cloud, Shield, Settings, Mail,
+    Globe, Smartphone, Monitor, Cpu, HardDrive, Wifi, Zap
+} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getServiceDescription } from '@/lib/registry';
+
+// Basic map of selectable string icons to their Lucide component
+const CUSTOM_ICONS: Record<string, any> = {
+    'activity': Activity,
+    'server': Server,
+    'cloud': Cloud,
+    'database': Database,
+    'shield': Shield,
+    'settings': Settings,
+    'mail': Mail,
+    'globe': Globe,
+    'smartphone': Smartphone,
+    'monitor': Monitor,
+    'file': File,
+    'user': User,
+    'cpu': Cpu,
+    'hard-drive': HardDrive,
+    'wifi': Wifi,
+    'zap': Zap,
+    'square': Square,
+    'circle': Circle,
+    'play': Play,
+    'help-circle': HelpCircle,
+};
 
 const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     const { label, service, simulation, provider } = data;
@@ -57,11 +85,16 @@ const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
             shapeClasses = "rounded-lg";
     }
 
-    // Custom colors from metadata
+    // Custom colors and icon from metadata
     const customBg = data.metadata?.backgroundColor;
     const customBorder = data.metadata?.borderColor;
     const customText = data.metadata?.textColor;
-    const customIcon = data.metadata?.iconColor;
+    const customIconColor = data.metadata?.iconColor;
+    const customIconName = data.metadata?.customIcon as string | undefined;
+
+    if (customIconName && CUSTOM_ICONS[customIconName]) {
+        Icon = CUSTOM_ICONS[customIconName];
+    }
 
     return (
         <Tooltip>
@@ -102,7 +135,7 @@ const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                         <Icon
                             size={subtype === 'start-end' || subtype === 'actor' ? 32 : 24}
                             className={cn("text-foreground", iconColor)}
-                            style={{ color: customIcon }}
+                            style={{ color: customIconColor }}
                         />
                     </div>
 

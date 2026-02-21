@@ -715,6 +715,42 @@ export default function PropertiesPanel() {
                                                     />
                                                 </div>
                                             </div>
+
+                                            <div className="mt-3">
+                                                <Label className="text-xs">Icon</Label>
+                                                <select
+                                                    value={metadata?.customIcon || ''}
+                                                    onChange={(e) => {
+                                                        const updateNode = useDiagramStore.getState().updateNode;
+                                                        updateNode(selectedNodeId, {
+                                                            metadata: { ...metadata, customIcon: e.target.value }
+                                                        });
+                                                    }}
+                                                    className="w-full h-8 mt-1 text-xs rounded-md border border-input bg-background px-2"
+                                                >
+                                                    <option value="">Default (by Subtype)</option>
+                                                    <option value="activity">Activity</option>
+                                                    <option value="server">Server</option>
+                                                    <option value="cloud">Cloud</option>
+                                                    <option value="database">Database</option>
+                                                    <option value="shield">Shield (Security)</option>
+                                                    <option value="settings">Settings (Gear)</option>
+                                                    <option value="mail">Mail</option>
+                                                    <option value="globe">Globe (Web)</option>
+                                                    <option value="smartphone">Smartphone</option>
+                                                    <option value="monitor">Monitor (Client)</option>
+                                                    <option value="file">File</option>
+                                                    <option value="user">User</option>
+                                                    <option value="cpu">CPU (Compute)</option>
+                                                    <option value="hard-drive">Hard Drive</option>
+                                                    <option value="wifi">WiFi / Connectivity</option>
+                                                    <option value="zap">Zap (Action)</option>
+                                                    <option value="square">Square</option>
+                                                    <option value="circle">Circle</option>
+                                                    <option value="play">Play (Start)</option>
+                                                    <option value="help-circle">Decision (Help)</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
