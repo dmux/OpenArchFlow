@@ -2,14 +2,19 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { AppNodeData } from '@/lib/store';
-import { Database, File, User, Activity, Play, Square, Circle, HelpCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Database, File, User, Activity, Play, Square, Circle, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { getAwsServiceDescription } from '@/lib/aws-services';
+import { getServiceDescription } from '@/lib/registry';
 
 const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-    const { label, type } = data;
+    const { label, service, simulation, provider } = data;
+    const isProcessing = simulation?.status === 'processing';
+    const isSuccess = simulation?.status === 'success';
+    const isError = simulation?.status === 'error';
+
     const subtype = (data.subtype as string) || 'process'; // process, database, file, start-end, decision, actor
-    const description = getAwsServiceDescription('generic', subtype);
+    const description = getServiceDescription(provider as string || 'generic', service || '', (data.subtype as string) || (data.type as string));
+
 
     // Define shapes and icons based on subtype
     let Icon = Activity;

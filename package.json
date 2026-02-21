@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "author": "Rafael Sales <rafael.sales@gmail.com>",
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowAny": [
+        "react",
+        "react-dom"
+      ]
+    }
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -29,6 +37,7 @@
     "@upstash/redis": "^1.36.2",
     "@vercel/analytics": "^1.6.1",
     "aws-react-icons": "^3.2.0",
+    "azure-react-icons": "^0.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",

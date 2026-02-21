@@ -16,7 +16,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '@/lib/store';
 import { useShallow } from 'zustand/react/shallow';
-import AWSNode from './AWSNode';
+import CloudNode from './CloudNode';
 import FrameNode from './FrameNode';
 import AnnotationNode from './AnnotationNode';
 import NoteNode from './NoteNode';
@@ -24,39 +24,44 @@ import LaserPointer from './LaserPointer';
 import GenericNode from './GenericNode';
 
 const nodeTypes = {
-    'aws-compute': AWSNode,
-    'aws-database': AWSNode,
-    'aws-network': AWSNode,
-    'aws-storage': AWSNode,
-    'aws-integration': AWSNode,
-    'aws-security': AWSNode,
-    'aws-management': AWSNode,
-    'aws-analytics': AWSNode,
-    'aws-developer': AWSNode, // Added
-    'aws-machine-learning': AWSNode, // Added
-    'aws-media-services': AWSNode, // Added
-    'aws-migration': AWSNode, // Added
-    'aws-robotics': AWSNode, // Added
-    'aws-satellite': AWSNode, // Added
-    'aws-blockchain': AWSNode, // Added
-    'aws-business-applications': AWSNode, // Added
-    'aws-customer-engagement': AWSNode, // Added
-    'aws-end-user-computing': AWSNode, // Added
-    'aws-front-end-web-mobile': AWSNode, // Added
-    'aws-game-tech': AWSNode, // Added
-    'aws-internet-of-things': AWSNode, // Added
-    'aws-quantum-technologies': AWSNode, // Added
-    'aws-serverless': AWSNode, // Added
-    'aws-containers': AWSNode, // Added
-    'aws-ai': AWSNode, // Added
-    'aws-devtools': AWSNode, // Added
-    'cloud-native': AWSNode,
-    'client': AWSNode,
+    'aws-compute': CloudNode,
+    'aws-database': CloudNode,
+    'aws-network': CloudNode,
+    'aws-storage': CloudNode,
+    'aws-integration': CloudNode,
+    'aws-security': CloudNode,
+    'aws-management': CloudNode,
+    'aws-analytics': CloudNode,
+    'aws-developer': CloudNode,
+    'aws-machine-learning': CloudNode,
+    'aws-media-services': CloudNode,
+    'aws-migration': CloudNode,
+    'aws-robotics': CloudNode,
+    'aws-satellite': CloudNode,
+    'aws-blockchain': CloudNode,
+    'aws-business-applications': CloudNode,
+    'aws-customer-engagement': CloudNode,
+    'aws-end-user-computing': CloudNode,
+    'aws-front-end-web-mobile': CloudNode,
+    'aws-game-tech': CloudNode,
+    'aws-internet-of-things': CloudNode,
+    'aws-quantum-technologies': CloudNode,
+    'aws-serverless': CloudNode,
+    'aws-containers': CloudNode,
+    'aws-ai': CloudNode,
+    'aws-devtools': CloudNode,
+    'azure-compute': CloudNode,
+    'azure-database': CloudNode,
+    'azure-network': CloudNode,
+    'azure-storage': CloudNode,
+    'cloud-native': CloudNode,
+    'integration': CloudNode,
+    'client': CloudNode,
     'frame': FrameNode,
     'annotation': AnnotationNode,
     'note': NoteNode,
     'generic': GenericNode,
-    'default': AWSNode,
+    'default': CloudNode,
 };
 
 const EMPTY_NODES: any[] = [];

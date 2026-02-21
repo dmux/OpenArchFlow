@@ -1,15 +1,6 @@
-import {
-    SiKubernetes, SiArgo, SiPrometheus, SiGrafana, SiTerraform, SiHelm, SiIstio, SiDocker,
-    SiVault, SiOpentelemetry, SiEnvoyproxy, SiNginx, SiConsul,
-    SiRedis, SiPostgresql, SiMongodb, SiApachekafka, SiElasticsearch,
-    SiGithubactions, SiGitlab, SiJenkins, SiKong, SiCloudflare,
-    SiRancher, SiPodman, SiDatadog, SiSentry, SiAnsible, SiPulumi,
-    SiGithub, SiGithubcopilot, SiOpenai, SiHuggingface, SiAnthropic, SiGooglegemini,
-    SiNewrelic, SiDynatrace, SiSplunk, SiJaeger, SiFluentd, SiElastic, SiKibana, SiLogstash,
-    SiStripe, SiPaypal, SiApplepay, SiGooglepay, SiShopify, SiSlack, SiDiscord, SiTwilio, SiSendgrid,
-    SiVercel, SiFlydotio, SiHeroku, SiNetlify,
-    SiNeo4J, SiSupabase, SiPlanetscale, SiTurso
-} from 'react-icons/si';
+import React from 'react';
+import { IconComponent } from '../types';
+import { Cpu } from 'lucide-react';
 import {
     ArchitectureServiceAmazonEC2,
     ArchitectureServiceAWSLambda,
@@ -131,17 +122,11 @@ import {
     CategoryApplicationIntegration,
     CategoryAnalytics,
 } from 'aws-react-icons';
-import { Cloud, Box, LucideIcon, User, Smartphone, Globe, Monitor, Laptop, Cpu, Layers, Webhook, ShoppingCart } from 'lucide-react';
-
-// Define a type that can be either an AWS Icon component or a Lucide Icon
-type IconComponent = React.ComponentType<any> | LucideIcon;
 
 export const getAwsIcon = (service: string, type: string): IconComponent => {
-    // Normalize input
     const normalizedService = service?.toLowerCase().replace(/\s+/g, '') || '';
     const normalizedType = type?.toLowerCase() || '';
 
-    // 1. Direct Service Mapping
     const serviceMap: Record<string, React.ComponentType<any>> = {
         'ec2': ArchitectureServiceAmazonEC2,
         'lambda': ArchitectureServiceAWSLambda,
@@ -259,108 +244,12 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'datasync': ArchitectureServiceAWSDataSync,
         'transferfamily': ArchitectureServiceAWSTransferFamily,
         'migrationhub': ArchitectureServiceAWSMigrationHub,
-        // Client / Generic Mappings
-        'user': User,
-        'browser': Globe,
-        'mobile': Smartphone,
-        'client': Monitor,
-        'iot-device': Cpu,
-        // GitHub Services
-        'github': SiGithub,
-        'githubcopilot': SiGithubcopilot,
-        'copilot': SiGithubcopilot,
-        'codespaces': SiGithub, // Fallback as no specific icon exists
-        // Alternative AI
-        'openai': SiOpenai,
-        'huggingface': SiHuggingface,
-        'anthropic': SiAnthropic,
-        'gemini': SiGooglegemini,
-        'googlegemini': SiGooglegemini,
-        'midjourney': Box, // Adding mapping even if fallback is needed depending on library version
-        // Cloud Native
-        'kubernetes': SiKubernetes,
-        'k8s': SiKubernetes,
-        'argocd': SiArgo,
-        'argo': SiArgo,
-        'crossplane': Layers,
-        'prometheus': SiPrometheus,
-        'grafana': SiGrafana,
-        'terraform': SiTerraform,
-        'helm': SiHelm,
-        'istio': SiIstio,
-        'docker': SiDocker,
-        'vault': SiVault,
-        'opentelemetry': SiOpentelemetry,
-        'envoy': SiEnvoyproxy,
-        'nginx': SiNginx,
-        'consul': SiConsul,
-        // Database & integration
-        'redis': SiRedis,
-        'postgresql': SiPostgresql,
-        'postgres': SiPostgresql,
-        'mongodb': SiMongodb,
-        'mongo': SiMongodb,
-        'kafka': SiApachekafka,
-        'elasticsearch': SiElasticsearch,
-        'neon': SiPostgresql, // SiNeon not available in current react-icons version
-        'supabase': SiSupabase,
-        'planetscale': SiPlanetscale,
-        'turso': SiTurso,
-        'neo4j': SiNeo4J,
-        // CI/CD & DevOps
-        'githubactions': SiGithubactions,
-        'gitlab': SiGitlab,
-        'jenkins': SiJenkins,
-        'ansible': SiAnsible,
-        'pulumi': SiPulumi,
-        // API Gateways & Networking
-        'kong': SiKong,
-        'cloudflare': SiCloudflare,
-        // Containers (Alternative)
-        'rancher': SiRancher,
-        'podman': SiPodman,
-        // Observability
-        'datadog': SiDatadog,
-        'sentry': SiSentry,
-        'newrelic': SiNewrelic,
-        'dynatrace': SiDynatrace,
-        'splunk': SiSplunk,
-        'jaeger': SiJaeger,
-        'fluentd': SiFluentd,
-        'elastic': SiElastic,
-        'kibana': SiKibana,
-        'logstash': SiLogstash,
-        // Integrations & Payments
-        'stripe': SiStripe,
-        'paypal': SiPaypal,
-        'applepay': SiApplepay,
-        'googlepay': SiGooglepay,
-        'shopify': SiShopify,
-        'checkout': ShoppingCart,
-        'webhook': Webhook,
-        'slack': SiSlack,
-        'discord': SiDiscord,
-        'twilio': SiTwilio,
-        'sendgrid': SiSendgrid,
-        // Hosting & PaaS
-        'vercel': SiVercel,
-        'flyio': SiFlydotio,
-        'heroku': SiHeroku,
-        'netlify': SiNetlify,
     };
 
-    // Check for exact match or partial match in service name
     if (serviceMap[normalizedService]) {
         return serviceMap[normalizedService];
     }
 
-    // Try to find a key that is contained within the service string
-    const foundServiceKey = Object.keys(serviceMap).find(key => normalizedService.includes(key));
-    if (foundServiceKey) {
-        return serviceMap[foundServiceKey];
-    }
-
-    // 2. Type Mapping (Fallback)
     const typeMap: Record<string, React.ComponentType<any>> = {
         'aws-compute': CategoryCompute,
         'aws-database': CategoryDatabase,
@@ -394,6 +283,5 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         return typeMap[normalizedType];
     }
 
-    // 3. Last Resort Fallback
     return Cpu;
 };

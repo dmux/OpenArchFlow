@@ -1,27 +1,6 @@
-export const AWS_SERVICES = [
-    {
-        category: "Diagram Tools",
-        items: [
-            { name: "Frame/Group", service: "frame", type: "frame", description: "Groups multiple components together visually." },
-            { name: "Sticky Note", service: "note", type: "note", description: "Add text notes or annotations to your diagram." },
-            { name: "Process", service: "generic", type: "generic", subtype: "process", description: "A generic process step or action." },
-            { name: "Database", service: "generic", type: "generic", subtype: "database", description: "A generic data store or database." },
-            { name: "File", service: "generic", type: "generic", subtype: "file", description: "Represents a file or document." },
-            { name: "Start/End", service: "generic", type: "generic", subtype: "start-end", description: "Start or end point of a flow." },
-            { name: "Decision", service: "generic", type: "generic", subtype: "decision", description: "A decision point or condition." },
-            { name: "Actor", service: "generic", type: "generic", subtype: "actor", description: "A user, actor, or lane." },
-        ]
-    },
-    {
-        category: "Client & Devices",
-        items: [
-            { name: "User", service: "user", type: "client", description: "Represents an end user interacting with the system." },
-            { name: "Browser", service: "browser", type: "client", description: "Web browser client for accessing applications." },
-            { name: "Mobile App", service: "mobile", type: "client", description: "Native or hybrid mobile application." },
-            { name: "Client App", service: "client", type: "client", description: "General purpose client application or software." },
-            { name: "IoT Device", service: "iot-device", type: "client", description: "Internet of Things device or sensor." },
-        ]
-    },
+import { ServiceCategory } from '../types';
+
+export const AWS_SERVICES: ServiceCategory[] = [
     {
         category: "Compute",
         items: [
@@ -45,8 +24,6 @@ export const AWS_SERVICES = [
             { name: "Fargate", service: "fargate", type: "aws-containers", description: "Serverless compute for containers. Works with both ECS and EKS." },
             { name: "EKS Anywhere", service: "eksanywhere", description: "Create and operate Kubernetes clusters on your own infrastructure." },
             { name: "ECS Anywhere", service: "ecsanywhere", description: "Run and manage container workloads on-premises using the same APIs as ECS." },
-            { name: "Rancher", service: "rancher", type: "cloud-native", description: "Complete software stack for teams adopting containers." },
-            { name: "Podman", service: "podman", type: "cloud-native", description: "Daemonless, open source, Linux native tool designed to make it easy to find, run, build, share and deploy applications using OCI Containers and Container Images." },
         ]
     },
     {
@@ -62,16 +39,6 @@ export const AWS_SERVICES = [
             { name: "Keyspaces", service: "keyspaces", description: "Scalable, highly available, and managed Apache Cassandra-compatible database service." },
             { name: "MemoryDB", service: "memorydb", description: "Redis-compatible, durable, in-memory database service." },
             { name: "QLDB", service: "qldb", description: "Fully managed ledger database that provides a transparent, immutable, and cryptographically verifiable transaction log." },
-            { name: "Redis", service: "redis", type: "aws-database", description: "In-memory data structure store, used as a database, cache, and message broker." },
-            { name: "PostgreSQL", service: "postgresql", type: "aws-database", description: "Advanced, enterprise-class, and open-source relational database system." },
-            { name: "MongoDB", service: "mongodb", type: "aws-database", description: "Source-available cross-platform document-oriented database program." },
-            { name: "Elasticsearch", service: "elasticsearch", type: "aws-database", description: "Distributed, free and open search and analytics engine for all types of data." },
-            // Modern Databases
-            { name: "Neon", service: "neon", type: "cloud-native", description: "Serverless Postgres built for the cloud." },
-            { name: "Supabase", service: "supabase", type: "cloud-native", description: "Open source Firebase alternative." },
-            { name: "PlanetScale", service: "planetscale", type: "cloud-native", description: "Serverless MySQL database." },
-            { name: "Turso", service: "turso", type: "cloud-native", description: "Edge database based on libSQL." },
-            { name: "Neo4j", service: "neo4j", type: "cloud-native", description: "Graph database management system." },
         ]
     },
     {
@@ -102,8 +69,6 @@ export const AWS_SERVICES = [
             { name: "Internet Gateway", service: "internetgateway", type: "aws-network", description: "Horizontally scaled, redundant, and highly available VPC component that allows communication between your VPC and the internet." },
             { name: "Transit Gateway", service: "transitgateway", type: "aws-network", description: "Connects VPCs and on-premises networks through a central hub." },
             { name: "Private Subnet", service: "privatesubnet", type: "aws-network", description: "Subnet within a VPC that does not have a direct route to the internet." },
-            { name: "Kong", service: "kong", type: "cloud-native", description: "Cloud-native API gateway and service mesh." },
-            { name: "Cloudflare", service: "cloudflare", type: "cloud-native", description: "Global network designed to make everything you connect to the Internet secure, private, fast, and reliable." },
         ]
     },
     {
@@ -121,12 +86,6 @@ export const AWS_SERVICES = [
             { name: "Personalize", service: "personalize", description: "Create real-time personalized recommendations." },
             { name: "Forecast", service: "forecast", description: "Build accurate forecasting models based on machine learning." },
             { name: "Kendra", service: "kendra", description: "Highly accurate and easy-to-use enterprise search service powered by machine learning." },
-            // Additional AI Platforms
-            { name: "OpenAI", service: "openai", type: "aws-ai", description: "AI research and deployment company behind ChatGPT and DALL-E." },
-            { name: "Hugging Face", service: "huggingface", type: "aws-ai", description: "The AI community building the future." },
-            { name: "Anthropic", service: "anthropic", type: "aws-ai", description: "AI safety and research company behind Claude." },
-            { name: "Google Gemini", service: "gemini", type: "aws-ai", description: "Google's most capable AI model for multimodal tasks." },
-            { name: "Midjourney", service: "midjourney", type: "aws-ai", description: "Independent research lab producing an AI program that creates images from textual descriptions." },
         ]
     },
     {
@@ -138,7 +97,6 @@ export const AWS_SERVICES = [
             { name: "EventBridge", service: "eventbridge", type: "aws-integration", description: "Serverless event bus that helps you receive, filter, transform, route, and deliver events." },
             { name: "AppSync", service: "appsync", description: "Build serverless GraphQL and Pub/Sub APIs that simplify application development." },
             { name: "MQ", service: "mq", description: "Managed message broker service for Apache ActiveMQ and RabbitMQ." },
-            { name: "Kafka", service: "kafka", type: "aws-integration", description: "Distributed event streaming platform." },
         ]
     },
     {
@@ -168,10 +126,6 @@ export const AWS_SERVICES = [
             { name: "CodeArtifact", service: "codeartifact", description: "Secure, scalable, and cost-effective artifact management for software development." },
             { name: "Cloud9", service: "cloud9", description: "Cloud-based integrated development environment (IDE) for writing, running, and debugging code." },
             { name: "X-Ray", service: "xray", description: "Analyze and debug production, distributed applications." },
-            // GitHub Developer Tools
-            { name: "GitHub", service: "github", type: "aws-devtools", description: "Internet hosting service for software development and version control using Git." },
-            { name: "GitHub Copilot", service: "githubcopilot", type: "aws-devtools", description: "Cloud-based AI tool to assist users by autocompleting code." },
-            { name: "Codespaces", service: "codespaces", type: "aws-devtools", description: "Instant, cloud-based development environment." },
         ]
     },
     {
@@ -209,101 +163,5 @@ export const AWS_SERVICES = [
             { name: "Transfer Family", service: "transferfamily", description: "Fully managed support for SFTP, FTPS, and FTP." },
             { name: "Migration Hub", service: "migrationhub", description: "Simplify and accelerate the migration of your data centers to AWS." },
         ]
-    },
-    {
-        category: "Cloud Native",
-        items: [
-            { name: "Kubernetes", service: "kubernetes", type: "cloud-native", description: "Open-source system for automating deployment, scaling, and management of containerized applications." },
-            { name: "ArgoCD", service: "argocd", type: "cloud-native", description: "Declarative, GitOps continuous delivery tool for Kubernetes." },
-            { name: "Crossplane", service: "crossplane", type: "cloud-native", description: "Open source, CNCF project built on the foundation of Kubernetes to orchestrate anything." },
-            { name: "Prometheus", service: "prometheus", type: "cloud-native", description: "Open-source systems monitoring and alerting toolkit." },
-            { name: "Grafana", service: "grafana", type: "cloud-native", description: "Open source analytics & monitoring solution for every database." },
-            { name: "Terraform", service: "terraform", type: "cloud-native", description: "Infrastructure as code software tool created by HashiCorp." },
-            { name: "Helm", service: "helm", type: "cloud-native", description: "The package manager for Kubernetes." },
-            { name: "Istio", service: "istio", type: "cloud-native", description: "Open platform for providing a uniform way to integrate microservices, manage traffic flow across microservices, enforce policies and aggregate telemetry data." },
-            { name: "Docker", service: "docker", type: "cloud-native", description: "Set of platform as a service products that use OS-level virtualization to deliver software in packages called containers." },
-            { name: "Vault", service: "vault", type: "cloud-native", description: "Tool for securely accessing secrets." },
-            { name: "OpenTelemetry", service: "opentelemetry", type: "cloud-native", description: "Collection of tools, APIs, and SDKs used to instrument, generate, collect, and export telemetry data." },
-            { name: "Envoy", service: "envoy", type: "cloud-native", description: "Edge and service proxy designed for cloud-native applications." },
-            { name: "Nginx", service: "nginx", type: "cloud-native", description: "Web server that can also be used as a reverse proxy, load balancer, mail proxy and HTTP cache." },
-            { name: "Consul", service: "consul", type: "cloud-native", description: "Service networking solution to connect and secure services across any runtime platform and public or private cloud." },
-        ]
-    },
-    {
-        category: "CI/CD & DevOps",
-        items: [
-            { name: "GitHub Actions", service: "githubactions", type: "cloud-native", description: "Automate your workflow from idea to production." },
-            { name: "GitLab", service: "gitlab", type: "cloud-native", description: "The single DevOps platform." },
-            { name: "Jenkins", service: "jenkins", type: "cloud-native", description: "Open source automation server." },
-            { name: "Ansible", service: "ansible", type: "cloud-native", description: "Open-source software provisioning, configuration management, and application-deployment tool." },
-            { name: "Pulumi", service: "pulumi", type: "cloud-native", description: "Universal infrastructure as code." },
-        ]
-    },
-    {
-        category: "Observability",
-        items: [
-            { name: "Datadog", service: "datadog", type: "cloud-native", description: "Monitoring and security platform for cloud applications." },
-            { name: "Sentry", service: "sentry", type: "cloud-native", description: "Developer-first error tracking and performance monitoring." },
-            { name: "New Relic", service: "newrelic", type: "cloud-native", description: "Full-stack observability platform for software engineers." },
-            { name: "Dynatrace", service: "dynatrace", type: "cloud-native", description: "Software intelligence platform based on AI and automation." },
-            { name: "Splunk", service: "splunk", type: "cloud-native", description: "Data platform for searching, monitoring, and analyzing machine-generated big data." },
-            { name: "Elastic", service: "elastic", type: "cloud-native", description: "Search, observability, and security built on the Elastic Stack." },
-            { name: "Kibana", service: "kibana", type: "cloud-native", description: "Data visualization dashboard for Elasticsearch." },
-            { name: "Logstash", service: "logstash", type: "cloud-native", description: "Server-side data processing pipeline that ingests data from multiple sources simultaneously." },
-            { name: "Jaeger", service: "jaeger", type: "cloud-native", description: "Open source, end-to-end distributed tracing." },
-            { name: "Fluentd", service: "fluentd", type: "cloud-native", description: "Open source data collector for unified logging layer." },
-        ]
-    },
-    {
-        category: "Integrations & Payments",
-        items: [
-            { name: "Stripe", service: "stripe", type: "integration", description: "Financial infrastructure platform for the internet." },
-            { name: "PayPal", service: "paypal", type: "integration", description: "Online payments system." },
-            { name: "Apple Pay", service: "applepay", type: "integration", description: "Mobile payment and digital wallet service." },
-            { name: "Google Pay", service: "googlepay", type: "integration", description: "Online payment system developed by Google." },
-            { name: "Shopify", service: "shopify", type: "integration", description: "E-commerce platform for online stores." },
-            { name: "Checkout", service: "checkout", type: "integration", description: "E-commerce checkout process or gateway." },
-            { name: "Webhook", service: "webhook", type: "integration", description: "User-defined HTTP callbacks or webhooks." },
-            { name: "Slack", service: "slack", type: "integration", description: "Messaging program designed specifically for the office." },
-            { name: "Discord", service: "discord", type: "integration", description: "Voice, video and text communication service." },
-            { name: "Twilio", service: "twilio", type: "integration", description: "Customer engagement platform used to build direct, personalized relationships." },
-            { name: "SendGrid", service: "sendgrid", type: "integration", description: "Cloud-based customer communication platform." },
-        ]
-    },
-    {
-        category: "Hosting & PaaS",
-        items: [
-            { name: "Vercel", service: "vercel", type: "cloud-native", description: "Platform for frontend frameworks and static sites." },
-            { name: "Fly.io", service: "flyio", type: "cloud-native", description: "Deploy app servers close to your users." },
-            { name: "Heroku", service: "heroku", type: "cloud-native", description: "Cloud platform as a service supporting several programming languages." },
-            { name: "Netlify", service: "netlify", type: "cloud-native", description: "Hosting and serverless backend services for web applications." },
-            { name: "Cloudflare", service: "cloudflare", type: "cloud-native", description: "Global network designed to make everything you connect to the Internet secure, private, fast, and reliable." },
-        ]
-    },
-];
-
-export const getAwsServiceDescription = (service: string, subtype?: string): string => {
-    if (!service) return '';
-    const normalize = (str: string) => str.toLowerCase().replace(/[\s-]/g, '');
-    const normalizedService = normalize(service);
-
-    for (const category of AWS_SERVICES) {
-        for (const item of category.items) {
-            const itemServiceNormalized = normalize(item.service);
-            const itemNameNormalized = normalize(item.name);
-
-            if (itemServiceNormalized === normalizedService || itemNameNormalized === normalizedService) {
-                if (subtype && (item as any).subtype) {
-                    if (normalize((item as any).subtype) === normalize(subtype)) {
-                        return item.description;
-                    }
-                } else if (!subtype || !(item as any).subtype || normalize(subtype) === normalize((item as any).subtype) || subtype === 'aws-compute' || subtype.startsWith('aws-')) {
-                    // Also account for cases where type is passed as subtype, and item might be standard.
-                    // If no specific subtype is needed on the item, return its description.
-                    return item.description;
-                }
-            }
-        }
     }
-    return '';
-};
+];

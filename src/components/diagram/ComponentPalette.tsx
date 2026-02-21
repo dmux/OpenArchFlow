@@ -7,17 +7,14 @@ import {
     SheetDescription,
     SheetHeader,
     SheetTitle,
-    SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Plus, Search, Box, Frame, MessageSquare, Database, File, User, Activity, Play, Square, Circle, HelpCircle } from "lucide-react";
+import { Search, Box } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDiagramStore } from "@/lib/store";
-import { getAwsIcon } from "@/lib/aws-icon-registry";
 import { cn } from "@/lib/utils";
-
-import { AWS_SERVICES } from "@/lib/aws-services";
+import { getAllProviders, getServiceIcon } from "@/lib/registry";
+import { ProviderId } from "@/lib/providers/types";
 
 interface ComponentPaletteProps {
     isOpen: boolean;
@@ -33,9 +30,14 @@ import {
 
 export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPaletteProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeProviderId, setActiveProviderId] = useState<ProviderId>('aws');
     const addNode = useDiagramStore((state) => state.addNode);
 
-    const filteredServices = AWS_SERVICES.map(category => ({
+    const providers = getAllProviders();
+    const activeProvider = providers.find(p => p.id === activeProviderId) || providers[0];
+
+    // Some generic tools shouldn't filter by name as strictly or we just filter normally
+    const filteredServices = activeProvider.services.map(category => ({
         ...category,
         items: category.items.filter(item =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,6 +56,7 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                 service: item.service,
                 type: item.type,
                 subtype: (item as any).subtype,
+                provider: activeProviderId,
             },
         };
         addNode(newNode);
@@ -68,12 +71,34 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                         Component Library
                     </SheetTitle>
                     <SheetDescription>
-                        Browse and add AWS components to your architecture.
+                        Browse and add architecture components to your diagram.
                     </SheetDescription>
-                    <div className="relative mt-4">
+
+                    {/* Provider Tabs */}
+                    <div className="flex flex-wrap gap-2 mt-4 pb-2">
+                        {providers.map(p => (
+                            <button
+                                key={p.id}
+                                onClick={() => {
+                                    setActiveProviderId(p.id);
+                                    setSearchQuery("");
+                                }}
+                                className={cn(
+                                    "px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors",
+                                    activeProviderId === p.id
+                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                                )}
+                            >
+                                {p.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="relative mt-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search services (e.g., EC2, S3)..."
+                            placeholder={`Search ${activeProvider.name} services...`}
                             className="pl-9 bg-secondary/50 border-0 focus-visible:ring-1"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -91,28 +116,7 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                                     </h3>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {category.items.map((item) => {
-                                            // Use custom icons for diagram tools
-                                            let Icon;
-                                            if (item.type === 'frame') {
-                                                Icon = Frame;
-                                            } else if (item.type === 'annotation') {
-                                                Icon = MessageSquare;
-                                            } else if (item.type === 'note') {
-                                                Icon = MessageSquare;
-                                            } else if (item.type === 'generic') {
-                                                // Generic tool icons
-                                                switch ((item as any).subtype) {
-                                                    case 'process': Icon = Square; break;
-                                                    case 'database': Icon = Database; break;
-                                                    case 'file': Icon = File; break;
-                                                    case 'start-end': Icon = Play; break;
-                                                    case 'decision': Icon = HelpCircle; break;
-                                                    case 'actor': Icon = User; break;
-                                                    default: Icon = Activity;
-                                                }
-                                            } else {
-                                                Icon = getAwsIcon(item.service, item.type || '');
-                                            }
+                                            const Icon = getServiceIcon(activeProviderId, item.service, item.type || '', (item as any).subtype);
 
                                             return (
                                                 <Tooltip key={`${item.service}-${item.name}`}>
@@ -124,7 +128,7 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                                                             <div className="p-2 rounded-full bg-muted group-hover:bg-background transition-colors mb-2">
                                                                 <Icon
                                                                     className={cn(
-                                                                        "w-8 h-8",
+                                                                        "w-8 h-8 transition-colors",
                                                                         (item.type === 'client' || item.type === 'frame' || item.type === 'note' || item.type === 'annotation') && "text-primary"
                                                                     )}
                                                                 />
@@ -148,7 +152,7 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
                             {filteredServices.length === 0 && (
                                 <div className="text-center py-10 text-muted-foreground">
                                     <Search className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                                    <p>No components found matching "{searchQuery}"</p>
+                                    <p>No {activeProvider.name} components found matching "{searchQuery}"</p>
                                 </div>
                             )}
                         </div>

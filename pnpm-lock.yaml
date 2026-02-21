@@ -65,6 +65,9 @@ importers:
       aws-react-icons:
         specifier: ^3.2.0
         version: 3.2.0(react@19.2.4)
+      azure-react-icons:
+        specifier: ^0.10.1
+        version: 0.10.1(react@19.2.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1529,6 +1532,11 @@ packages:
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
     engines: {node: '>= 0.4'}
+
+  azure-react-icons@0.10.1:
+    resolution: {integrity: sha512-Wus1mpyCNUa9/kKpV4FypXyIclfcWRxl01tdZ9r53wnY7cFxdfIcaadOhONx49wIHMREIwSbqK+sjQ6Ba1GExA==}
+    peerDependencies:
+      react: ^16.8.4
 
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
@@ -4908,6 +4916,10 @@ snapshots:
   axe-core@4.11.1: {}
 
   axobject-query@4.1.0: {}
+
+  azure-react-icons@0.10.1(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   bail@2.0.2: {}
 

@@ -1,18 +1,18 @@
-import React, { memo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import React, { memo, useState, useEffect, useRef } from 'react';
+import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
 import { cn } from '@/lib/utils';
-import { AppNodeData } from '@/lib/store';
+import { AppNodeData, useDiagramStore } from '@/lib/store';
 import { MessageSquare } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { getAwsServiceDescription } from '@/lib/aws-services';
+import { getServiceDescription } from '@/lib/registry';
 
-const AnnotationNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-    const { label, metadata } = data;
+const AnnotationNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
+    const { service, provider, metadata, label } = data;
     const text = metadata?.text || label || 'Annotation';
     const color = metadata?.color || 'rgb(239, 68, 68)'; // red-500 (laser red)
     const pointerDirection = metadata?.pointerDirection || 'down'; // 'left', 'right', 'up', 'down'
     const animated = metadata?.animated !== false; // default true
-    const description = getAwsServiceDescription('note');
+    const description = getServiceDescription(provider as string || 'generic', service || '', (data.subtype as string) || (data.type as string));
 
     // Calculate beam length and position based on direction
     const getBeamStyles = () => {

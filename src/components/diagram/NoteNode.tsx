@@ -1,19 +1,19 @@
-import React, { memo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import React, { memo, useState, useEffect } from 'react';
+import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
 import { cn } from '@/lib/utils';
-import { AppNodeData } from '@/lib/store';
+import { AppNodeData, useDiagramStore } from '@/lib/store';
 import { MessageSquare } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { getAwsServiceDescription } from '@/lib/aws-services';
+import { getServiceDescription } from '@/lib/registry';
 
-const NoteNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-    const { label, metadata } = data;
+const NoteNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
+    const { label, metadata, service, provider } = data;
     const text = metadata?.text || label || 'New Note';
     const backgroundColor = metadata?.backgroundColor || '#fef08a'; // yellow-200
     const borderColor = metadata?.borderColor || '#facc15'; // yellow-400
     const textColor = metadata?.textColor || '#854d0e'; // yellow-900
     const fontSize = metadata?.fontSize || '13px';
-    const description = getAwsServiceDescription('note');
+    const description = getServiceDescription(provider as string || 'generic', service || '', (data.subtype as string) || (data.type as string));
 
     return (
         <Tooltip>

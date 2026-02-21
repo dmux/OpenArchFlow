@@ -1,21 +1,33 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
-import { getAwsIcon } from '@/lib/aws-icon-registry';
+import { getServiceIcon, getServiceDescription } from '@/lib/registry';
 
 import { AppNodeData } from '@/lib/store';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { getAwsServiceDescription } from '@/lib/aws-services';
 
-const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-    const { label, service, simulation } = data;
+const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
+    const { label, service, simulation, provider } = data as any;
     const isProcessing = simulation?.status === 'processing';
     const isSuccess = simulation?.status === 'success';
     const isError = simulation?.status === 'error';
 
-    const Icon = getAwsIcon(service || 'Service', (data.type as string) || '');
-    const description = getAwsServiceDescription(service || '', (data.subtype as string) || (data.type as string));
+    // Fallback to 'aws' provider for backward compatibility with existing saved layouts
+    const resolvedProvider = provider || 'aws';
+
+    const Icon = getServiceIcon(
+        resolvedProvider,
+        service || 'Service',
+        (data.type as string) || '',
+        (data.subtype as string) || undefined
+    );
+
+    const description = getServiceDescription(
+        resolvedProvider,
+        service || '',
+        (data.subtype as string) || (data.type as string)
+    );
 
     return (
         <Tooltip>
@@ -61,7 +73,7 @@ const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                             size={48}
                             className={cn(
                                 "w-12 h-12 transition-colors",
-                                (data.type === 'client' || data.type === 'cloud-native' || !data.type || data.type === 'default')
+                                (data.type === 'client' || data.type === 'cloud-native' || !data.type || data.type === 'default' || data.type === 'generic')
                                     ? "text-blue-500"
                                     : ""
                             )}
@@ -72,7 +84,7 @@ const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                     <div className="text-center">
                         <div className="font-semibold text-sm text-foreground leading-tight">{label}</div>
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-medium bg-muted/50 px-2 py-0.5 rounded-full inline-block">
-                            {service}
+                            {service} {resolvedProvider !== 'aws' && resolvedProvider !== 'generic' ? `(${resolvedProvider})` : ''}
                         </div>
                     </div>
 
@@ -94,4 +106,4 @@ const AWSNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     );
 };
 
-export default memo(AWSNode);
+export default memo(CloudNode);
