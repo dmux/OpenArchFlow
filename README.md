@@ -41,11 +41,18 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 
 - **Cloud AI (Gemini)**: Fast generation with Google's Gemini 2.5 Flash
 - **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU
+- **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch
+- **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews
+
+### 🎮 Diagram Simulation & Interactivity
+
+- **Architecture Simulation**: Playback and simulate data flows and traffic patterns to visualize how your architecture behaves
+- **Presentation Tools**: Built-in Laser Pointer mode for presenting architectures to your team
 
 ### 📐 Professional Diagram Capabilities
 
 - **Auto-Layout**: One-click hierarchical organization using dagre algorithm
-- **AWS Components**: 30+ AWS service components with official icons
+- **Massive Component Library**: Hundreds of official components for AWS, Azure, Cloud Native, Observability (Datadog, Sentry), Integrations (Stripe, Twilio), and Generic shapes
 - **Smart Connections**: Automatic edge routing and labels
 - **Export Options**: Download diagrams as high-quality PNG images or JSON files
 - **Multi-Diagram Support**: Create, manage, and backup multiple architecture diagrams
