@@ -26,6 +26,7 @@ import { PrivacyInfo } from '@/components/layout/PrivacyInfo';
 import SpecificationDialog from '@/components/diagram/SpecificationDialog';
 import { UnifiedToolbar } from '@/components/layout/UnifiedToolbar';
 import { GeminiKeyDialog } from '@/components/layout/GeminiKeyDialog';
+import DiagramChat from '@/components/diagram/DiagramChat';
 
 // Service
 import { WebLLMService } from '@/lib/ai/webllm';
@@ -284,6 +285,14 @@ function HomeContent() {
                 <ComponentPalette
                     isOpen={activePanel === 'library'}
                     onOpenChange={(open: boolean) => setActivePanel(open ? 'library' : null)}
+                />
+
+                <DiagramChat
+                    isOpen={activePanel === 'chat'}
+                    onClose={() => setActivePanel(null)}
+                    currentNodes={currentNodes}
+                    currentEdges={currentEdges}
+                    geminiApiKey={geminiApiKey}
                 />
 
                 <PropertiesPanel />

@@ -19,7 +19,8 @@ import {
     Sun,
     Moon,
     Monitor,
-    Check
+    Check,
+    MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -243,6 +244,13 @@ export function UnifiedToolbar({
             label: 'AI Generate',
             onClick: () => setActivePanel(activePanel === 'ai' ? null : 'ai'),
             active: activePanel === 'ai'
+        },
+        {
+            id: 'chat',
+            icon: MessageSquare,
+            label: 'Diagram Chat',
+            onClick: () => setActivePanel(activePanel === 'chat' ? null : 'chat'),
+            active: activePanel === 'chat'
         }
     ];
 
@@ -324,7 +332,7 @@ export function UnifiedToolbar({
                                         !tool.active && "hover:bg-accent hover:text-accent-foreground"
                                     )}
                                 >
-                                    <tool.icon className={cn("h-5 w-5", tool.id === 'ai' && !tool.active && "text-indigo-500")} />
+                                    <tool.icon className={cn("h-5 w-5", (tool.id === 'ai' || tool.id === 'chat') && !tool.active && "text-indigo-500")} />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="right" sideOffset={10}><p className="font-medium">{tool.label}</p></TooltipContent>
