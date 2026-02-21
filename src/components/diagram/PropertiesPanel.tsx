@@ -316,25 +316,39 @@ export default function PropertiesPanel() {
 
                             {/* Regular Metadata Section for other nodes */}
                             {!isFrame && !isAnnotation && !isNote && (
-                                <>
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Info size={14} /> Configuration & Details
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-xs">Name / Label</Label>
+                                            <Input
+                                                value={label || ''}
+                                                onChange={(e) => {
+                                                    const updateNode = useDiagramStore.getState().updateNode;
+                                                    updateNode(selectedNodeId, { label: e.target.value });
+                                                }}
+                                                placeholder="Component Name"
+                                                className="h-8 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
                                     {metadata && Object.keys(metadata).length > 0 ? (
-                                        <div className="space-y-3">
-                                            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                                                <Info size={14} /> Configuration & Details
-                                            </h3>
-                                            <div className="grid gap-3">
-                                                {Object.entries(metadata).map(([key, value]) => (
-                                                    <div key={key} className="bg-muted/50 p-3 rounded-lg border border-border/50">
-                                                        <div className="text-xs font-medium text-muted-foreground uppercase mb-1">{key.replace(/_/g, ' ')}</div>
-                                                        <div className="text-sm font-medium text-foreground break-words">{String(value)}</div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                        <div className="grid gap-3 mt-3">
+                                            {Object.entries(metadata).map(([key, value]) => (
+                                                <div key={key} className="bg-muted/50 p-3 rounded-lg border border-border/50">
+                                                    <div className="text-xs font-medium text-muted-foreground uppercase mb-1">{key.replace(/_/g, ' ')}</div>
+                                                    <div className="text-sm font-medium text-foreground break-words">{String(value)}</div>
+                                                </div>
+                                            ))}
                                         </div>
                                     ) : (
-                                        <div className="text-sm text-muted-foreground italic">No metadata available for this resource.</div>
+                                        <div className="text-sm text-muted-foreground italic mt-3">No metadata available for this resource.</div>
                                     )}
-                                </>
+                                </div>
                             )}
 
                             <Separator />
@@ -634,6 +648,73 @@ export default function PropertiesPanel() {
                                                     </div>
                                                 </div>
                                             )}
+                                        </div>
+                                    )}
+
+                                    {/* Generic Custom Node Styling properties */}
+                                    {type === 'generic' && (
+                                        <div className="space-y-3 border rounded-lg p-3 bg-muted/20 mt-4">
+                                            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                                <Settings size={14} /> Appearance
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <Label className="text-xs">Background</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={metadata?.backgroundColor || '#ffffff'}
+                                                        onChange={(e) => {
+                                                            const updateNode = useDiagramStore.getState().updateNode;
+                                                            updateNode(selectedNodeId, {
+                                                                metadata: { ...metadata, backgroundColor: e.target.value }
+                                                            });
+                                                        }}
+                                                        className="h-8 p-1 w-full"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs">Border</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={metadata?.borderColor || '#e2e8f0'}
+                                                        onChange={(e) => {
+                                                            const updateNode = useDiagramStore.getState().updateNode;
+                                                            updateNode(selectedNodeId, {
+                                                                metadata: { ...metadata, borderColor: e.target.value }
+                                                            });
+                                                        }}
+                                                        className="h-8 p-1 w-full"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs">Text Color</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={metadata?.textColor || '#0f172a'}
+                                                        onChange={(e) => {
+                                                            const updateNode = useDiagramStore.getState().updateNode;
+                                                            updateNode(selectedNodeId, {
+                                                                metadata: { ...metadata, textColor: e.target.value }
+                                                            });
+                                                        }}
+                                                        className="h-8 p-1 w-full"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs">Icon Color</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={metadata?.iconColor || '#0f172a'}
+                                                        onChange={(e) => {
+                                                            const updateNode = useDiagramStore.getState().updateNode;
+                                                            updateNode(selectedNodeId, {
+                                                                metadata: { ...metadata, iconColor: e.target.value }
+                                                            });
+                                                        }}
+                                                        className="h-8 p-1 w-full"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

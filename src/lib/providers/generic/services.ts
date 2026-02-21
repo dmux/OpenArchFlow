@@ -6,6 +6,7 @@ export const GENERIC_SERVICES: ServiceCategory[] = [
         items: [
             { name: "Frame/Group", service: "frame", type: "frame", description: "Groups multiple components together visually." },
             { name: "Sticky Note", service: "note", type: "note", description: "Add text notes or annotations to your diagram." },
+            { name: "Custom Element", service: "generic", type: "generic", subtype: "custom", description: "A fully customizable generic component." },
             { name: "Process", service: "generic", type: "generic", subtype: "process", description: "A generic process step or action." },
             { name: "Database", service: "generic", type: "generic", subtype: "database", description: "A generic data store or database." },
             { name: "File", service: "generic", type: "generic", subtype: "file", description: "Represents a file or document." },

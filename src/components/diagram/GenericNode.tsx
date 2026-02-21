@@ -57,6 +57,12 @@ const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
             shapeClasses = "rounded-lg";
     }
 
+    // Custom colors from metadata
+    const customBg = data.metadata?.backgroundColor;
+    const customBorder = data.metadata?.borderColor;
+    const customText = data.metadata?.textColor;
+    const customIcon = data.metadata?.iconColor;
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
@@ -71,6 +77,10 @@ const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                         subtype === 'decision' && "min-w-[100px] min-h-[100px]",
                         subtype === 'start-end' && "min-w-[80px] min-h-[80px] p-2"
                     )}
+                    style={{
+                        backgroundColor: customBg,
+                        borderColor: selected ? undefined : customBorder, // Selection color overrides custom border temporarily
+                    }}
                 >
                     {/* Handles */}
                     <Handle
@@ -85,19 +95,21 @@ const GenericNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                     {/* Icon / Shape Content */}
                     <div className={cn(
                         "p-2 rounded-full mb-2 transition-colors",
-                        selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5",
+                        selected && !customBg ? "bg-primary/10" : "",
+                        !selected && !customBg ? "bg-muted group-hover:bg-primary/5" : "",
                         subtype === 'decision' && "mb-0" // Centered for decision
                     )}>
                         <Icon
                             size={subtype === 'start-end' || subtype === 'actor' ? 32 : 24}
                             className={cn("text-foreground", iconColor)}
+                            style={{ color: customIcon }}
                         />
                     </div>
 
                     {/* Label */}
                     {(subtype !== 'decision' && subtype !== 'start-end') && (
                         <div className="text-center w-full">
-                            <div className="font-semibold text-sm text-foreground leading-tight truncate px-1">
+                            <div className="font-semibold text-sm text-foreground leading-tight truncate px-1" style={{ color: customText }}>
                                 {label}
                             </div>
                         </div>
