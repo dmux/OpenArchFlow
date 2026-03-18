@@ -1,0 +1,1485 @@
+{
+  "version": 1,
+  "type": "backup",
+  "data": [
+    {
+      "id": "7408d883-4185-4b39-ab3f-76b6cb3f663c",
+      "name": "EKS Architecture",
+      "nodes": [
+        {
+          "id": "node-internet-user",
+          "type": "default",
+          "data": {
+            "label": "Internet User",
+            "service": "Client Application",
+            "metadata": {
+              "description": "External users accessing the applications"
+            }
+          },
+          "position": {
+            "x": 1435,
+            "y": 50
+          },
+          "width": 150,
+          "height": 172,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "node-global-route53",
+          "type": "aws-network",
+          "data": {
+            "label": "Route 53",
+            "service": "Route 53",
+            "metadata": {
+              "purpose": "Global DNS Management, Multi-Region Failover",
+              "features": "Health Checks, Weighted Routing, Failover Routing"
+            }
+          },
+          "position": {
+            "x": 1435,
+            "y": 300
+          },
+          "width": 120,
+          "height": 158
+        },
+        {
+          "id": "node-global-cloudfront",
+          "type": "aws-network",
+          "data": {
+            "label": "CloudFront",
+            "service": "CloudFront",
+            "metadata": {
+              "purpose": "Content Delivery Network, Edge Caching, DDoS Protection",
+              "features": "Global PoPs, SSL/TLS Termination"
+            }
+          },
+          "position": {
+            "x": 1435,
+            "y": 550
+          },
+          "width": 128,
+          "height": 158
+        },
+        {
+          "id": "node-global-waf",
+          "type": "aws-network",
+          "data": {
+            "label": "AWS WAF",
+            "service": "WAF",
+            "metadata": {
+              "purpose": "Web Application Firewall",
+              "features": "Protects against common web exploits, Integrates with CloudFront, ALB"
+            }
+          },
+          "position": {
+            "x": 1435,
+            "y": 800
+          },
+          "width": 120,
+          "height": 158
+        },
+        {
+          "id": "node-r1-public-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Public Subnets (R1)",
+            "service": "Subnet",
+            "metadata": {
+              "purpose": "Hosts internet-facing resources",
+              "resource_type": "Application Load Balancer"
+            }
+          },
+          "position": {
+            "x": 3930,
+            "y": 800
+          },
+          "width": 168,
+          "height": 158
+        },
+        {
+          "id": "node-r1-private-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnets (R1)",
+            "service": "Subnet",
+            "metadata": {
+              "purpose": "Hosts internal resources, EKS nodes, databases",
+              "security": "No direct internet access"
+            }
+          },
+          "position": {
+            "x": 905,
+            "y": 1050
+          },
+          "width": 174,
+          "height": 158
+        },
+        {
+          "id": "node-r1-nat-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "NAT Gateway (R1)",
+            "service": "NAT Gateway",
+            "metadata": {
+              "purpose": "Outbound internet access for private subnets",
+              "high_availability": "Deployed in public subnet, highly available"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 1300
+          },
+          "width": 157,
+          "height": 158
+        },
+        {
+          "id": "node-r1-vpc-endpoints",
+          "type": "aws-network",
+          "data": {
+            "label": "VPC Endpoints (R1)",
+            "service": "VPC Endpoint",
+            "metadata": {
+              "purpose": "Secure private access to AWS services",
+              "services_accessed": "ECR, S3, EKS API, CloudWatch Logs"
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 1300
+          },
+          "width": 167,
+          "height": 158
+        },
+        {
+          "id": "node-r1-alb",
+          "type": "aws-network",
+          "data": {
+            "label": "Application Load Balancer (R1)",
+            "service": "ELB",
+            "metadata": {
+              "purpose": "Distributes incoming application traffic, EKS Ingress",
+              "features": "HTTP/S routing, Path-based routing, Multi-AZ"
+            }
+          },
+          "position": {
+            "x": 1435,
+            "y": 1050
+          },
+          "width": 243,
+          "height": 158
+        },
+        {
+          "id": "node-r1-eks-control-plane",
+          "type": "aws-compute",
+          "data": {
+            "label": "EKS Control Plane (R1)",
+            "service": "EKS",
+            "metadata": {
+              "purpose": "Manages Kubernetes clusters",
+              "features": "Managed service, Highly available across AZs",
+              "reliability": "AWS managed"
+            }
+          },
+          "position": {
+            "x": 70,
+            "y": 1550
+          },
+          "width": 188,
+          "height": 158
+        },
+        {
+          "id": "node-r1-eks-node-group",
+          "type": "aws-compute",
+          "data": {
+            "label": "EKS Managed Node Group (R1)",
+            "service": "EC2",
+            "metadata": {
+              "purpose": "Worker nodes for Kubernetes pods, hosting 3000 applications",
+              "scaling": "Auto Scaling Group, Multi-AZ",
+              "instance_types": "m5.large, m5.xlarge, c5.large, potentially spot instances",
+              "cost_optimization": "Auto Scaling, Spot Instances, Reserved Instances"
+            }
+          },
+          "position": {
+            "x": 1400,
+            "y": 1300
+          },
+          "width": 244,
+          "height": 158
+        },
+        {
+          "id": "node-r1-ecr",
+          "type": "aws-storage",
+          "data": {
+            "label": "ECR (R1)",
+            "service": "ECR",
+            "metadata": {
+              "purpose": "Container Image Registry",
+              "security": "Private repository, IAM integration",
+              "availability": "Regional"
+            }
+          },
+          "position": {
+            "x": 390,
+            "y": 1550
+          },
+          "width": 120,
+          "height": 158
+        },
+        {
+          "id": "node-r1-s3",
+          "type": "aws-storage",
+          "data": {
+            "label": "S3 (R1)",
+            "service": "S3",
+            "metadata": {
+              "purpose": "Object Storage for static assets, backups, logs",
+              "durability": "11 nines",
+              "features": "Versioning, Lifecycle Policies, Cross-Region Replication"
+            }
+          },
+          "position": {
+            "x": 710,
+            "y": 1550
+          },
+          "width": 120,
+          "height": 158
+        },
+        {
+          "id": "node-r1-rds",
+          "type": "aws-database",
+          "data": {
+            "label": "RDS Multi-AZ (R1)",
+            "service": "RDS",
+            "metadata": {
+              "purpose": "Managed Relational Database",
+              "database_engine": "PostgreSQL, MySQL, Aurora",
+              "reliability": "Multi-AZ for high availability, automatic failover",
+              "security": "Encryption at rest, in transit"
+            }
+          },
+          "position": {
+            "x": 1115,
+            "y": 1550
+          },
+          "width": 158,
+          "height": 158
+        },
+        {
+          "id": "node-r1-dynamodb",
+          "type": "aws-database",
+          "data": {
+            "label": "DynamoDB (R1)",
+            "service": "DynamoDB",
+            "metadata": {
+              "purpose": "NoSQL Database",
+              "features": "Serverless, High performance, Global Tables",
+              "scaling": "On-demand capacity, Auto Scaling"
+            }
+          },
+          "position": {
+            "x": 3150,
+            "y": 1550
+          },
+          "width": 142,
+          "height": 158
+        },
+        {
+          "id": "node-r1-elasticache",
+          "type": "aws-database",
+          "data": {
+            "label": "ElastiCache Redis (R1)",
+            "service": "ElastiCache",
+            "metadata": {
+              "purpose": "In-memory data store, Caching",
+              "engine": "Redis",
+              "performance": "Low latency, High throughput",
+              "reliability": "Multi-AZ with replication groups"
+            }
+          },
+          "position": {
+            "x": 1850,
+            "y": 1550
+          },
+          "width": 187,
+          "height": 158
+        },
+        {
+          "id": "node-r1-cloudwatch",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch (R1)",
+            "service": "CloudWatch",
+            "metadata": {
+              "purpose": "Monitoring, Logging, Alarms",
+              "features": "EKS Container Insights, Metrics, Logs (Fluent Bit integration)"
+            }
+          },
+          "position": {
+            "x": 2170,
+            "y": 1550
+          },
+          "width": 150,
+          "height": 157
+        },
+        {
+          "id": "node-r1-iam",
+          "type": "default",
+          "data": {
+            "label": "IAM (R1)",
+            "service": "IAM",
+            "metadata": {
+              "purpose": "Access Management",
+              "security": "Least privilege, IAM Roles for Service Accounts (IRSA) for EKS"
+            }
+          },
+          "position": {
+            "x": 575,
+            "y": 1050
+          },
+          "width": 150,
+          "height": 157
+        },
+        {
+          "id": "node-r1-kms",
+          "type": "default",
+          "data": {
+            "label": "KMS (R1)",
+            "service": "KMS",
+            "metadata": {
+              "purpose": "Key Management Service",
+              "security": "Encryption for S3, RDS, EBS, EKS secrets"
+            }
+          },
+          "position": {
+            "x": 1080,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 157
+        },
+        {
+          "id": "node-r1-secrets-manager",
+          "type": "default",
+          "data": {
+            "label": "Secrets Manager (R1)",
+            "service": "Secrets Manager",
+            "metadata": {
+              "purpose": "Securely store and retrieve application secrets",
+              "security": "Automated rotation, Integration with EKS pods"
+            }
+          },
+          "position": {
+            "x": 2140,
+            "y": 1050
+          },
+          "width": 150,
+          "height": 189
+        },
+        {
+          "id": "node-r2-public-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Public Subnets (R2)",
+            "service": "Subnet",
+            "metadata": {
+              "purpose": "Hosts internet-facing resources",
+              "resource_type": "Application Load Balancer"
+            }
+          },
+          "position": {
+            "x": 4120,
+            "y": 1050
+          },
+          "width": 170,
+          "height": 158
+        },
+        {
+          "id": "node-r2-private-subnets",
+          "type": "aws-network",
+          "data": {
+            "label": "Private Subnets (R2)",
+            "service": "Subnet",
+            "metadata": {
+              "purpose": "Hosts internal resources, EKS nodes, databases",
+              "security": "No direct internet access"
+            }
+          },
+          "position": {
+            "x": 3565,
+            "y": 1300
+          },
+          "width": 176,
+          "height": 158
+        },
+        {
+          "id": "node-r2-nat-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "NAT Gateway (R2)",
+            "service": "NAT Gateway",
+            "metadata": {
+              "purpose": "Outbound internet access for private subnets",
+              "high_availability": "Deployed in public subnet, highly available"
+            }
+          },
+          "position": {
+            "x": 2490,
+            "y": 1550
+          },
+          "width": 159,
+          "height": 158
+        },
+        {
+          "id": "node-r2-vpc-endpoints",
+          "type": "aws-network",
+          "data": {
+            "label": "VPC Endpoints (R2)",
+            "service": "VPC Endpoint",
+            "metadata": {
+              "purpose": "Secure private access to AWS services",
+              "services_accessed": "ECR, S3, EKS API, CloudWatch Logs"
+            }
+          },
+          "position": {
+            "x": 2810,
+            "y": 1550
+          },
+          "width": 169,
+          "height": 158
+        },
+        {
+          "id": "node-r2-alb",
+          "type": "aws-network",
+          "data": {
+            "label": "Application Load Balancer (R2)",
+            "service": "ELB",
+            "metadata": {
+              "purpose": "Distributes incoming application traffic, EKS Ingress, Disaster Recovery target",
+              "features": "HTTP/S routing, Path-based routing, Multi-AZ"
+            }
+          },
+          "position": {
+            "x": 3950,
+            "y": 1300
+          },
+          "width": 245,
+          "height": 158
+        },
+        {
+          "id": "node-r2-eks-control-plane",
+          "type": "aws-compute",
+          "data": {
+            "label": "EKS Control Plane (R2)",
+            "service": "EKS",
+            "metadata": {
+              "purpose": "Manages Kubernetes clusters for Disaster Recovery",
+              "features": "Managed service, Highly available across AZs",
+              "reliability": "AWS managed"
+            }
+          },
+          "position": {
+            "x": 3650,
+            "y": 1800
+          },
+          "width": 190,
+          "height": 158
+        },
+        {
+          "id": "node-r2-eks-node-group",
+          "type": "aws-compute",
+          "data": {
+            "label": "EKS Managed Node Group (R2)",
+            "service": "EC2",
+            "metadata": {
+              "purpose": "Worker nodes for Kubernetes pods, Disaster Recovery readiness",
+              "scaling": "Auto Scaling Group, Multi-AZ, can be scaled down for cost optimization",
+              "instance_types": "m5.large, m5.xlarge, c5.large, potentially spot instances",
+              "cost_optimization": "Scaled to minimum capacity in DR region during normal operations"
+            }
+          },
+          "position": {
+            "x": 3960,
+            "y": 1550
+          },
+          "width": 246,
+          "height": 158
+        },
+        {
+          "id": "node-r2-ecr",
+          "type": "aws-storage",
+          "data": {
+            "label": "ECR (R2)",
+            "service": "ECR",
+            "metadata": {
+              "purpose": "Container Image Registry for Disaster Recovery",
+              "security": "Private repository, IAM integration",
+              "availability": "Regional, replicated or synced from R1"
+            }
+          },
+          "position": {
+            "x": 4225,
+            "y": 1800
+          },
+          "width": 120,
+          "height": 158
+        },
+        {
+          "id": "node-r2-s3",
+          "type": "aws-storage",
+          "data": {
+            "label": "S3 (R2)",
+            "service": "S3",
+            "metadata": {
+              "purpose": "Object Storage for static assets, backups, logs, Disaster Recovery target",
+              "durability": "11 nines",
+              "features": "Cross-Region Replication from R1, Versioning"
+            }
+          },
+          "position": {
+            "x": 1115,
+            "y": 1800
+          },
+          "width": 120,
+          "height": 158
+        },
+        {
+          "id": "node-r2-rds-replica",
+          "type": "aws-database",
+          "data": {
+            "label": "RDS Read Replica (R2)",
+            "service": "RDS",
+            "metadata": {
+              "purpose": "Cross-Region Read Replica for Disaster Recovery",
+              "database_engine": "PostgreSQL, MySQL, Aurora",
+              "reliability": "Can be promoted to primary in failover scenario",
+              "data_replication": "Asynchronous replication from R1 RDS"
+            }
+          },
+          "position": {
+            "x": 2720,
+            "y": 1800
+          },
+          "width": 188,
+          "height": 158
+        },
+        {
+          "id": "node-r2-dynamodb-global",
+          "type": "aws-database",
+          "data": {
+            "label": "DynamoDB Global Table (R2)",
+            "service": "DynamoDB",
+            "metadata": {
+              "purpose": "NoSQL Database with multi-region active replication",
+              "features": "Serverless, High performance, Active-Active replication",
+              "scaling": "On-demand capacity, Auto Scaling"
+            }
+          },
+          "position": {
+            "x": 3245,
+            "y": 1800
+          },
+          "width": 231,
+          "height": 158
+        },
+        {
+          "id": "node-r2-elasticache",
+          "type": "aws-database",
+          "data": {
+            "label": "ElastiCache Redis (R2)",
+            "service": "ElastiCache",
+            "metadata": {
+              "purpose": "In-memory data store, Caching for Disaster Recovery",
+              "engine": "Redis",
+              "performance": "Low latency, High throughput",
+              "reliability": "Separate cluster, warm-up strategy in DR"
+            }
+          },
+          "position": {
+            "x": 4545,
+            "y": 1800
+          },
+          "width": 189,
+          "height": 158
+        },
+        {
+          "id": "node-r2-cloudwatch",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch (R2)",
+            "service": "CloudWatch",
+            "metadata": {
+              "purpose": "Monitoring, Logging, Alarms for Disaster Recovery region",
+              "features": "EKS Container Insights, Metrics, Logs"
+            }
+          },
+          "position": {
+            "x": 4865,
+            "y": 1800
+          },
+          "width": 150,
+          "height": 174
+        },
+        {
+          "id": "node-r2-iam",
+          "type": "default",
+          "data": {
+            "label": "IAM (R2)",
+            "service": "IAM",
+            "metadata": {
+              "purpose": "Access Management",
+              "security": "Least privilege, IAM Roles for Service Accounts (IRSA) for EKS"
+            }
+          },
+          "position": {
+            "x": 4270,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 157
+        },
+        {
+          "id": "node-r2-kms",
+          "type": "default",
+          "data": {
+            "label": "KMS (R2)",
+            "service": "KMS",
+            "metadata": {
+              "purpose": "Key Management Service",
+              "security": "Encryption for S3, RDS, EBS, EKS secrets"
+            }
+          },
+          "position": {
+            "x": 1530,
+            "y": 1550
+          },
+          "width": 150,
+          "height": 157
+        },
+        {
+          "id": "node-r2-secrets-manager",
+          "type": "default",
+          "data": {
+            "label": "Secrets Manager (R2)",
+            "service": "Secrets Manager",
+            "metadata": {
+              "purpose": "Securely store and retrieve application secrets",
+              "security": "Automated rotation, Integration with EKS pods"
+            }
+          },
+          "position": {
+            "x": 4590,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 189
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-internet-to-route53",
+          "source": "node-internet-user",
+          "target": "node-global-route53",
+          "label": "resolves DNS for"
+        },
+        {
+          "id": "edge-route53-to-cloudfront",
+          "source": "node-global-route53",
+          "target": "node-global-cloudfront",
+          "label": "routes traffic to (Primary)"
+        },
+        {
+          "id": "edge-route53-to-cloudfront-dr",
+          "source": "node-global-route53",
+          "target": "node-global-cloudfront",
+          "label": "routes traffic to (Failover if R1 unavailable)"
+        },
+        {
+          "id": "edge-cloudfront-to-waf",
+          "source": "node-global-cloudfront",
+          "target": "node-global-waf",
+          "label": "forwards requests to"
+        },
+        {
+          "id": "edge-waf-to-alb-r1",
+          "source": "node-global-waf",
+          "target": "node-r1-alb",
+          "label": "protects and forwards to (Region 1)"
+        },
+        {
+          "id": "edge-waf-to-alb-r2",
+          "source": "node-global-waf",
+          "target": "node-r2-alb",
+          "label": "protects and forwards to (Region 2 on failover)"
+        },
+        {
+          "id": "edge-alb-r1-to-public-subnets-r1",
+          "source": "node-r1-public-subnets",
+          "target": "node-r1-alb",
+          "label": "resides in"
+        },
+        {
+          "id": "edge-alb-r1-to-eks-nodes-r1",
+          "source": "node-r1-alb",
+          "target": "node-r1-eks-node-group",
+          "label": "routes traffic to (EKS Pods)"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-control-plane-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-eks-control-plane",
+          "label": "communicates with"
+        },
+        {
+          "id": "edge-private-subnets-r1-to-eks-nodes-r1",
+          "source": "node-r1-private-subnets",
+          "target": "node-r1-eks-node-group",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-private-subnets-r1-to-rds-r1",
+          "source": "node-r1-private-subnets",
+          "target": "node-r1-rds",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-private-subnets-r1-to-dynamodb-r1",
+          "source": "node-r1-private-subnets",
+          "target": "node-r1-dynamodb",
+          "label": "accesses (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-private-subnets-r1-to-elasticache-r1",
+          "source": "node-r1-private-subnets",
+          "target": "node-r1-elasticache",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-private-subnets-r1-to-nat-gateway-r1",
+          "source": "node-r1-private-subnets",
+          "target": "node-r1-nat-gateway",
+          "label": "routes outbound internet via"
+        },
+        {
+          "id": "edge-private-subnets-r1-to-vpc-endpoints-r1",
+          "source": "node-r1-private-subnets",
+          "target": "node-r1-vpc-endpoints",
+          "label": "accesses AWS services privately via"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-ecr-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-ecr",
+          "label": "pulls container images from (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-s3-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-s3",
+          "label": "accesses static assets, stores logs in (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-rds-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-rds",
+          "label": "queries relational database"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-dynamodb-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-dynamodb",
+          "label": "interacts with NoSQL database"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-elasticache-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-elasticache",
+          "label": "uses for caching"
+        },
+        {
+          "id": "edge-eks-nodes-r1-to-cloudwatch-r1",
+          "source": "node-r1-eks-node-group",
+          "target": "node-r1-cloudwatch",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-cloudwatch-r1-monitors",
+          "source": "node-r1-cloudwatch",
+          "target": "node-r1-eks-node-group",
+          "label": "monitors"
+        },
+        {
+          "id": "edge-cloudwatch-r1-monitors-alb",
+          "source": "node-r1-cloudwatch",
+          "target": "node-r1-alb",
+          "label": "monitors"
+        },
+        {
+          "id": "edge-iam-r1-manages",
+          "source": "node-r1-iam",
+          "target": "node-r1-eks-node-group",
+          "label": "manages permissions for (via IRSA)"
+        },
+        {
+          "id": "edge-iam-r1-manages-ecr",
+          "source": "node-r1-iam",
+          "target": "node-r1-ecr",
+          "label": "manages permissions for"
+        },
+        {
+          "id": "edge-kms-r1-encrypts-s3",
+          "source": "node-r1-kms",
+          "target": "node-r1-s3",
+          "label": "encrypts data in"
+        },
+        {
+          "id": "edge-kms-r1-encrypts-rds",
+          "source": "node-r1-kms",
+          "target": "node-r1-rds",
+          "label": "encrypts data in"
+        },
+        {
+          "id": "edge-secrets-manager-r1-to-eks-nodes-r1",
+          "source": "node-r1-secrets-manager",
+          "target": "node-r1-eks-node-group",
+          "label": "provides secrets to applications in"
+        },
+        {
+          "id": "edge-rds-r1-to-rds-replica-r2",
+          "source": "node-r1-rds",
+          "target": "node-r2-rds-replica",
+          "label": "replicates data to (Cross-Region Read Replica)"
+        },
+        {
+          "id": "edge-dynamodb-r1-to-global-r2",
+          "source": "node-r1-dynamodb",
+          "target": "node-r2-dynamodb-global",
+          "label": "replicates data to (Global Table)"
+        },
+        {
+          "id": "edge-s3-r1-to-s3-r2",
+          "source": "node-r1-s3",
+          "target": "node-r2-s3",
+          "label": "replicates data to (Cross-Region Replication)"
+        },
+        {
+          "id": "edge-alb-r2-to-public-subnets-r2",
+          "source": "node-r2-public-subnets",
+          "target": "node-r2-alb",
+          "label": "resides in"
+        },
+        {
+          "id": "edge-alb-r2-to-eks-nodes-r2",
+          "source": "node-r2-alb",
+          "target": "node-r2-eks-node-group",
+          "label": "routes traffic to (EKS Pods in DR)"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-control-plane-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-eks-control-plane",
+          "label": "communicates with"
+        },
+        {
+          "id": "edge-private-subnets-r2-to-eks-nodes-r2",
+          "source": "node-r2-private-subnets",
+          "target": "node-r2-eks-node-group",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-private-subnets-r2-to-rds-r2",
+          "source": "node-r2-private-subnets",
+          "target": "node-r2-rds-replica",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-private-subnets-r2-to-dynamodb-r2",
+          "source": "node-r2-private-subnets",
+          "target": "node-r2-dynamodb-global",
+          "label": "accesses (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-private-subnets-r2-to-elasticache-r2",
+          "source": "node-r2-private-subnets",
+          "target": "node-r2-elasticache",
+          "label": "hosts"
+        },
+        {
+          "id": "edge-private-subnets-r2-to-nat-gateway-r2",
+          "source": "node-r2-private-subnets",
+          "target": "node-r2-nat-gateway",
+          "label": "routes outbound internet via"
+        },
+        {
+          "id": "edge-private-subnets-r2-to-vpc-endpoints-r2",
+          "source": "node-r2-private-subnets",
+          "target": "node-r2-vpc-endpoints",
+          "label": "accesses AWS services privately via"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-ecr-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-ecr",
+          "label": "pulls container images from (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-s3-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-s3",
+          "label": "accesses static assets, stores logs in (via VPC Endpoint)"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-rds-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-rds-replica",
+          "label": "queries relational database (after promotion)"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-dynamodb-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-dynamodb-global",
+          "label": "interacts with NoSQL database"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-elasticache-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-elasticache",
+          "label": "uses for caching"
+        },
+        {
+          "id": "edge-eks-nodes-r2-to-cloudwatch-r2",
+          "source": "node-r2-eks-node-group",
+          "target": "node-r2-cloudwatch",
+          "label": "sends logs and metrics to"
+        },
+        {
+          "id": "edge-cloudwatch-r2-monitors",
+          "source": "node-r2-cloudwatch",
+          "target": "node-r2-eks-node-group",
+          "label": "monitors"
+        },
+        {
+          "id": "edge-cloudwatch-r2-monitors-alb",
+          "source": "node-r2-cloudwatch",
+          "target": "node-r2-alb",
+          "label": "monitors"
+        },
+        {
+          "id": "edge-iam-r2-manages",
+          "source": "node-r2-iam",
+          "target": "node-r2-eks-node-group",
+          "label": "manages permissions for (via IRSA)"
+        },
+        {
+          "id": "edge-iam-r2-manages-ecr",
+          "source": "node-r2-iam",
+          "target": "node-r2-ecr",
+          "label": "manages permissions for"
+        },
+        {
+          "id": "edge-kms-r2-encrypts-s3",
+          "source": "node-r2-kms",
+          "target": "node-r2-s3",
+          "label": "encrypts data in"
+        },
+        {
+          "id": "edge-kms-r2-encrypts-rds",
+          "source": "node-r2-kms",
+          "target": "node-r2-rds-replica",
+          "label": "encrypts data in"
+        },
+        {
+          "id": "edge-secrets-manager-r2-to-eks-nodes-r2",
+          "source": "node-r2-secrets-manager",
+          "target": "node-r2-eks-node-group",
+          "label": "provides secrets to applications in"
+        }
+      ],
+      "lastModified": 1773800133449
+    },
+    {
+      "id": "80034433-05a2-48c9-af03-a73a58860695",
+      "name": "Bedrock Architecture",
+      "nodes": [
+        {
+          "id": "bedrock-agent",
+          "type": "aws-compute",
+          "data": {
+            "label": "Bedrock Agent",
+            "service": "Bedrock Agents",
+            "metadata": {
+              "description": "Autonomous agent for task execution and interaction.",
+              "framework_pillars": "Operational Excellence,Security,Reliability,Performance,Cost Optimization",
+              "notes": "Orchestrates actions based on user prompts; integrates with action groups and workflows."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288399614
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 300
+          },
+          "width": 152,
+          "height": 158
+        },
+        {
+          "id": "lambda-action-group",
+          "type": "aws-compute",
+          "data": {
+            "label": "Lambda Action Group",
+            "service": "Lambda",
+            "metadata": {
+              "description": "Implements an action group for the Bedrock agent, handling specific business logic.",
+              "runtime": "Python 3.12",
+              "memory": "512 MB",
+              "timeout": "30 seconds",
+              "framework_pillars": "Operational Excellence,Security,Reliability,Performance,Cost Optimization",
+              "notes": "Event-driven, serverless function; scales automatically; integrates with CloudWatch for logging."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288401638
+            }
+          },
+          "position": {
+            "x": 230,
+            "y": 800
+          },
+          "width": 182,
+          "height": 158
+        },
+        {
+          "id": "dynamodb-customers",
+          "type": "aws-database",
+          "data": {
+            "label": "Customer Data Table",
+            "service": "DynamoDB",
+            "metadata": {
+              "description": "NoSQL database for storing customer information.",
+              "partition_key": "customer_id",
+              "sort_key": "timestamp, order_id",
+              "framework_pillars": "Reliability,Performance,Cost Optimization",
+              "notes": "Fully managed, highly available (Multi-AZ), low-latency data access; pay-per-request billing."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288401667
+            }
+          },
+          "position": {
+            "x": 465,
+            "y": 1050
+          },
+          "width": 177,
+          "height": 158
+        },
+        {
+          "id": "step-functions",
+          "type": "aws-compute",
+          "data": {
+            "label": "Step Functions Workflow",
+            "service": "Step Functions",
+            "metadata": {
+              "description": "Orchestrates complex multi-step tasks and long-running processes.",
+              "state_machine_type": "Standard",
+              "framework_pillars": "Operational Excellence,Reliability,Cost Optimization",
+              "notes": "Manages execution flow, retries, and error handling; integrates with CloudWatch for trace monitoring."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288400623
+            }
+          },
+          "position": {
+            "x": 305,
+            "y": 550
+          },
+          "width": 204,
+          "height": 158
+        },
+        {
+          "id": "cloudwatch",
+          "type": "default",
+          "data": {
+            "label": "CloudWatch Monitoring",
+            "service": "CloudWatch",
+            "metadata": {
+              "description": "Centralized monitoring and logging for all AWS services.",
+              "monitors": "Bedrock Agents,Lambda,DynamoDB,Step Functions",
+              "framework_pillars": "Operational Excellence",
+              "notes": "Collects logs, metrics, and traces (e.g., Bedrock agent traces, Lambda logs, Step Functions execution history)."
+            },
+            "simulation": {
+              "status": "idle",
+              "lastRun": 1771288402426
+            }
+          },
+          "position": {
+            "x": 220,
+            "y": 1300
+          },
+          "width": 150,
+          "height": 174
+        },
+        {
+          "id": "iam-bedrock-agent",
+          "type": "default",
+          "data": {
+            "label": "IAM Role for Bedrock Agent",
+            "service": "IAM",
+            "metadata": {
+              "description": "Grants Bedrock Agent permissions to invoke Lambda functions and start Step Functions.",
+              "permissions": "bedrock:InvokeAgent, lambda:InvokeFunction, states:StartExecution",
+              "framework_pillars": "Security",
+              "notes": "Least privilege access; defines service interactions securely."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288398613
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 50
+          },
+          "width": 150,
+          "height": 174,
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "iam-lambda-action",
+          "type": "default",
+          "data": {
+            "label": "IAM Role for Lambda Action Group",
+            "service": "IAM",
+            "metadata": {
+              "description": "Grants Lambda permissions to query DynamoDB and write logs to CloudWatch.",
+              "permissions": "dynamodb:GetItem, dynamodb:Query, logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents",
+              "framework_pillars": "Security",
+              "notes": "Specific permissions for DynamoDB access and CloudWatch logging."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288398620
+            }
+          },
+          "position": {
+            "x": 625,
+            "y": 550
+          },
+          "width": 150,
+          "height": 192
+        },
+        {
+          "id": "iam-step-functions",
+          "type": "default",
+          "data": {
+            "label": "IAM Role for Step Functions",
+            "service": "IAM",
+            "metadata": {
+              "description": "Grants Step Functions permissions to invoke Lambda functions and write logs to CloudWatch.",
+              "permissions": "lambda:InvokeFunction, logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents",
+              "framework_pillars": "Security",
+              "notes": "Allows Step Functions to manage workflow and log its execution."
+            },
+            "simulation": {
+              "status": "success",
+              "lastRun": 1771288398624
+            }
+          },
+          "position": {
+            "x": 370,
+            "y": 300
+          },
+          "width": 150,
+          "height": 174
+        }
+      ],
+      "edges": [
+        {
+          "id": "bedrock-agent-invokes-lambda",
+          "source": "bedrock-agent",
+          "target": "lambda-action-group",
+          "label": "invokes action group"
+        },
+        {
+          "id": "lambda-queries-dynamodb",
+          "source": "lambda-action-group",
+          "target": "dynamodb-customers",
+          "label": "queries customer data"
+        },
+        {
+          "id": "bedrock-agent-initiates-step-functions",
+          "source": "bedrock-agent",
+          "target": "step-functions",
+          "label": "initiates complex workflow"
+        },
+        {
+          "id": "step-functions-orchestrates-lambda",
+          "source": "step-functions",
+          "target": "lambda-action-group",
+          "label": "orchestrates action group (if part of workflow)"
+        },
+        {
+          "id": "bedrock-agent-to-cloudwatch",
+          "source": "bedrock-agent",
+          "target": "cloudwatch",
+          "label": "sends agent traces & logs"
+        },
+        {
+          "id": "lambda-to-cloudwatch",
+          "source": "lambda-action-group",
+          "target": "cloudwatch",
+          "label": "sends logs & metrics"
+        },
+        {
+          "id": "dynamodb-to-cloudwatch",
+          "source": "dynamodb-customers",
+          "target": "cloudwatch",
+          "label": "sends metrics"
+        },
+        {
+          "id": "step-functions-to-cloudwatch",
+          "source": "step-functions",
+          "target": "cloudwatch",
+          "label": "sends execution logs & metrics"
+        },
+        {
+          "id": "iam-bedrock-agent-grants",
+          "source": "iam-bedrock-agent",
+          "target": "bedrock-agent",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "iam-lambda-action-grants",
+          "source": "iam-lambda-action",
+          "target": "lambda-action-group",
+          "label": "grants permissions to"
+        },
+        {
+          "id": "iam-step-functions-grants",
+          "source": "iam-step-functions",
+          "target": "step-functions",
+          "label": "grants permissions to"
+        }
+      ],
+      "lastModified": 1773800135879
+    },
+    {
+      "id": "21ffd8a6-9fbe-474e-b9f9-e3a5846fdf67",
+      "name": "Serverless Architecture",
+      "nodes": [
+        {
+          "id": "node-client",
+          "type": "default",
+          "data": {
+            "label": "Client Application",
+            "service": "Client",
+            "metadata": {
+              "Access": "Internet"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 50
+          },
+          "width": 150,
+          "height": 174
+        },
+        {
+          "id": "node-api-gateway",
+          "type": "aws-network",
+          "data": {
+            "label": "Public API Endpoint",
+            "service": "API Gateway",
+            "metadata": {
+              "Security": "WAF,IAM Authorizer",
+              "Endpoint Type": "Regional"
+            }
+          },
+          "position": {
+            "x": 50,
+            "y": 300
+          },
+          "width": 168,
+          "height": 158
+        },
+        {
+          "id": "node-lambda-api-handler",
+          "type": "aws-compute",
+          "data": {
+            "label": "API Request Handler",
+            "service": "Lambda",
+            "metadata": {
+              "Runtime": "Node.js 18.x",
+              "Memory": "128MB",
+              "Concurrency": "On-demand",
+              "IAM Role": "Least Privilege Execution Role",
+              "VPC": "Private Subnet"
+            }
+          },
+          "position": {
+            "x": 145,
+            "y": 550
+          },
+          "width": 175,
+          "height": 158
+        },
+        {
+          "id": "node-sqs-queue",
+          "type": "aws-storage",
+          "data": {
+            "label": "Asynchronous Task Queue",
+            "service": "SQS",
+            "metadata": {
+              "Type": "Standard",
+              "Dead Letter Queue": "Enabled",
+              "Retention Period": "4 Days"
+            }
+          },
+          "position": {
+            "x": 145,
+            "y": 800
+          },
+          "width": 215,
+          "height": 158
+        },
+        {
+          "id": "node-lambda-sqs-processor",
+          "type": "aws-compute",
+          "data": {
+            "label": "SQS Message Processor",
+            "service": "Lambda",
+            "metadata": {
+              "Trigger": "SQS Queue",
+              "Batch Size": "10",
+              "Runtime": "Node.js 18.x",
+              "Memory": "128MB",
+              "Concurrency": "On-demand",
+              "IAM Role": "Least Privilege Execution Role",
+              "VPC": "Private Subnet"
+            }
+          },
+          "position": {
+            "x": 145,
+            "y": 1050
+          },
+          "width": 201,
+          "height": 158
+        },
+        {
+          "id": "node-dynamodb",
+          "type": "aws-database",
+          "data": {
+            "label": "Application Data Store",
+            "service": "DynamoDB",
+            "metadata": {
+              "Table Type": "On-demand",
+              "Replication": "Multi-AZ",
+              "Backup": "Point-in-time Recovery"
+            }
+          },
+          "position": {
+            "x": 335,
+            "y": 1300
+          },
+          "width": 188,
+          "height": 158
+        },
+        {
+          "id": "node-cloudwatch",
+          "type": "default",
+          "data": {
+            "label": "Monitoring & Logging",
+            "service": "CloudWatch",
+            "metadata": {
+              "Log Groups": "API Gateway,Lambda",
+              "Metrics": "All Services",
+              "Alarms": "Error Rates,Latency,Queue Depth"
+            }
+          },
+          "position": {
+            "x": 220,
+            "y": 1550
+          },
+          "width": 150,
+          "height": 174
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-client-api-gateway",
+          "source": "node-client",
+          "target": "node-api-gateway",
+          "label": "sends requests"
+        },
+        {
+          "id": "edge-api-gateway-lambda-handler",
+          "source": "node-api-gateway",
+          "target": "node-lambda-api-handler",
+          "label": "invokes"
+        },
+        {
+          "id": "edge-lambda-handler-sqs",
+          "source": "node-lambda-api-handler",
+          "target": "node-sqs-queue",
+          "label": "sends messages to"
+        },
+        {
+          "id": "edge-sqs-lambda-processor",
+          "source": "node-sqs-queue",
+          "target": "node-lambda-sqs-processor",
+          "label": "triggers processing by"
+        },
+        {
+          "id": "edge-lambda-handler-dynamodb",
+          "source": "node-lambda-api-handler",
+          "target": "node-dynamodb",
+          "label": "reads/writes data"
+        },
+        {
+          "id": "edge-lambda-processor-dynamodb",
+          "source": "node-lambda-sqs-processor",
+          "target": "node-dynamodb",
+          "label": "reads/writes data"
+        },
+        {
+          "id": "edge-api-gateway-cloudwatch",
+          "source": "node-api-gateway",
+          "target": "node-cloudwatch",
+          "label": "emits logs & metrics"
+        },
+        {
+          "id": "edge-lambda-handler-cloudwatch",
+          "source": "node-lambda-api-handler",
+          "target": "node-cloudwatch",
+          "label": "emits logs & metrics"
+        },
+        {
+          "id": "edge-lambda-processor-cloudwatch",
+          "source": "node-lambda-sqs-processor",
+          "target": "node-cloudwatch",
+          "label": "emits logs & metrics"
+        },
+        {
+          "id": "edge-dynamodb-cloudwatch",
+          "source": "node-dynamodb",
+          "target": "node-cloudwatch",
+          "label": "emits metrics"
+        },
+        {
+          "id": "edge-sqs-cloudwatch",
+          "source": "node-sqs-queue",
+          "target": "node-cloudwatch",
+          "label": "emits metrics"
+        }
+      ],
+      "lastModified": 1773800151902
+    }
+  ],
+  "timestamp": 1773800283757
+}
