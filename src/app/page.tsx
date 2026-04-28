@@ -74,6 +74,7 @@ function HomeContent() {
     // UI Panel State
     const [activePanel, setActivePanel] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [apiKeyInvalid, setApiKeyInvalid] = useState(false);
 
     // Initialize Local AI model if needed
     useEffect(() => {
@@ -150,7 +151,14 @@ function HomeContent() {
             }
         } catch (error) {
             console.error('Generation error:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to generate architecture');
+            const message = error instanceof Error ? error.message : 'Failed to generate architecture';
+            const isApiKeyError = /api key/i.test(message) || message.includes('API_KEY_INVALID');
+            if (isApiKeyError) {
+                setApiKeyInvalid(true);
+                setGeminiApiKey(null);
+            } else {
+                toast.error(message);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -307,7 +315,7 @@ function HomeContent() {
                     onClose={() => setGeneratedSpecification(null)}
                 />
 
-                <GeminiKeyDialog />
+                <GeminiKeyDialog invalidKey={apiKeyInvalid} onDismiss={() => setApiKeyInvalid(false)} />
             </div>
         </ReactFlowProvider>
     );

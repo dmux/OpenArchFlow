@@ -10,7 +10,7 @@ import {
     ArchitectureServiceAmazonRoute53,
     ArchitectureServiceAmazonSimpleQueueService,
     ArchitectureServiceAmazonSimpleNotificationService,
-    CategorySecurityIdentityCompliance,
+    CategorySecurityIdentity,
     ArchitectureServiceAmazonCloudWatch,
     ArchitectureServiceAmazonElasticKubernetesService,
     ArchitectureServiceAmazonElasticContainerService,
@@ -21,7 +21,7 @@ import {
     ArchitectureServiceAmazonElastiCache,
     ArchitectureServiceAmazonKinesis,
     CategoryCompute,
-    CategoryDatabase,
+    CategoryDatabases,
     CategoryStorage,
     CategoryNetworkingContentDelivery,
     ArchitectureServiceAWSGlue,
@@ -30,7 +30,7 @@ import {
     ArchitectureServiceAmazonAthena,
     ArchitectureServiceAmazonEMR,
     ArchitectureServiceAmazonRedshift,
-    ArchitectureServiceAmazonQuickSight,
+    ArchitectureServiceAmazonQuickSuite,
     ArchitectureServiceAmazonOpenSearchService,
     ArchitectureServiceAmazonManagedStreamingforApacheKafka,
     ArchitectureServiceAWSBatch,
@@ -59,7 +59,7 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'vpc': ArchitectureServiceAmazonVirtualPrivateCloud,
         'sqs': ArchitectureServiceAmazonSimpleQueueService,
         'sns': ArchitectureServiceAmazonSimpleNotificationService,
-        'iam': CategorySecurityIdentityCompliance, // Best fit for generic IAM
+        'iam': CategorySecurityIdentity, // Best fit for generic IAM
         'cloudwatch': ArchitectureServiceAmazonCloudWatch,
         'eks': ArchitectureServiceAmazonElasticKubernetesService,
         'ecs': ArchitectureServiceAmazonElasticContainerService,
@@ -78,7 +78,7 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'athena': ArchitectureServiceAmazonAthena,
         'emr': ArchitectureServiceAmazonEMR,
         'redshift': ArchitectureServiceAmazonRedshift,
-        'quicksight': ArchitectureServiceAmazonQuickSight,
+        'quicksight': ArchitectureServiceAmazonQuickSuite,
         'opensearch': ArchitectureServiceAmazonOpenSearchService,
         'msk': ArchitectureServiceAmazonManagedStreamingforApacheKafka,
         'batch': ArchitectureServiceAWSBatch,
@@ -102,11 +102,11 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
     // 2. Type Mapping (Fallback)
     const typeMap: Record<string, React.ComponentType<any>> = {
         'aws-compute': CategoryCompute,
-        'aws-database': CategoryDatabase,
+        'aws-database': CategoryDatabases,
         'aws-storage': CategoryStorage,
         'aws-network': CategoryNetworkingContentDelivery,
         'compute': CategoryCompute,
-        'database': CategoryDatabase,
+        'database': CategoryDatabases,
         'storage': CategoryStorage,
         'network': CategoryNetworkingContentDelivery,
     };
