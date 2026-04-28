@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { driver } from 'driver.js';
 import {
     Cloud,
     Laptop,
@@ -30,6 +31,7 @@ import DiagramChat from '@/components/diagram/DiagramChat';
 
 // Service
 import { WebLLMService } from '@/lib/ai/webllm';
+import { APP_VERSION } from '@/lib/version';
 
 // UI Components
 import { Switch } from '@/components/ui/switch';
@@ -49,6 +51,9 @@ export default function Home() {
 }
 
 function HomeContent() {
+    const ONBOARDING_STORAGE_KEY = `openarchflow.onboarding.seen.${APP_VERSION}`;
+    const onboardingDriverRef = useRef<ReturnType<typeof driver> | null>(null);
+
     const setNodes = useDiagramStore((state) => state.setNodes);
     const setEdges = useDiagramStore((state) => state.setEdges);
 
@@ -75,6 +80,7 @@ function HomeContent() {
     const [activePanel, setActivePanel] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [apiKeyInvalid, setApiKeyInvalid] = useState(false);
+    const [onboardingReplayToken, setOnboardingReplayToken] = useState(0);
 
     // Initialize Local AI model if needed
     useEffect(() => {
@@ -103,6 +109,85 @@ function HomeContent() {
             initModel();
         }
     }, [useLocalAI]);
+
+    const startOnboardingTour = useCallback(() => {
+        setActivePanel('ai');
+
+        const startTourTimeout = window.setTimeout(() => {
+            const tour = driver({
+                showProgress: true,
+                animate: true,
+                allowClose: true,
+                popoverClass: 'openarchflow-tour-popover',
+                nextBtnText: 'Proximo',
+                prevBtnText: 'Voltar',
+                doneBtnText: 'Concluir',
+                steps: [
+                    {
+                        element: '[data-tour="ai-mode-toggle"]',
+                        popover: {
+                            title: 'Escolha IA',
+                            description: 'Escolha entre Gemini (cloud) ou Phi-3 local para gerar o seu diagrama.',
+                            side: 'bottom',
+                            align: 'start',
+                        },
+                    },
+                    {
+                        element: '[data-tour="prompt-input"]',
+                        popover: {
+                            title: 'Descreva arquitetura',
+                            description: 'Escreva o que voce quer construir para gerar o diagrama automaticamente.',
+                            side: 'top',
+                            align: 'start',
+                        },
+                    },
+                    {
+                        element: '[data-tour="edit-export-actions"]',
+                        popover: {
+                            title: 'Edite e exporte',
+                            description: 'Use as acoes para organizar, editar e exportar seu diagrama em PNG.',
+                            side: 'right',
+                            align: 'start',
+                        },
+                    },
+                ],
+                onDestroyed: () => {
+                    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+                },
+            });
+
+            onboardingDriverRef.current = tour;
+            tour.drive();
+        }, 350);
+
+        return () => {
+            window.clearTimeout(startTourTimeout);
+            onboardingDriverRef.current?.destroy();
+            onboardingDriverRef.current = null;
+        };
+    }, [ONBOARDING_STORAGE_KEY]);
+
+    const handleReplayOnboarding = useCallback(() => {
+        onboardingDriverRef.current?.destroy();
+        setOnboardingReplayToken((prev) => prev + 1);
+    }, []);
+
+    useEffect(() => {
+        const hasSeenOnboarding = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+        if (hasSeenOnboarding) {
+            return;
+        }
+
+        return startOnboardingTour();
+    }, [ONBOARDING_STORAGE_KEY]);
+
+    useEffect(() => {
+        if (onboardingReplayToken === 0) {
+            return;
+        }
+
+        return startOnboardingTour();
+    }, [onboardingReplayToken, startOnboardingTour]);
 
     const handlePromptSubmit = useCallback(async (prompt: string) => {
         setIsLoading(true);
@@ -176,6 +261,7 @@ function HomeContent() {
                     isGenerating={isGenerating}
                     setIsGenerating={setIsGenerating}
                     useLocalAI={useLocalAI}
+                    onReplayOnboarding={handleReplayOnboarding}
                 />
 
                 {/* Main Content Area */}
@@ -193,6 +279,7 @@ function HomeContent() {
                             {/* AI Mode Toggle */}
                             <TooltipProvider delayDuration={400}>
                                 <div className="flex items-center space-x-3 bg-background/80 backdrop-blur-xl border border-border shadow-xl rounded-2xl px-4 py-2 hover:bg-background/100 transition-all">
+                                <div data-tour="ai-mode-toggle" className="contents">
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <div
@@ -245,6 +332,7 @@ function HomeContent() {
                                             Switch to Local AI (Phi-3)
                                         </TooltipContent>
                                     </Tooltip>
+                                </div>
                                 </div>
                             </TooltipProvider>
 

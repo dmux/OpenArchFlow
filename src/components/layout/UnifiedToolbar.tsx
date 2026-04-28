@@ -65,6 +65,7 @@ interface UnifiedToolbarProps {
     isGenerating: boolean;
     setIsGenerating: (value: boolean) => void;
     useLocalAI: boolean;
+    onReplayOnboarding: () => void;
 }
 
 export function UnifiedToolbar({
@@ -74,7 +75,8 @@ export function UnifiedToolbar({
     setIsSidebarOpen,
     isGenerating,
     setIsGenerating,
-    useLocalAI
+    useLocalAI,
+    onReplayOnboarding
 }: UnifiedToolbarProps) {
     const { getNodes, fitView } = useReactFlow();
     const isPlaying = useDiagramStore((state) => state.isPlaying);
@@ -343,7 +345,7 @@ export function UnifiedToolbar({
                 <div className="w-6 h-px bg-border my-0.5" />
 
                 {/* Quick Actions */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5" data-tour="edit-export-actions">
                     {actionTools.map((tool) => (
                         <Tooltip key={tool.id}>
                             <TooltipTrigger asChild>
@@ -457,6 +459,14 @@ export function UnifiedToolbar({
                                     <span className="text-sm font-medium">System</span>
                                 </div>
                                 {theme === "system" && <Check className="h-4 w-4 text-primary" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="my-1" />
+                            <DropdownMenuItem
+                                onClick={onReplayOnboarding}
+                                className="flex items-center gap-2 rounded-xl px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent"
+                            >
+                                <Sparkles className="h-4 w-4 text-indigo-500" />
+                                <span className="text-sm font-medium">Ver tour novamente</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

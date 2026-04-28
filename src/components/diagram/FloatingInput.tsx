@@ -120,6 +120,7 @@ export default function FloatingInput({
                     </Button>
 
                     <Input
+                        data-tour="prompt-input"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder={placeholder || "Describe your AWS architecture..."}

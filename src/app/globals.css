@@ -1,3 +1,5 @@
+@import "driver.js/dist/driver.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -87,4 +89,74 @@
   padding: 0 !important;
   color: inherit !important;
   box-shadow: none !important;
+}
+
+/* Driver.js onboarding theme aligned with project design system */
+.openarchflow-tour-popover {
+  background: hsl(var(--background) / 0.9) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  backdrop-filter: blur(14px) !important;
+  box-shadow: 0 20px 40px hsl(var(--foreground) / 0.2) !important;
+  min-width: 320px !important;
+}
+
+.openarchflow-tour-popover .driver-popover-title {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25rem !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.openarchflow-tour-popover .driver-popover-description {
+  margin-top: 0.5rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+  line-height: 1.4 !important;
+}
+
+.openarchflow-tour-popover .driver-popover-progress-text {
+  color: hsl(var(--muted-foreground)) !important;
+  font-weight: 500 !important;
+}
+
+.openarchflow-tour-popover .driver-popover-footer {
+  margin-top: 0.75rem !important;
+  border-top: 1px solid hsl(var(--border) / 0.6) !important;
+  padding-top: 0.75rem !important;
+}
+
+.openarchflow-tour-popover .driver-popover-btn {
+  border-radius: 0.75rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-shadow: none !important;
+  padding: 0.45rem 0.9rem !important;
+}
+
+.openarchflow-tour-popover .driver-popover-btn:hover {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.openarchflow-tour-popover .driver-popover-next-btn {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-color: hsl(var(--primary)) !important;
+}
+
+.openarchflow-tour-popover .driver-popover-next-btn:hover {
+  opacity: 0.92 !important;
+}
+
+.openarchflow-tour-popover .driver-popover-close-btn {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 1.1rem !important;
+}
+
+.openarchflow-tour-popover .driver-popover-close-btn:hover {
+  color: hsl(var(--foreground)) !important;
 }
