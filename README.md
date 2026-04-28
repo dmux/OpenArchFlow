@@ -18,6 +18,13 @@
   <a href="#-license">License</a>
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.2.0-blue?style=flat-square" alt="Version 0.2.0" />
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
+  <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
+  <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange?style=flat-square" alt="Gemini 2.5 Flash" />
+</p>
+
 ---
 
 ## 🌟 Overview
@@ -53,6 +60,7 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 
 - **Auto-Layout**: One-click hierarchical organization using dagre algorithm
 - **Massive Component Library**: Hundreds of official components for AWS, Azure, Cloud Native, Observability (Datadog, Sentry), Integrations (Stripe, Twilio), and Generic shapes
+- **AWS Architecture Groups**: Pre-styled containers for VPC, Subnet, Availability Zone, Region, On-Premises, and Security Zone — matching draw.io-level solution design capability
 - **Smart Connections**: Automatic edge routing and labels
 - **Export Options**: Download diagrams as high-quality PNG images or JSON files
 - **Multi-Diagram Support**: Create, manage, and backup multiple architecture diagrams
@@ -187,6 +195,37 @@ pnpm start
 
 ---
 
+## 🔖 Versioning
+
+OpenArchFlow follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
+
+| Segment | When to bump | Example |
+|---------|-------------|---------|
+| **MAJOR** | Breaking changes to file format or public API | `1.0.0` |
+| **MINOR** | New features, new providers, new AI capabilities (backwards-compatible) | `0.3.0` |
+| **PATCH** | Bug fixes, dependency updates, UI tweaks | `0.2.1` |
+
+All notable changes are documented in **[CHANGELOG.md](CHANGELOG.md)**, following the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+
+### How to Release a New Version
+
+1. **Update `package.json`** — bump the `"version"` field
+2. **Update `CHANGELOG.md`** — move items from `[Unreleased]` to a new dated section
+3. **Commit** the release:
+   ```bash
+   git add package.json CHANGELOG.md
+   git commit -m "chore: release vX.Y.Z"
+   ```
+4. **Tag** the release:
+   ```bash
+   git tag -a vX.Y.Z -m "Release vX.Y.Z"
+   git push && git push --tags
+   ```
+
+> The version is automatically injected into the UI at build time via `NEXT_PUBLIC_APP_VERSION` — no manual UI updates needed.
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions from the community! OpenArchFlow is built **by architects and engineers for architects and engineers**.
@@ -201,10 +240,11 @@ We welcome contributions from the community! OpenArchFlow is built **by architec
 
 ### Development Guidelines
 
-- Write clear, descriptive commit messages
+- Write clear, descriptive commit messages following [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:`)
 - Follow the existing code style (TypeScript + ESLint)
 - Test your changes thoroughly
-- Update documentation as needed
+- Update `CHANGELOG.md` under `[Unreleased]` for any user-visible changes
+- Bump the version in `package.json` when submitting a release PR
 
 ### Ideas for Contributions
 
