@@ -120,6 +120,40 @@ import {
     CategoryMigrationModernization,
     CategoryApplicationIntegration,
     CategoryAnalytics,
+    // Networking additions
+    ArchitectureServiceAWSNetworkFirewall,
+    ArchitectureServiceAWSPrivateLink,
+    ArchitectureServiceAWSGlobalAccelerator,
+    ResourceAmazonVPCEndpoints,
+    ResourceAmazonEC2ElasticIPAddress,
+    ResourceAmazonVPCCustomerGateway,
+    ResourceAmazonVPCVPNGateway,
+    ResourceAmazonVPCNetworkAccessControlList,
+    ResourceElasticLoadBalancingNetworkLoadBalancer,
+    // Compute additions
+    // (ArchitectureServiceAWSAmplify already imported above)
+    // Integration additions
+    ArchitectureServiceAmazonAppFlow,
+    ArchitectureServiceAmazonManagedWorkflowsforApacheAirflow,
+    // Storage additions
+    ArchitectureServiceAWSSnowball,
+    // Analytics additions
+    ArchitectureServiceAmazonDataFirehose,
+    ArchitectureServiceAWSLakeFormation,
+    // Management additions
+    ArchitectureServiceAWSComputeOptimizer,
+    ArchitectureServiceAWSHealthDashboard,
+    ArchitectureServiceAWSWellArchitectedTool,
+    // Security additions
+    ArchitectureServiceAWSFirewallManager,
+    ArchitectureServiceAmazonDetective,
+    ArchitectureServiceAWSIAMIdentityCenter,
+    ArchitectureServiceAWSVerifiedAccess,
+    // AI additions
+    ArchitectureServiceAmazonQ,
+    ArchitectureServiceAWSHealthLake,
+    // Developer Tools additions
+    ArchitectureServiceAmazonCodeGuru,
 } from 'aws-react-icons';
 
 export const getAwsIcon = (service: string, type: string): IconComponent => {
@@ -243,6 +277,42 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'datasync': ArchitectureServiceAWSDataSync,
         'transferfamily': ArchitectureServiceAWSTransferFamily,
         'migrationhub': ArchitectureServiceAWSMigrationHub,
+        // Networking additions
+        'networkfirewall': ArchitectureServiceAWSNetworkFirewall,
+        'privatelink': ArchitectureServiceAWSPrivateLink,
+        'globalaccelerator': ArchitectureServiceAWSGlobalAccelerator,
+        'vpcendpoint': ResourceAmazonVPCEndpoints,
+        'elasticip': ResourceAmazonEC2ElasticIPAddress,
+        'customergateway': ResourceAmazonVPCCustomerGateway,
+        'vpngateway': ResourceAmazonVPCVPNGateway,
+        'networkacl': ResourceAmazonVPCNetworkAccessControlList,
+        'nlb': ResourceElasticLoadBalancingNetworkLoadBalancer,
+        'networkloadbalancer': ResourceElasticLoadBalancingNetworkLoadBalancer,
+        // Integration additions
+        'appflow': ArchitectureServiceAmazonAppFlow,
+        'mwaa': ArchitectureServiceAmazonManagedWorkflowsforApacheAirflow,
+        // Storage additions
+        'snowfamily': ArchitectureServiceAWSSnowball,
+        's3transferacceleration': ArchitectureServiceAmazonSimpleStorageService,
+        // Analytics additions
+        'firehose': ArchitectureServiceAmazonDataFirehose,
+        'lakeformation': ArchitectureServiceAWSLakeFormation,
+        // Management additions
+        'computeoptimizer': ArchitectureServiceAWSComputeOptimizer,
+        'health': ArchitectureServiceAWSHealthDashboard,
+        'wellarchitected': ArchitectureServiceAWSWellArchitectedTool,
+        'resourcegroups': CategoryManagementTools,
+        // Security additions
+        'firewallmanager': ArchitectureServiceAWSFirewallManager,
+        'detective': ArchitectureServiceAmazonDetective,
+        'sso': ArchitectureServiceAWSIAMIdentityCenter,
+        'identitycenter': ArchitectureServiceAWSIAMIdentityCenter,
+        'verifiedaccess': ArchitectureServiceAWSVerifiedAccess,
+        // AI additions
+        'q': ArchitectureServiceAmazonQ,
+        'healthlake': ArchitectureServiceAWSHealthLake,
+        // Developer Tools additions
+        'codeguru': ArchitectureServiceAmazonCodeGuru,
     };
 
     if (serviceMap[normalizedService]) {
