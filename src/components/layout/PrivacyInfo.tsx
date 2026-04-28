@@ -9,7 +9,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, Github } from "lucide-react";
+import { HelpCircle, Github, Globe } from "lucide-react";
 
 export function PrivacyInfo() {
     return (
@@ -71,6 +71,17 @@ export function PrivacyInfo() {
                                 <p>
                                     Built by architects and engineers passionate about technology, specifically for the developer and architect community to use freely.
                                 </p>
+                                <div className="flex items-center gap-4 pt-1">
+                                    <a
+                                        href="https://rfsales.dev"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <Globe className="w-4 h-4" />
+                                        <span>rfsales.dev</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </AlertDialogDescription>
