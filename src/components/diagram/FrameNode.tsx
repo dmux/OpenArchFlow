@@ -3,12 +3,28 @@ import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
 import { cn } from '@/lib/utils';
 import { AppNodeData } from '@/lib/store';
 
+const AWS_FRAME_STYLES: Record<string, { bg: string; border: string }> = {
+    'region':            { bg: 'rgba(249, 115, 22, 0.06)',  border: 'rgb(249, 115, 22)' },
+    'vpc':               { bg: 'rgba(59, 130, 246, 0.06)',  border: 'rgb(59, 130, 246)' },
+    'subnet-public':     { bg: 'rgba(34, 197, 94, 0.06)',   border: 'rgb(34, 197, 94)' },
+    'subnet-private':    { bg: 'rgba(148, 163, 184, 0.06)', border: 'rgb(148, 163, 184)' },
+    'availability-zone': { bg: 'rgba(234, 179, 8, 0.06)',   border: 'rgb(234, 179, 8)' },
+    'internet':          { bg: 'rgba(6, 182, 212, 0.06)',   border: 'rgb(6, 182, 212)' },
+    'on-premises':       { bg: 'rgba(107, 114, 128, 0.06)', border: 'rgb(107, 114, 128)' },
+    'security-zone':     { bg: 'rgba(239, 68, 68, 0.06)',   border: 'rgb(239, 68, 68)' },
+    'account':           { bg: 'rgba(168, 85, 247, 0.06)',  border: 'rgb(168, 85, 247)' },
+};
+
+const DEFAULT_FRAME_STYLE = { bg: 'rgba(147, 197, 253, 0.1)', border: 'rgb(147, 197, 253)' };
+
 const FrameNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     const { label, metadata } = data;
+    const subtype = data.subtype as string | undefined;
     const title = metadata?.title || label || 'Group';
     const description = metadata?.description || '';
-    const backgroundColor = metadata?.backgroundColor || 'rgba(147, 197, 253, 0.1)'; // blue-300 with opacity
-    const borderColor = metadata?.borderColor || 'rgb(147, 197, 253)'; // blue-300
+    const subtypeStyle = (subtype && AWS_FRAME_STYLES[subtype]) || DEFAULT_FRAME_STYLE;
+    const backgroundColor = metadata?.backgroundColor || subtypeStyle.bg;
+    const borderColor = metadata?.borderColor || subtypeStyle.border;
 
     return (
         <>

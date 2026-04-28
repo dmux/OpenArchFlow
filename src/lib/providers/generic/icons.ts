@@ -1,10 +1,33 @@
 import { IconComponent } from '../types';
-import { User, Smartphone, Globe, Monitor, Cpu, Frame, MessageSquare, Box, Square, Database, File, Play, HelpCircle, Activity } from 'lucide-react';
+import { User, Smartphone, Globe, Monitor, Cpu, Frame, MessageSquare, Box, Square, Database, File, Play, HelpCircle, Activity, Layers, Shield } from 'lucide-react';
+import {
+    ArchitectureGroupRegion,
+    ArchitectureGroupVirtualprivatecloudVPC,
+    ArchitectureGroupPublicsubnet,
+    ArchitectureGroupPrivatesubnet,
+    ArchitectureGroupAWSCloud,
+    ArchitectureGroupCorporatedatacenter,
+    ArchitectureGroupAWSAccount,
+} from 'aws-react-icons';
+
+const AWS_FRAME_ICONS: Record<string, IconComponent> = {
+    'aws-region':         ArchitectureGroupRegion,
+    'aws-vpc':            ArchitectureGroupVirtualprivatecloudVPC,
+    'aws-subnet-public':  ArchitectureGroupPublicsubnet,
+    'aws-subnet-private': ArchitectureGroupPrivatesubnet,
+    'aws-az':             Layers,
+    'aws-internet':       ArchitectureGroupAWSCloud,
+    'aws-on-premises':    ArchitectureGroupCorporatedatacenter,
+    'aws-security-zone':  Shield,
+    'aws-account':        ArchitectureGroupAWSAccount,
+};
 
 export const getGenericIcon = (service: string, type: string, subtype?: string): IconComponent => {
     const normalizedService = service?.toLowerCase().replace(/\s+/g, '') || '';
 
-    if (type === 'frame') return Frame;
+    if (type === 'frame') {
+        return AWS_FRAME_ICONS[normalizedService] || Frame;
+    }
     if (type === 'note' || type === 'annotation') return MessageSquare;
 
     if (type === 'generic') {

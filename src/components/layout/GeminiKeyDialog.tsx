@@ -13,11 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, ExternalLink, ShieldCheck, Laptop } from "lucide-react";
+import { KeyRound, ExternalLink, ShieldCheck, Laptop, AlertTriangle } from "lucide-react";
 import { useDiagramStore } from '@/lib/store';
 import { toast } from 'sonner';
 
-export function GeminiKeyDialog() {
+interface GeminiKeyDialogProps {
+    invalidKey?: boolean;
+    onDismiss?: () => void;
+}
+
+export function GeminiKeyDialog({ invalidKey = false, onDismiss }: GeminiKeyDialogProps) {
     const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
     const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
     const setOfflineMode = useDiagramStore((state) => state.setOfflineMode);
@@ -42,6 +47,7 @@ export function GeminiKeyDialog() {
         }
         setGeminiApiKey(inputValue.trim());
         setIsOpen(false);
+        onDismiss?.();
         toast.success('Gemini API Key saved locally');
     };
 
@@ -49,6 +55,7 @@ export function GeminiKeyDialog() {
         setOfflineMode(true);
         setGeminiApiKey('offline'); // Placeholder to close dialog and mark as set
         setIsOpen(false);
+        onDismiss?.();
         toast.info('Using Application in Offline Mode');
     };
 
@@ -72,6 +79,14 @@ export function GeminiKeyDialog() {
                 </AlertDialogHeader>
 
                 <div className="space-y-6 py-4">
+                    {invalidKey && (
+                        <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+                            <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                            <p className="text-sm text-red-600 dark:text-red-400 leading-snug">
+                                The API key you entered was not accepted. Please check it and try again.
+                            </p>
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="api-key" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
                             Gemini API Key

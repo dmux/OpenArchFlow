@@ -17,6 +17,7 @@ import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLef
 import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { APP_VERSION } from '@/lib/version';
 import { useState, useRef, useEffect } from 'react';
 
 // Simple date formatter to avoid extra dependency for now
@@ -335,8 +336,9 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                             onChange={handleImport}
                         />
                     </div>
-                    <div className="text-xs text-center text-muted-foreground">
-                        {sortedDiagrams.length} diagrams stored locally
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{sortedDiagrams.length} diagram{sortedDiagrams.length !== 1 ? 's' : ''} stored locally</span>
+                        <span className="font-mono opacity-60">v{APP_VERSION}</span>
                     </div>
                 </div>
             </div>

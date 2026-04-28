@@ -12,7 +12,7 @@ import {
     ArchitectureServiceAmazonRoute53,
     ArchitectureServiceAmazonSimpleQueueService,
     ArchitectureServiceAmazonSimpleNotificationService,
-    CategorySecurityIdentityCompliance,
+    CategorySecurityIdentity,
     ArchitectureServiceAmazonCloudWatch,
     ArchitectureServiceAmazonElasticKubernetesService,
     ArchitectureServiceAmazonElasticContainerService,
@@ -26,7 +26,7 @@ import {
     ArchitectureServiceAmazonElastiCache,
     ArchitectureServiceAmazonKinesis,
     CategoryCompute,
-    CategoryDatabase,
+    CategoryDatabases,
     CategoryStorage,
     CategoryNetworkingContentDelivery,
     ArchitectureServiceAWSGlue,
@@ -38,7 +38,7 @@ import {
     ArchitectureServiceAWSClientVPN,
     ArchitectureServiceAWSSitetoSiteVPN,
     ArchitectureServiceAmazonRedshift,
-    ArchitectureServiceAmazonQuickSight,
+    ArchitectureServiceAmazonQuickSuite,
     ArchitectureServiceAmazonOpenSearchService,
     ArchitectureServiceAmazonManagedStreamingforApacheKafka,
     ArchitectureServiceAWSBatch,
@@ -87,7 +87,6 @@ import {
     ArchitectureServiceAmazonTimestream,
     ArchitectureServiceAmazonKeyspaces,
     ArchitectureServiceAmazonMemoryDB,
-    ArchitectureServiceAmazonQuantumLedgerDatabase,
     // Storage
     ArchitectureServiceAmazonFSx,
     ArchitectureServiceAWSBackup,
@@ -111,7 +110,7 @@ import {
     ArchitectureServiceAWSServiceCatalog,
     ArchitectureServiceAWSTrustedAdvisor,
     ArchitectureServiceAWSCloudFormation,
-    CategoryManagementGovernance,
+    CategoryManagementTools,
     // Migration & Transfer
     ArchitectureServiceAWSDatabaseMigrationService,
     ArchitectureServiceAWSDataSync,
@@ -121,6 +120,40 @@ import {
     CategoryMigrationModernization,
     CategoryApplicationIntegration,
     CategoryAnalytics,
+    // Networking additions
+    ArchitectureServiceAWSNetworkFirewall,
+    ArchitectureServiceAWSPrivateLink,
+    ArchitectureServiceAWSGlobalAccelerator,
+    ResourceAmazonVPCEndpoints,
+    ResourceAmazonEC2ElasticIPAddress,
+    ResourceAmazonVPCCustomerGateway,
+    ResourceAmazonVPCVPNGateway,
+    ResourceAmazonVPCNetworkAccessControlList,
+    ResourceElasticLoadBalancingNetworkLoadBalancer,
+    // Compute additions
+    // (ArchitectureServiceAWSAmplify already imported above)
+    // Integration additions
+    ArchitectureServiceAmazonAppFlow,
+    ArchitectureServiceAmazonManagedWorkflowsforApacheAirflow,
+    // Storage additions
+    ArchitectureServiceAWSSnowball,
+    // Analytics additions
+    ArchitectureServiceAmazonDataFirehose,
+    ArchitectureServiceAWSLakeFormation,
+    // Management additions
+    ArchitectureServiceAWSComputeOptimizer,
+    ArchitectureServiceAWSHealthDashboard,
+    ArchitectureServiceAWSWellArchitectedTool,
+    // Security additions
+    ArchitectureServiceAWSFirewallManager,
+    ArchitectureServiceAmazonDetective,
+    ArchitectureServiceAWSIAMIdentityCenter,
+    ArchitectureServiceAWSVerifiedAccess,
+    // AI additions
+    ArchitectureServiceAmazonQ,
+    ArchitectureServiceAWSHealthLake,
+    // Developer Tools additions
+    ArchitectureServiceAmazonCodeGuru,
 } from 'aws-react-icons';
 
 export const getAwsIcon = (service: string, type: string): IconComponent => {
@@ -136,7 +169,7 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'vpc': ArchitectureServiceAmazonVirtualPrivateCloud,
         'sqs': ArchitectureServiceAmazonSimpleQueueService,
         'sns': ArchitectureServiceAmazonSimpleNotificationService,
-        'iam': CategorySecurityIdentityCompliance,
+        'iam': CategorySecurityIdentity,
         'cloudwatch': ArchitectureServiceAmazonCloudWatch,
         'eks': ArchitectureServiceAmazonElasticKubernetesService,
         'ecs': ArchitectureServiceAmazonElasticContainerService,
@@ -165,7 +198,7 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'athena': ArchitectureServiceAmazonAthena,
         'emr': ArchitectureServiceAmazonEMR,
         'redshift': ArchitectureServiceAmazonRedshift,
-        'quicksight': ArchitectureServiceAmazonQuickSight,
+        'quicksight': ArchitectureServiceAmazonQuickSuite,
         'opensearch': ArchitectureServiceAmazonOpenSearchService,
         'msk': ArchitectureServiceAmazonManagedStreamingforApacheKafka,
         'batch': ArchitectureServiceAWSBatch,
@@ -214,7 +247,7 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'timestream': ArchitectureServiceAmazonTimestream,
         'keyspaces': ArchitectureServiceAmazonKeyspaces,
         'memorydb': ArchitectureServiceAmazonMemoryDB,
-        'qldb': ArchitectureServiceAmazonQuantumLedgerDatabase,
+        'qldb': CategoryDatabases,
         // Storage
         'fsx': ArchitectureServiceAmazonFSx,
         'backup': ArchitectureServiceAWSBackup,
@@ -244,6 +277,42 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'datasync': ArchitectureServiceAWSDataSync,
         'transferfamily': ArchitectureServiceAWSTransferFamily,
         'migrationhub': ArchitectureServiceAWSMigrationHub,
+        // Networking additions
+        'networkfirewall': ArchitectureServiceAWSNetworkFirewall,
+        'privatelink': ArchitectureServiceAWSPrivateLink,
+        'globalaccelerator': ArchitectureServiceAWSGlobalAccelerator,
+        'vpcendpoint': ResourceAmazonVPCEndpoints,
+        'elasticip': ResourceAmazonEC2ElasticIPAddress,
+        'customergateway': ResourceAmazonVPCCustomerGateway,
+        'vpngateway': ResourceAmazonVPCVPNGateway,
+        'networkacl': ResourceAmazonVPCNetworkAccessControlList,
+        'nlb': ResourceElasticLoadBalancingNetworkLoadBalancer,
+        'networkloadbalancer': ResourceElasticLoadBalancingNetworkLoadBalancer,
+        // Integration additions
+        'appflow': ArchitectureServiceAmazonAppFlow,
+        'mwaa': ArchitectureServiceAmazonManagedWorkflowsforApacheAirflow,
+        // Storage additions
+        'snowfamily': ArchitectureServiceAWSSnowball,
+        's3transferacceleration': ArchitectureServiceAmazonSimpleStorageService,
+        // Analytics additions
+        'firehose': ArchitectureServiceAmazonDataFirehose,
+        'lakeformation': ArchitectureServiceAWSLakeFormation,
+        // Management additions
+        'computeoptimizer': ArchitectureServiceAWSComputeOptimizer,
+        'health': ArchitectureServiceAWSHealthDashboard,
+        'wellarchitected': ArchitectureServiceAWSWellArchitectedTool,
+        'resourcegroups': CategoryManagementTools,
+        // Security additions
+        'firewallmanager': ArchitectureServiceAWSFirewallManager,
+        'detective': ArchitectureServiceAmazonDetective,
+        'sso': ArchitectureServiceAWSIAMIdentityCenter,
+        'identitycenter': ArchitectureServiceAWSIAMIdentityCenter,
+        'verifiedaccess': ArchitectureServiceAWSVerifiedAccess,
+        // AI additions
+        'q': ArchitectureServiceAmazonQ,
+        'healthlake': ArchitectureServiceAWSHealthLake,
+        // Developer Tools additions
+        'codeguru': ArchitectureServiceAmazonCodeGuru,
     };
 
     if (serviceMap[normalizedService]) {
@@ -252,28 +321,28 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
 
     const typeMap: Record<string, React.ComponentType<any>> = {
         'aws-compute': CategoryCompute,
-        'aws-database': CategoryDatabase,
+        'aws-database': CategoryDatabases,
         'aws-storage': CategoryStorage,
         'aws-network': CategoryNetworkingContentDelivery,
         'aws-ai': CategoryArtificialIntelligence,
         'aws-ml': CategoryArtificialIntelligence,
         'aws-devtools': CategoryDeveloperTools,
-        'aws-security': CategorySecurityIdentityCompliance,
+        'aws-security': CategorySecurityIdentity,
         'aws-containers': CategoryContainers,
-        'aws-management': CategoryManagementGovernance,
+        'aws-management': CategoryManagementTools,
         'aws-migration': CategoryMigrationModernization,
         'aws-integration': CategoryApplicationIntegration,
         'aws-analytics': CategoryAnalytics,
         'compute': CategoryCompute,
-        'database': CategoryDatabase,
+        'database': CategoryDatabases,
         'storage': CategoryStorage,
         'network': CategoryNetworkingContentDelivery,
         'ai': CategoryArtificialIntelligence,
         'ml': CategoryArtificialIntelligence,
         'devtools': CategoryDeveloperTools,
-        'security': CategorySecurityIdentityCompliance,
+        'security': CategorySecurityIdentity,
         'containers': CategoryContainers,
-        'management': CategoryManagementGovernance,
+        'management': CategoryManagementTools,
         'migration': CategoryMigrationModernization,
         'integration': CategoryApplicationIntegration,
         'analytics': CategoryAnalytics,

@@ -13,6 +13,7 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "Batch", service: "batch", description: "Fully managed batch processing at any scale." },
             { name: "Elastic Beanstalk", service: "elasticbeanstalk", description: "Easy-to-use service for deploying and scaling web applications and services." },
             { name: "Lightsail", service: "lightsail", description: "Easy-to-use virtual private server (VPS) instances, containers, storage, and more." },
+            { name: "Amplify", service: "amplify", type: "aws-compute", description: "Fastest, easiest way to build mobile and web apps that scale — includes hosting, CI/CD, and backend services." },
         ]
     },
     {
@@ -51,6 +52,8 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "FSx", service: "fsx", description: "Fully managed file systems for Windows File Server, Lustre, NetApp ONTAP, and OpenZFS." },
             { name: "Backup", service: "backup", description: "Fully managed backup service that makes it easy to centralize and automate data protection." },
             { name: "Storage Gateway", service: "storagegateway", description: "Hybrid cloud storage service that provides on-premises access to virtually unlimited cloud storage." },
+            { name: "Snow Family", service: "snowfamily", type: "aws-storage", description: "Physical devices to migrate data into and out of AWS at petabyte scale — Snowcone, Snowball, and Snowmobile." },
+            { name: "S3 Transfer Acceleration", service: "s3transferacceleration", type: "aws-storage", description: "Fast, easy, and secure transfer of files over long distances between your client and an S3 bucket." },
         ]
     },
     {
@@ -69,6 +72,15 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "Internet Gateway", service: "internetgateway", type: "aws-network", description: "Horizontally scaled, redundant, and highly available VPC component that allows communication between your VPC and the internet." },
             { name: "Transit Gateway", service: "transitgateway", type: "aws-network", description: "Connects VPCs and on-premises networks through a central hub." },
             { name: "Private Subnet", service: "privatesubnet", type: "aws-network", description: "Subnet within a VPC that does not have a direct route to the internet." },
+            { name: "Network Firewall", service: "networkfirewall", type: "aws-network", description: "Managed stateful network firewall and intrusion detection and prevention service for VPCs." },
+            { name: "AWS PrivateLink", service: "privatelink", type: "aws-network", description: "Provides private connectivity between VPCs, AWS services, and on-premises networks without exposing traffic to the internet." },
+            { name: "Global Accelerator", service: "globalaccelerator", type: "aws-network", description: "Networking service that improves availability and performance of applications using the AWS global network." },
+            { name: "VPC Endpoint", service: "vpcendpoint", type: "aws-network", description: "Enables private connections from your VPC to supported AWS services without requiring an internet gateway." },
+            { name: "Elastic IP", service: "elasticip", type: "aws-network", description: "Static public IPv4 address designed for dynamic cloud computing." },
+            { name: "Customer Gateway", service: "customergateway", type: "aws-network", description: "AWS resource that provides information about your customer gateway device for a Site-to-Site VPN connection." },
+            { name: "VPN Gateway", service: "vpngateway", type: "aws-network", description: "The VPC side of a VPN connection that terminates Site-to-Site VPN connections." },
+            { name: "Network ACL", service: "networkacl", type: "aws-network", description: "Optional stateless layer of security for your VPC that acts as a firewall for controlling traffic at the subnet level." },
+            { name: "NLB", service: "nlb", type: "aws-network", description: "Network Load Balancer: Routes connections based on IP protocol data, operating at the transport layer (Layer 4)." },
         ]
     },
     {
@@ -86,6 +98,8 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "Personalize", service: "personalize", description: "Create real-time personalized recommendations." },
             { name: "Forecast", service: "forecast", description: "Build accurate forecasting models based on machine learning." },
             { name: "Kendra", service: "kendra", description: "Highly accurate and easy-to-use enterprise search service powered by machine learning." },
+            { name: "Amazon Q", service: "q", type: "aws-ai", description: "Generative AI-powered assistant for business — accelerate software development and gain insights from enterprise data." },
+            { name: "HealthLake", service: "healthlake", type: "aws-ai", description: "Store, transform, query, and analyze health data at scale in the FHIR standard." },
         ]
     },
     {
@@ -97,6 +111,8 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "EventBridge", service: "eventbridge", type: "aws-integration", description: "Serverless event bus that helps you receive, filter, transform, route, and deliver events." },
             { name: "AppSync", service: "appsync", description: "Build serverless GraphQL and Pub/Sub APIs that simplify application development." },
             { name: "MQ", service: "mq", description: "Managed message broker service for Apache ActiveMQ and RabbitMQ." },
+            { name: "AppFlow", service: "appflow", type: "aws-integration", description: "Fully managed integration service to securely transfer data between AWS services and third-party SaaS apps." },
+            { name: "MWAA", service: "mwaa", type: "aws-integration", description: "Managed Workflows for Apache Airflow — orchestrate your workflows at scale using directed acyclic graphs (DAGs)." },
         ]
     },
     {
@@ -114,6 +130,10 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "Certificate Manager", service: "certificatemanager", description: "Provision, manage, and deploy public and private SSL/TLS certificates." },
             { name: "CloudHSM", service: "cloudhsm", description: "Managed hardware security module (HSM) on the AWS Cloud." },
             { name: "Shield", service: "shield", description: "Managed Distributed Denial of Service (DDoS) protection service." },
+            { name: "Firewall Manager", service: "firewallmanager", type: "aws-security", description: "Centrally configure and manage firewall rules across your accounts and applications in AWS Organizations." },
+            { name: "Detective", service: "detective", type: "aws-security", description: "Analyze and investigate security findings to identify the root cause of potential security issues." },
+            { name: "IAM Identity Center", service: "sso", type: "aws-security", description: "Centrally manage workforce access to multiple AWS accounts and cloud applications with single sign-on." },
+            { name: "Verified Access", service: "verifiedaccess", type: "aws-security", description: "Securely provide access to corporate applications without a VPN, using Zero Trust principles." },
         ]
     },
     {
@@ -126,6 +146,7 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "CodeArtifact", service: "codeartifact", description: "Secure, scalable, and cost-effective artifact management for software development." },
             { name: "Cloud9", service: "cloud9", description: "Cloud-based integrated development environment (IDE) for writing, running, and debugging code." },
             { name: "X-Ray", service: "xray", description: "Analyze and debug production, distributed applications." },
+            { name: "CodeGuru", service: "codeguru", type: "aws-devtools", description: "Intelligent recommendations for improving application performance, efficiency, and code quality." },
         ]
     },
     {
@@ -140,6 +161,10 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "Control Tower", service: "controltower", description: "Establish and govern a secure, multi-account AWS environment." },
             { name: "Service Catalog", service: "servicecatalog", description: "Create, manage, and govern a catalog of IT services." },
             { name: "Trusted Advisor", service: "trustedadvisor", description: "Reduce costs, increase performance, and improve security." },
+            { name: "Compute Optimizer", service: "computeoptimizer", type: "aws-management", description: "Recommends optimal AWS resources to reduce costs and improve performance using machine learning." },
+            { name: "Health Dashboard", service: "health", type: "aws-management", description: "Provides visibility into the health of AWS services and personalized alerts for your account." },
+            { name: "Well-Architected Tool", service: "wellarchitected", type: "aws-management", description: "Review workloads against AWS best practices across the six pillars of the Well-Architected Framework." },
+            { name: "Resource Groups", service: "resourcegroups", type: "aws-management", description: "Organize and manage AWS resources by application, environment, or any criteria using tags." },
         ]
     },
     {
@@ -153,6 +178,8 @@ export const AWS_SERVICES: ServiceCategory[] = [
             { name: "QuickSight", service: "quicksight", description: "Fast, cloud-powered business intelligence (BI) service." },
             { name: "OpenSearch", service: "opensearch", description: "Search, visualize, and analyze data." },
             { name: "MSK", service: "msk", description: "Fully managed service that makes it easy for you to build and run applications that use Apache Kafka." },
+            { name: "Data Firehose", service: "firehose", type: "aws-analytics", description: "Fully managed service for delivering real-time streaming data to data lakes, warehouses, and analytics services." },
+            { name: "Lake Formation", service: "lakeformation", type: "aws-analytics", description: "Makes it easy to build, secure, and manage data lakes by automating many of the complex manual steps." },
         ]
     },
     {
