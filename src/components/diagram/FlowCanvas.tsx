@@ -11,7 +11,6 @@ import ReactFlow, {
     useNodesState,
     useEdgesState,
     addEdge,
-    MiniMap,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '@/lib/store';
@@ -148,7 +147,6 @@ function FlowCanvas() {
                 >
                     <Background gap={12} size={1} />
                     <Controls />
-                    <MiniMap />
                 </ReactFlow>
 
                 {/* Laser Pointer Overlay */}

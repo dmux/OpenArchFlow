@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from "@/components/ui/switch";
 import JsonEditor from './JsonEditor';
+import PricingSection from './PricingSection';
 
 export default function PropertiesPanel() {
     const {
@@ -189,7 +190,7 @@ export default function PropertiesPanel() {
                                                 className="h-8"
                                             />
                                             <p className="text-[10px] text-muted-foreground mt-1">
-                                                Cor do laser pointer (vermelho é mais realista)
+                                                Laser pointer color (red is more realistic)
                                             </p>
                                         </div>
                                         <div>
@@ -755,6 +756,11 @@ export default function PropertiesPanel() {
                                     )}
                                 </div>
                             )}
+
+                            {/* Pricing Section - Only for AWS nodes */}
+                            {service?.toLowerCase().includes('aws') || selectedNode.data.service ? (
+                                <PricingSection node={selectedNode} />
+                            ) : null}
 
                             <Separator />
 

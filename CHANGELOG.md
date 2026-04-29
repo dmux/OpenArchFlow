@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-04-28
+
+### Added
+
+**AWS Pricing Integration** — Real-time cost estimation for AWS resources:
+- Integration with official **AWS Price List API** via MCP-inspired provider
+- Support for **Compute** (EC2, RDS) with hourly/monthly instance rates
+- Support for **Storage** (S3, EFS) with GB-Mo usage metrics
+- Support for **Serverless/Integration** (Lambda, SQS) with invocation/request rates
+- **Dynamic Cost Configuration** — adjust Region, Instance Type, and usage quantities (count, storage size, requests) in the properties panel
+- **Bill of Materials (BOM) Panel** — Consolidated monthly architecture cost view listing all priced resources
+- **CSV Export** — Download a detailed cost breakdown for external reporting or spreadsheets
+- Standardized all UI components and labels to English for a consistent global experience
+
+### Changed
+
+- Removed MiniMap from the canvas to provide a cleaner and more focused user interface
+- Updated `UnifiedToolbar` with a dedicated Cost Summary button ($)
+
+### Technical
+
+- Added `@aws-sdk/client-pricing` and `dotenv` dependencies
+- Implemented `AWSPricingProvider` with forced us-east-1 endpoint for reliable global pricing data
+- Separated pricing metadata from UI components to allow cross-platform (client/server) usage without Node.js module errors
+
+---
+
 ## [0.2.0] - 2026-04-27
 
 ### Added

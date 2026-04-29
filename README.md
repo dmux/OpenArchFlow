@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-blue?style=flat-square" alt="Version 0.2.0" />
+  <img src="https://img.shields.io/badge/version-0.3.0-blue?style=flat-square" alt="Version 0.3.0" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange?style=flat-square" alt="Gemini 2.5 Flash" />
@@ -36,6 +36,7 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - ✨ **Zero Setup**: No account required. Start designing immediately.
 - 🔒 **Privacy First**: Runs entirely in your browser. Your data never leaves your device.
 - 🎨 **AI-Powered**: Describe your architecture in plain English, get professional diagrams instantly.
+- 💰 **Cost Estimation**: Integrated AWS Pricing API to calculate real-world architecture costs.
 - 🔧 **Fully Editable**: AI generates the initial design, you refine it with drag-and-drop.
 - 📚 **AWS Standards**: Uses AWS Documentation MCP for up-to-date service recommendations.
 - 🌐 **Offline Capable**: Local AI option (WebLLM) works without internet connection.
@@ -50,6 +51,13 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU
 - **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch
 - **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews
+
+### 💰 AWS Pricing & Cost Estimation
+
+- **Real-time Pricing**: Fetches live data from the AWS Price List API for EC2, RDS, S3, Lambda, and more
+- **Usage Configuration**: Customize regions, instance types, and usage quantities (storage GBs, requests) for precise estimates
+- **Bill of Materials (BOM)**: View a consolidated cost breakdown for your entire architecture in a dedicated panel
+- **Export to CSV**: Download your cost estimate for architectural proposals or budgeting
 
 ### 🎮 Diagram Simulation & Interactivity
 
