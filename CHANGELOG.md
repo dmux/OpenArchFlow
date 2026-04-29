@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2026-04-28
+
+### Added
+
+- Added **Vercel Speed Insights** for real-user performance monitoring and web vitals tracking
+
+---
+
 ## [0.3.0] - 2026-04-28
 
 ### Added
