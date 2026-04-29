@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] - 2026-04-29
+
+### Fixed
+
+- **Pricing Resilience**: Added mandatory filters (`preInstalledSw`, `capacitystatus`) to AWS Pricing queries to prevent "Price not found" errors on EC2 resources.
+- Improved OS string handling for AWS Price List compatibility.
+
+---
+
 ## [0.3.1] - 2026-04-28
 
 ### Added
