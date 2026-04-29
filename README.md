@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.3.2-blue?style=flat-square" alt="Version 0.3.2" />
+  <img src="https://img.shields.io/badge/version-0.4.0-blue?style=flat-square" alt="Version 0.4.0" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange?style=flat-square" alt="Gemini 2.5 Flash" />
@@ -44,6 +44,13 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 ---
 
 ## ✨ Features
+
+### 🤝 Real-time P2P Collaboration (NEW)
+
+- **Peer-to-Peer Architecture**: Design together in real-time with direct browser-to-browser synchronization.
+- **End-to-End Encryption (E2EE)**: All data is encrypted with a key stored in the URL fragment (`#hash`), which is never sent to the signaling server (Zero-Knowledge).
+- **No Central Storage**: Your diagrams are never stored on any central server. Synchronization happens directly between peers via WebRTC.
+- **Live Presence**: See how many peers are connected to your session directly in the toolbar.
 
 ### 🤖 Dual AI Engine
 
@@ -159,6 +166,7 @@ pnpm start
 | **State Management** | Zustand |
 | **AI - Cloud** | Google Gemini 2.5 Flash |
 | **AI - Local** | WebLLM (Phi-3-mini via WebGPU) |
+| **P2P Collaboration** | Yjs + WebRTC |
 | **Documentation** | react-markdown + remark-gfm |
 | **Export** | html2canvas |
 | **Icons** | Lucide React |
@@ -188,12 +196,19 @@ pnpm start
 - View rendered Markdown or raw code
 - Copy to clipboard for your wiki/documentation
 
-### 4. Export Diagram
+### 4. Collaborate in Real-time
+
+1. Click the **Users** icon in the toolbar
+2. Click **Start Collaborating**
+3. Share the generated link (E2EE) with your team
+4. Watch updates happen instantly across all screens!
+
+### 5. Export Diagram
 
 - Click **Actions** → **Export as PNG**
 - Download professional diagrams for presentations
 
-### 5. Manage Diagrams (Import/Export)
+### 6. Manage Diagrams (Import/Export)
 
 - **Export Single**: Click the download icon (⬇️) next to a diagram in the sidebar to save it as a JSON file.
 - **Backup All**: Click **Backup All** in the sidebar footer to export all your diagrams at once.

@@ -1,0 +1,13 @@
+app = "y-webrtc-signaling"
+primary_region = "gru" # Choose the region closest to you
+
+[http_service]
+  internal_port = 4444
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[env]
+  PORT = "4444"

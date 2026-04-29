@@ -58,6 +58,7 @@ import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { WebLLMService } from '@/lib/ai/webllm';
 import BillOfMaterials from '../diagram/BillOfMaterials';
+import { CollaborateButton } from './CollaborateButton';
 
 interface UnifiedToolbarProps {
     activePanel: string | null;
@@ -402,8 +403,10 @@ export function UnifiedToolbar({
 
                 <div className="w-6 h-px bg-border my-0.5" />
 
-                {/* Danger Zone / Settings */}
+                {/* Danger Zone / Settings / Collaboration */}
                 <div className="flex flex-col gap-1.5">
+                    <CollaborateButton />
+                    
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button

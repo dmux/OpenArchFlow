@@ -1,6 +1,6 @@
 {
   "name": "open-arch-flow",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "private": true,
   "author": "Rafael Sales <rafael.sales@gmail.com>",
   "pnpm": {
@@ -15,7 +15,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0",
+    "signaling": "node scripts/signaling.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-pricing": "^3.1038.0",
@@ -60,6 +61,8 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.30",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },

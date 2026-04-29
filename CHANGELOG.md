@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.4.0] - 2026-04-29
+
+### Added
+
+**Real-time P2P Collaboration** — Design architectures together in real-time with zero-knowledge privacy:
+- **Peer-to-Peer Architecture**: Direct browser-to-browser synchronization using **WebRTC** and **Yjs (CRDT)**.
+- **End-to-End Encryption (E2EE)**: All diagram data is encrypted before leaving the browser. The decryption key is stored in the URL fragment (`#hash`), which is **never sent** to the signaling server.
+- **Zero-Knowledge Privacy**: No central server stores or can read your diagrams. The signaling server only facilitates the initial P2P handshake.
+- **Presence Features**: Real-time peer count and connection status indicator on the toolbar.
+- **Seamless Sharing**: Generate secure invite links that include the diagram ID and the encryption key.
+- **Custom Signaling Infrastructure**: Dedicated signaling server deployed on Fly.io (`y-webrtc-signaling.openarchflow.cloud`) for high reliability.
+
+### Technical
+
+- Added `yjs` and `y-webrtc` dependencies.
+- Implemented `src/lib/collaboration.ts` for managing shared documents and WebRTC providers.
+- Integrated Yjs observers into `useDiagramStore` for bi-directional state synchronization.
+- Created `CollaborateButton` component with Popover-based sharing UI.
+- Added `scripts/signaling.mjs` and `Dockerfile` for the private signaling server.
 
 ---
 
