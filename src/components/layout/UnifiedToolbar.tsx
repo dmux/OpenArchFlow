@@ -13,6 +13,7 @@ import {
     Trash2,
     Download,
     FileText,
+    DollarSign,
     Pointer,
     MousePointer2,
     Loader2,
@@ -56,6 +57,7 @@ import { getLayoutedElements } from '@/lib/layout-utils';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { WebLLMService } from '@/lib/ai/webllm';
+import BillOfMaterials from '../diagram/BillOfMaterials';
 
 interface UnifiedToolbarProps {
     activePanel: string | null;
@@ -89,6 +91,7 @@ export function UnifiedToolbar({
     const { setTheme, theme } = useTheme();
 
     const [showClearConfirm, setShowClearConfirm] = useState(false);
+    const [showBOM, setShowBOM] = useState(false);
 
     const activeDiagram = activeDiagramId ? diagrams[activeDiagramId] : null;
     const nodes = activeDiagram?.nodes || [];
@@ -268,6 +271,13 @@ export function UnifiedToolbar({
             label: 'Export PNG',
             onClick: handleExport,
             active: false
+        },
+        {
+            id: 'bom',
+            icon: DollarSign,
+            label: 'Cost Summary',
+            onClick: () => setShowBOM(true),
+            active: showBOM
         },
         {
             id: 'generate',
@@ -462,6 +472,8 @@ export function UnifiedToolbar({
                     </DropdownMenu>
                 </div>
             </div>
+
+            <BillOfMaterials open={showBOM} onOpenChange={setShowBOM} />
 
             <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
                 <AlertDialogContent>

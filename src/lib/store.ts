@@ -63,6 +63,18 @@ export interface NodeSimulationStatus {
     lastRun?: number;
 }
 
+export interface NodePricing {
+    rate?: number; // Price per unit (e.g., $0.023)
+    unit?: string; // Unit (e.g., Hrs, GB-Mo, Request)
+    hourlyCost?: number;
+    monthlyCost?: number;
+    quantity?: number; // User-defined usage quantity (count, GBs, etc.)
+    currency?: string;
+    lastUpdated?: number;
+    error?: string;
+    loading?: boolean;
+}
+
 export interface AppNodeData extends Record<string, unknown> {
     label: string;
     service: string;
@@ -70,6 +82,7 @@ export interface AppNodeData extends Record<string, unknown> {
     metadata?: Record<string, any>;
     mock?: NodeMockData;
     simulation?: NodeSimulationStatus;
+    pricing?: NodePricing;
 }
 
 export interface SimulationLog {
@@ -287,8 +300,7 @@ export const useDiagramStore = create<DiagramState>()(
                 set((state) => {
                     const activeDiagram = state.diagrams[activeDiagramId];
                     const newNodes = activeDiagram.nodes.map((node) => {
-                        // Clear processing status on stop, convert to idle or leave as is if not processing?
-                        // Requirement: "status de loading e execução sejam parados" -> implies clearing processing state.
+                        // Clear processing status on stop
                         if (node.data.simulation?.status === 'processing') {
                             return {
                                 ...node,
