@@ -61,12 +61,22 @@ export class AWSPricingProvider {
                 }))
             ];
 
-            // Add service-specific defaults if missing to improve match rate
-            if (request.serviceCode === 'AmazonS3' && !request.attributes.storageClass) {
-                filters.push({ Field: "storageClass", Type: FilterType.TERM_MATCH, Value: "General Purpose" });
+            // Add service-specific defaults to improve match rate and avoid common "Price not found" errors
+            if (request.serviceCode === 'AmazonS3') {
+                if (!request.attributes.storageClass) filters.push({ Field: "storageClass", Type: FilterType.TERM_MATCH, Value: "General Purpose" });
             }
-            if (request.serviceCode === 'AmazonEC2' && !request.attributes.tenancy) {
-                filters.push({ Field: "tenancy", Type: FilterType.TERM_MATCH, Value: "Shared" });
+            
+            if (request.serviceCode === 'AmazonEC2') {
+                if (!request.attributes.tenancy) filters.push({ Field: "tenancy", Type: FilterType.TERM_MATCH, Value: "Shared" });
+                if (!request.attributes.preInstalledSw) filters.push({ Field: "preInstalledSw", Type: FilterType.TERM_MATCH, Value: "NA" });
+                if (!request.attributes.capacitystatus) filters.push({ Field: "capacitystatus", Type: FilterType.TERM_MATCH, Value: "Used" });
+                // Ensure operatingSystem is consistent with AWS Pricing naming
+                const os = request.attributes.operatingSystem;
+                if (os === 'Linux') {
+                    // AWS sometimes uses 'Linux' and sometimes 'Linux/UNIX'
+                    const osFilter = filters.find(f => f.Field === 'operatingSystem');
+                    if (osFilter) osFilter.Value = 'Linux'; 
+                }
             }
 
             const command = new GetProductsCommand({
