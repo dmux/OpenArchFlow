@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -136,6 +137,7 @@ export default function RootLayout({
                 >
                     {children}
                     <Analytics />
+                    <SpeedInsights />
                     <Toaster />
                 </ThemeProvider>
             </body>

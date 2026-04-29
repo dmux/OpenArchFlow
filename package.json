@@ -1,6 +1,6 @@
 {
   "name": "open-arch-flow",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "author": "Rafael Sales <rafael.sales@gmail.com>",
   "pnpm": {
@@ -37,6 +37,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^1.6.1",
+    "@vercel/speed-insights": "^2.0.0",
     "aws-react-icons": "^3.3.0",
     "azure-react-icons": "^0.10.1",
     "class-variance-authority": "^0.7.1",
