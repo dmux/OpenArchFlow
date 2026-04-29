@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+docs
+src
+public
+*.png
+*.json
+!package.json
+!pnpm-lock.yaml
+!scripts/signaling.mjs

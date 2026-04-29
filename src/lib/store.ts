@@ -14,8 +14,16 @@ import {
     applyEdgeChanges,
 } from 'reactflow';
 import ELK from 'elkjs/lib/elk.bundled';
+import * as Y from 'yjs';
+import { sharedDiagrams, initCollaboration } from './collaboration';
 
 const elk = new ELK();
+
+const syncToYjs = (id: string | null, roomId: string | null, diagrams: Record<string, Diagram>) => {
+    if (id && roomId && diagrams[id]) {
+        sharedDiagrams.set(id, diagrams[id]);
+    }
+};
 
 export interface AppEdgeData {
     simulationAction?: {
@@ -141,6 +149,9 @@ interface DiagramState {
     layout: () => Promise<void>;
     clear: () => void;
 
+    // Collaboration internal
+    applyRemoteUpdate: (id: string, diagram: Diagram) => void;
+
     // Simulation State
     isPlaying: boolean;
     setIsPlaying: (isPlaying: boolean) => void;
@@ -160,6 +171,10 @@ interface DiagramState {
     interactionMode: 'default' | 'laser'; // 'default' = selection/pan, 'laser' = laser pointer
     setInteractionMode: (mode: 'default' | 'laser') => void;
 
+    // Collaboration
+    collaborationRoomId: string | null;
+    setCollaborationRoomId: (id: string | null) => void;
+
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -176,6 +191,21 @@ export const useDiagramStore = create<DiagramState>()(
             simulationLogs: [],
             generatedSpecification: null,
             interactionMode: 'default',
+            collaborationRoomId: null,
+
+            setCollaborationRoomId: (id) => {
+                set({ collaborationRoomId: id });
+                if (id) {
+                    initCollaboration(id);
+                    // Initial sync: push current active diagram to Yjs if it's not there
+                    const { activeDiagramId, diagrams } = get();
+                    if (activeDiagramId && diagrams[activeDiagramId]) {
+                        if (!sharedDiagrams.has(activeDiagramId)) {
+                            sharedDiagrams.set(activeDiagramId, diagrams[activeDiagramId]);
+                        }
+                    }
+                }
+            },
 
             importDiagram: (diagram) => set((state) => {
                 // Check if ID exists, if so, create a new ID and append (Imported) to name
@@ -194,8 +224,12 @@ export const useDiagramStore = create<DiagramState>()(
                     lastModified: Date.now()
                 };
 
+                const newDiagrams = { ...state.diagrams, [newId]: newDiagram };
+                
+                syncToYjs(newId, state.collaborationRoomId, newDiagrams);
+
                 return {
-                    diagrams: { ...state.diagrams, [newId]: newDiagram },
+                    diagrams: newDiagrams,
                     activeDiagramId: newId // Switch to imported diagram
                 };
             }),
@@ -219,6 +253,8 @@ export const useDiagramStore = create<DiagramState>()(
                         name: newName,
                         lastModified: Date.now()
                     };
+                    
+                    syncToYjs(newId, state.collaborationRoomId, newDiagrams);
                 });
 
                 return {
@@ -386,12 +422,15 @@ export const useDiagramStore = create<DiagramState>()(
             setSelectedEdge: (id) => set({ selectedEdgeId: id, selectedNodeId: null }),
 
             renameDiagram: (id, name) => {
-                set((state) => ({
-                    diagrams: {
+                const { collaborationRoomId } = get();
+                set((state) => {
+                    const newDiagrams = {
                         ...state.diagrams,
                         [id]: { ...state.diagrams[id], name, lastModified: Date.now() },
-                    },
-                }));
+                    };
+                    syncToYjs(id, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
+                });
             },
 
             setGeminiApiKey: (key) => set({ geminiApiKey: key, isOfflineMode: false }),
@@ -401,119 +440,134 @@ export const useDiagramStore = create<DiagramState>()(
             // --- Active Diagram Actions ---
 
             onNodesChange: (changes: NodeChange[]) => {
-                const { activeDiagramId, diagrams } = get();
+                const { activeDiagramId, diagrams, collaborationRoomId } = get();
                 if (!activeDiagramId || !diagrams[activeDiagramId]) return;
 
                 const activeDiagram = diagrams[activeDiagramId];
                 const newNodes = applyNodeChanges(changes, activeDiagram.nodes);
 
-                set({
-                    diagrams: {
-                        ...diagrams,
-                        [activeDiagramId]: { ...activeDiagram, nodes: newNodes, lastModified: Date.now() },
-                    },
-                });
+                const newDiagrams = {
+                    ...diagrams,
+                    [activeDiagramId]: { ...activeDiagram, nodes: newNodes, lastModified: Date.now() },
+                };
+
+                set({ diagrams: newDiagrams });
+                syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
             },
 
             onEdgesChange: (changes: EdgeChange[]) => {
-                const { activeDiagramId, diagrams } = get();
+                const { activeDiagramId, diagrams, collaborationRoomId } = get();
                 if (!activeDiagramId || !diagrams[activeDiagramId]) return;
 
                 const activeDiagram = diagrams[activeDiagramId];
                 const newEdges = applyEdgeChanges(changes, activeDiagram.edges);
 
-                set({
-                    diagrams: {
-                        ...diagrams,
-                        [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
-                    },
-                });
+                const newDiagrams = {
+                    ...diagrams,
+                    [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
+                };
+
+                set({ diagrams: newDiagrams });
+                syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
             },
 
             onConnect: (connection: Connection) => {
-                const { activeDiagramId, diagrams } = get();
+                const { activeDiagramId, diagrams, collaborationRoomId } = get();
                 if (!activeDiagramId || !diagrams[activeDiagramId]) return;
 
                 const activeDiagram = diagrams[activeDiagramId];
                 const newEdges = addEdge(connection, activeDiagram.edges);
 
+                const newDiagrams = {
+                    ...diagrams,
+                    [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
+                };
+
                 set({
-                    diagrams: {
-                        ...diagrams,
-                        [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
-                    },
+                    diagrams: newDiagrams,
                     selectedEdgeId: newEdges[newEdges.length - 1].id,
                     selectedNodeId: null,
                 });
+                syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
             },
 
             setNodes: (nodes) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
 
                 // Auto-create if no active diagram exists (e.g. initial load or empty state)
                 if (!activeDiagramId) {
                     const id = get().createDiagram('Generated Architecture');
-                    set((state) => ({
-                        diagrams: {
+                    set((state) => {
+                        const newDiagrams = {
                             ...state.diagrams,
                             [id]: { ...state.diagrams[id], nodes, lastModified: Date.now() }
-                        }
-                    }));
+                        };
+                        syncToYjs(id, state.collaborationRoomId, newDiagrams);
+                        return { diagrams: newDiagrams };
+                    });
                     return;
                 }
 
-                set((state) => ({
-                    diagrams: {
+                set((state) => {
+                    const newDiagrams = {
                         ...state.diagrams,
                         [activeDiagramId]: { ...state.diagrams[activeDiagramId], nodes, lastModified: Date.now() },
-                    },
-                }));
+                    };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
+                });
             },
 
             setEdges: (edges) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
                 if (!activeDiagramId) return; // Should be handled by setNodes usually
 
-                set((state) => ({
-                    diagrams: {
+                set((state) => {
+                    const newDiagrams = {
                         ...state.diagrams,
                         [activeDiagramId]: { ...state.diagrams[activeDiagramId], edges, lastModified: Date.now() },
-                    },
-                }));
+                    };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
+                });
             },
 
             addNode: (node) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
 
                 if (!activeDiagramId) {
                     const id = get().createDiagram('New Architecture');
-                    set((state) => ({
-                        diagrams: {
+                    set((state) => {
+                        const newDiagrams = {
                             ...state.diagrams,
                             [id]: {
                                 ...state.diagrams[id],
                                 nodes: [node],
                                 lastModified: Date.now()
                             }
-                        }
-                    }));
+                        };
+                        syncToYjs(id, state.collaborationRoomId, newDiagrams);
+                        return { diagrams: newDiagrams };
+                    });
                     return;
                 }
 
-                set((state) => ({
-                    diagrams: {
+                set((state) => {
+                    const newDiagrams = {
                         ...state.diagrams,
                         [activeDiagramId]: {
                             ...state.diagrams[activeDiagramId],
                             nodes: [...state.diagrams[activeDiagramId].nodes, node],
                             lastModified: Date.now()
                         },
-                    },
-                }));
+                    };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
+                });
             },
 
             removeNode: (id) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
                 if (!activeDiagramId) return;
 
                 set((state) => {
@@ -525,18 +579,20 @@ export const useDiagramStore = create<DiagramState>()(
                         (edge) => edge.source !== id && edge.target !== id
                     );
 
+                    const newDiagrams = {
+                        ...state.diagrams,
+                        [activeDiagramId]: { ...activeDiagram, nodes: newNodes, edges: newEdges, lastModified: Date.now() },
+                    };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
                     return {
-                        diagrams: {
-                            ...state.diagrams,
-                            [activeDiagramId]: { ...activeDiagram, nodes: newNodes, edges: newEdges, lastModified: Date.now() },
-                        },
+                        diagrams: newDiagrams,
                         selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
                     };
                 });
             },
 
             updateNode: (id, data) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
                 if (!activeDiagramId) return;
 
                 set((state) => {
@@ -545,17 +601,17 @@ export const useDiagramStore = create<DiagramState>()(
                         node.id === id ? { ...node, data: { ...node.data, ...data } } : node
                     );
 
-                    return {
-                        diagrams: {
-                            ...state.diagrams,
-                            [activeDiagramId]: { ...activeDiagram, nodes: newNodes, lastModified: Date.now() },
-                        },
+                    const newDiagrams = {
+                        ...state.diagrams,
+                        [activeDiagramId]: { ...activeDiagram, nodes: newNodes, lastModified: Date.now() },
                     };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
                 });
             },
 
             updateEdge: (id, data) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
                 if (!activeDiagramId) return;
 
                 set((state) => {
@@ -564,28 +620,30 @@ export const useDiagramStore = create<DiagramState>()(
                         edge.id === id ? { ...edge, label: data.label, data: { ...edge.data, ...data } } : edge
                     );
 
-                    return {
-                        diagrams: {
-                            ...state.diagrams,
-                            [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
-                        },
+                    const newDiagrams = {
+                        ...state.diagrams,
+                        [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
                     };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
                 });
             },
 
             removeEdge: (id) => {
-                const { activeDiagramId } = get();
+                const { activeDiagramId, collaborationRoomId } = get();
                 if (!activeDiagramId) return;
 
                 set((state) => {
                     const activeDiagram = state.diagrams[activeDiagramId];
                     const newEdges = activeDiagram.edges.filter((edge) => edge.id !== id);
 
+                    const newDiagrams = {
+                        ...state.diagrams,
+                        [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
+                    };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
                     return {
-                        diagrams: {
-                            ...state.diagrams,
-                            [activeDiagramId]: { ...activeDiagram, edges: newEdges, lastModified: Date.now() },
-                        },
+                        diagrams: newDiagrams,
                         selectedEdgeId: state.selectedEdgeId === id ? null : state.selectedEdgeId,
                     };
                 });
@@ -636,27 +694,38 @@ export const useDiagramStore = create<DiagramState>()(
                         return node;
                     });
 
-                    set({
-                        diagrams: {
-                            ...diagrams,
-                            [activeDiagramId]: { ...activeDiagram, nodes: layoutedNodes, lastModified: Date.now() },
-                        },
-                    });
+                    const newDiagrams = {
+                        ...diagrams,
+                        [activeDiagramId]: { ...activeDiagram, nodes: layoutedNodes, lastModified: Date.now() },
+                    };
+
+                    set({ diagrams: newDiagrams });
+                    syncToYjs(activeDiagramId, get().collaborationRoomId, newDiagrams);
                 } catch (error) {
                     console.error('ELK Layout Error:', error);
                 }
             },
 
             clear: () => {
-                const { activeDiagramId, diagrams } = get();
+                const { activeDiagramId, diagrams, collaborationRoomId } = get();
                 if (!activeDiagramId) return;
 
-                set({
+                const newDiagrams = {
+                    ...diagrams,
+                    [activeDiagramId]: { ...diagrams[activeDiagramId], nodes: [], edges: [], lastModified: Date.now() },
+                };
+
+                set({ diagrams: newDiagrams });
+                syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+            },
+
+            applyRemoteUpdate: (id, diagram) => {
+                set((state) => ({
                     diagrams: {
-                        ...diagrams,
-                        [activeDiagramId]: { ...diagrams[activeDiagramId], nodes: [], edges: [], lastModified: Date.now() },
-                    },
-                });
+                        ...state.diagrams,
+                        [id]: diagram
+                    }
+                }));
             },
         }),
         {
@@ -666,14 +735,30 @@ export const useDiagramStore = create<DiagramState>()(
                 activeDiagramId: state.activeDiagramId,
                 geminiApiKey: state.geminiApiKey,
                 isOfflineMode: state.isOfflineMode,
-                // isPlaying is transient, do not persist
+                collaborationRoomId: state.collaborationRoomId,
             }),
             onRehydrateStorage: () => (state) => {
                 // Ensure there is at least one diagram if none exist after hydration
                 if (state && (!state.activeDiagramId || Object.keys(state.diagrams).length === 0)) {
                     state.createDiagram('Untitled Architecture');
                 }
+                // Re-initialize collaboration if room ID is present
+                if (state?.collaborationRoomId) {
+                    initCollaboration(state.collaborationRoomId);
+                }
             }
         }
     )
 );
+
+// Subscribe to Yjs changes to update Zustand store
+sharedDiagrams.observe((event) => {
+    if (!event.transaction.local) {
+        const state = useDiagramStore.getState();
+        const activeId = state.activeDiagramId;
+        if (activeId && sharedDiagrams.has(activeId)) {
+            const remoteDiagram = sharedDiagrams.get(activeId) as Diagram;
+            state.applyRemoteUpdate(activeId, remoteDiagram);
+        }
+    }
+});
