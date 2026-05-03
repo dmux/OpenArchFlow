@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { temporal } from 'zundo';
 import {
     Connection,
     Edge,
@@ -178,7 +179,8 @@ interface DiagramState {
 }
 
 export const useDiagramStore = create<DiagramState>()(
-    persist(
+    temporal(
+      persist(
         (set, get) => ({
             diagrams: {},
             activeDiagramId: null,
@@ -748,17 +750,28 @@ export const useDiagramStore = create<DiagramState>()(
                 }
             }
         }
+      ),
+      {
+          partialize: (state) => ({
+              diagrams: state.diagrams,
+              activeDiagramId: state.activeDiagramId,
+          }),
+          limit: 50,
+      }
     )
 );
 
 // Subscribe to Yjs changes to update Zustand store
+// Remote updates must not pollute the local undo history
 sharedDiagrams.observe((event) => {
     if (!event.transaction.local) {
         const state = useDiagramStore.getState();
         const activeId = state.activeDiagramId;
         if (activeId && sharedDiagrams.has(activeId)) {
             const remoteDiagram = sharedDiagrams.get(activeId) as Diagram;
+            useDiagramStore.temporal.getState().pause();
             state.applyRemoteUpdate(activeId, remoteDiagram);
+            useDiagramStore.temporal.getState().resume();
         }
     }
 });

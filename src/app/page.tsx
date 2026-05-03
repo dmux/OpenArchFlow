@@ -30,6 +30,7 @@ import DiagramChat from '@/components/diagram/DiagramChat';
 
 // Service
 import { WebLLMService } from '@/lib/ai/webllm';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // UI Components
 import { Switch } from '@/components/ui/switch';
@@ -49,6 +50,8 @@ export default function Home() {
 }
 
 function HomeContent() {
+    useKeyboardShortcuts();
+
     const setNodes = useDiagramStore((state) => state.setNodes);
     const setEdges = useDiagramStore((state) => state.setEdges);
 

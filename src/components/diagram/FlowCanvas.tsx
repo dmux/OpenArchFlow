@@ -1,16 +1,10 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import ReactFlow, {
     Background,
     Controls,
-    Connection,
-    Edge,
     MarkerType,
-    Position,
-    useNodesState,
-    useEdgesState,
-    addEdge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '@/lib/store';
@@ -21,6 +15,10 @@ import AnnotationNode from './AnnotationNode';
 import NoteNode from './NoteNode';
 import LaserPointer from './LaserPointer';
 import GenericNode from './GenericNode';
+import AlignmentToolbar from './AlignmentToolbar';
+import AlignmentGuides from './AlignmentGuides';
+import CollaborationCursors from './CollaborationCursors';
+import { publishCursor } from '@/lib/collaboration';
 
 const nodeTypes = {
     'aws-compute': CloudNode,
@@ -100,6 +98,25 @@ function FlowCanvas() {
 
     const isLaserMode = interactionMode === 'laser';
 
+    const onMouseMove = useCallback((e: React.MouseEvent) => {
+        const vpEl = document.querySelector('.react-flow__viewport') as HTMLElement | null;
+        if (!vpEl) return;
+        const match = vpEl.style.transform.match(/translate\(([^,]+)px,\s*([^)]+)px\)\s*scale\(([^)]+)\)/);
+        if (!match) return;
+        const tx = parseFloat(match[1]);
+        const ty = parseFloat(match[2]);
+        const scale = parseFloat(match[3]);
+        publishCursor((e.clientX - tx) / scale, (e.clientY - ty) / scale);
+    }, []);
+
+    const onNodeDragStart = useCallback(() => {
+        useDiagramStore.temporal.getState().pause();
+    }, []);
+
+    const onNodeDragStop = useCallback(() => {
+        useDiagramStore.temporal.getState().resume();
+    }, []);
+
     const onNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
         if (isLaserMode) return;
         setSelectedNode(node.id);
@@ -124,12 +141,14 @@ function FlowCanvas() {
     // But ReactFlow internal state needs to be synced if controlled.
 
     return (
-        <div className="w-full h-full bg-background" style={{ width: '100vw', height: '100vh' }}>
+        <div className="w-full h-full bg-background" style={{ width: '100vw', height: '100vh' }} onMouseMove={onMouseMove}>
             <TooltipProvider delayDuration={300}>
                 <ReactFlow
                     nodeTypes={nodeTypes}
                     onNodeClick={onNodeClick}
                     onEdgeClick={onEdgeClick}
+                    onNodeDragStart={onNodeDragStart}
+                    onNodeDragStop={onNodeDragStop}
                     nodes={nodes}
                     edges={animatedEdges}
                     onNodesChange={onNodesChange}
@@ -140,6 +159,8 @@ function FlowCanvas() {
                     nodesDraggable={!isLaserMode}
                     nodesConnectable={!isLaserMode}
                     elementsSelectable={!isLaserMode}
+                    snapToGrid
+                    snapGrid={[16, 16]}
                     defaultEdgeOptions={{
                         type: 'smoothstep',
                         markerEnd: { type: MarkerType.ArrowClosed },
@@ -151,6 +172,15 @@ function FlowCanvas() {
 
                 {/* Laser Pointer Overlay */}
                 <LaserPointer />
+
+                {/* Alignment Toolbar (appears when 2+ nodes selected) */}
+                <AlignmentToolbar />
+
+                {/* Smart alignment guides during drag */}
+                <AlignmentGuides />
+
+                {/* Remote collaboration cursors */}
+                <CollaborationCursors />
             </TooltipProvider>
         </div>
     );
