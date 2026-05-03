@@ -13,12 +13,14 @@ import { useDiagramStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLeft, ChevronRight, GitBranch } from 'lucide-react';
 import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { APP_VERSION } from '@/lib/version';
 import { useState, useRef, useEffect } from 'react';
+import { parseMermaid } from '@/lib/import/mermaid';
+import { toast } from 'sonner';
 
 // Simple date formatter to avoid extra dependency for now
 const formatDate = (timestamp: number) => {
@@ -35,11 +37,36 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     const importDiagram = useDiagramStore((state) => state.importDiagram);
     const importDiagrams = useDiagramStore((state) => state.importDiagrams);
 
+    const setNodes = useDiagramStore((state) => state.setNodes);
+    const setEdges = useDiagramStore((state) => state.setEdges);
+
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(4); // Default, will be calculated
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const [mermaidOpen, setMermaidOpen] = useState(false);
+    const [mermaidCode, setMermaidCode] = useState('');
+
+    const handleImportMermaid = () => {
+        if (!mermaidCode.trim()) return;
+        try {
+            const { nodes, edges } = parseMermaid(mermaidCode);
+            if (nodes.length === 0) { toast.error('No nodes found in Mermaid code'); return; }
+            createDiagram('Mermaid Import');
+            // createDiagram sets activeDiagramId; setNodes/setEdges act on activeDiagramId
+            setTimeout(() => {
+                setNodes(nodes);
+                setEdges(edges);
+                toast.success(`Imported ${nodes.length} nodes from Mermaid`);
+            }, 0);
+            setMermaidOpen(false);
+            setMermaidCode('');
+        } catch {
+            toast.error('Failed to parse Mermaid code');
+        }
+    };
 
     // Calculate items per page based on available height
     useEffect(() => {
@@ -336,11 +363,41 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                             onChange={handleImport}
                         />
                     </div>
+                    <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setMermaidOpen(true)}>
+                        <GitBranch className="w-3.5 h-3.5 mr-2" />
+                        Import Mermaid
+                    </Button>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{sortedDiagrams.length} diagram{sortedDiagrams.length !== 1 ? 's' : ''} stored locally</span>
                         <span className="font-mono opacity-60">v{APP_VERSION}</span>
                     </div>
                 </div>
+
+                {/* Mermaid Import Dialog */}
+                {mermaidOpen && (
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setMermaidOpen(false)}>
+                        <div className="bg-background border border-border rounded-xl shadow-2xl p-5 w-[480px] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-semibold text-sm">Import Mermaid Diagram</span>
+                                <button onClick={() => setMermaidOpen(false)} className="text-muted-foreground hover:text-foreground">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">Supports flowchart, sequenceDiagram, and classDiagram.</p>
+                            <textarea
+                                autoFocus
+                                value={mermaidCode}
+                                onChange={(e) => setMermaidCode(e.target.value)}
+                                placeholder={`flowchart TD\n    A[Start] --> B[Process]\n    B --> C[End]`}
+                                className="w-full h-44 text-xs font-mono bg-muted border border-border rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                            />
+                            <div className="flex gap-2 mt-3 justify-end">
+                                <Button variant="ghost" size="sm" onClick={() => setMermaidOpen(false)}>Cancel</Button>
+                                <Button size="sm" onClick={handleImportMermaid}>Import</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
