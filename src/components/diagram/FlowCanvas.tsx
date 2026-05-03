@@ -20,6 +20,7 @@ import AlignmentGuides from './AlignmentGuides';
 import CollaborationCursors from './CollaborationCursors';
 import StyledEdge from './StyledEdge';
 import CustomShapeNode from './CustomShapeNode';
+import SwimlaneNode from './SwimlaneNode';
 import { publishCursor } from '@/lib/collaboration';
 
 const nodeTypes = {
@@ -61,6 +62,7 @@ const nodeTypes = {
     'note': NoteNode,
     'generic': GenericNode,
     'custom-shape': CustomShapeNode,
+    'swimlane': SwimlaneNode,
     'default': CloudNode,
 };
 

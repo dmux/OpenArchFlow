@@ -12,6 +12,77 @@ import { Switch } from "@/components/ui/switch";
 import JsonEditor from './JsonEditor';
 import PricingSection from './PricingSection';
 
+const LANE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#ef4444', '#8b5cf6'];
+
+function SwimlaneEditor({ nodeId, metadata }: { nodeId: string; metadata: Record<string, any> | undefined }) {
+    const lanes: { id: string; title: string; color: string }[] = metadata?.lanes ?? [
+        { id: 'lane-1', title: 'Lane 1', color: '#6366f1' },
+        { id: 'lane-2', title: 'Lane 2', color: '#10b981' },
+    ];
+    const direction: string = metadata?.direction ?? 'horizontal';
+
+    const updateMeta = (patch: Record<string, any>) => {
+        useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), ...patch } });
+    };
+
+    const updateLane = (id: string, patch: Partial<{ title: string; color: string }>) => {
+        updateMeta({ lanes: lanes.map((l) => l.id === id ? { ...l, ...patch } : l) });
+    };
+
+    const addLane = () => {
+        const next = { id: crypto.randomUUID(), title: `Lane ${lanes.length + 1}`, color: LANE_COLORS[lanes.length % LANE_COLORS.length] };
+        updateMeta({ lanes: [...lanes, next] });
+    };
+
+    const removeLane = (id: string) => {
+        if (lanes.length <= 1) return;
+        updateMeta({ lanes: lanes.filter((l) => l.id !== id) });
+    };
+
+    return (
+        <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Settings size={14} /> Swimlane Properties
+            </h3>
+            <div>
+                <Label className="text-xs">Direction</Label>
+                <select
+                    value={direction}
+                    onChange={(e) => updateMeta({ direction: e.target.value })}
+                    className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring mt-1"
+                >
+                    <option value="horizontal">Horizontal lanes</option>
+                    <option value="vertical">Vertical lanes</option>
+                </select>
+            </div>
+            <div className="space-y-2">
+                <Label className="text-xs">Lanes</Label>
+                {lanes.map((lane) => (
+                    <div key={lane.id} className="flex items-center gap-1.5">
+                        <input
+                            type="color"
+                            value={lane.color}
+                            onChange={(e) => updateLane(lane.id, { color: e.target.value })}
+                            className="h-7 w-7 rounded p-0.5 border border-input cursor-pointer shrink-0"
+                        />
+                        <Input
+                            value={lane.title}
+                            onChange={(e) => updateLane(lane.id, { title: e.target.value })}
+                            className="h-7 text-xs flex-1"
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 hover:text-destructive" onClick={() => removeLane(lane.id)}>
+                            <Trash size={12} />
+                        </Button>
+                    </div>
+                ))}
+                <Button variant="ghost" size="sm" className="w-full h-7 text-xs gap-1.5" onClick={addLane}>
+                    <Plus size={12} /> Add Lane
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 const RESERVED_METADATA_KEYS = new Set([
     'label', 'service', 'type', 'metadata', 'mock', 'simulation', 'pricing', 'layerId',
     'provider', 'subtype', 'backgroundColor', 'borderColor', 'textColor', 'iconColor',
@@ -121,6 +192,7 @@ export default function PropertiesPanel() {
 
         // Helper to determine node category
         const isFrame = type === 'frame';
+        const isSwimlane = type === 'swimlane';
         const isAnnotation = type === 'annotation';
         const isNote = type === 'note';
         const isGateway = service?.toLowerCase().includes('gateway') || service?.toLowerCase().includes('balancer') || service?.toLowerCase().includes('appsync');
@@ -244,6 +316,11 @@ export default function PropertiesPanel() {
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Swimlane Properties */}
+                            {isSwimlane && (
+                                <SwimlaneEditor nodeId={selectedNodeId} metadata={metadata} />
                             )}
 
                             {/* Annotation-specific Properties */}
