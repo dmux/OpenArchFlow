@@ -12,6 +12,74 @@ import { Switch } from "@/components/ui/switch";
 import JsonEditor from './JsonEditor';
 import PricingSection from './PricingSection';
 
+const RESERVED_METADATA_KEYS = new Set([
+    'label', 'service', 'type', 'metadata', 'mock', 'simulation', 'pricing', 'layerId',
+    'provider', 'subtype', 'backgroundColor', 'borderColor', 'textColor', 'iconColor',
+    'borderWidth', 'opacity', 'customIcon', 'shape', 'title', 'description',
+    'text', 'color', 'pointerDirection', 'animated', 'noteColor', 'fontSize',
+]);
+
+function CustomPropertiesEditor({ nodeId, metadata }: { nodeId: string; metadata: Record<string, any> | undefined }) {
+    const [newKey, setNewKey] = React.useState('');
+    const [newVal, setNewVal] = React.useState('');
+
+    const customEntries = Object.entries(metadata ?? {}).filter(([k]) => !RESERVED_METADATA_KEYS.has(k));
+
+    const commit = () => {
+        if (!newKey.trim()) return;
+        useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), [newKey.trim()]: newVal } });
+        setNewKey('');
+        setNewVal('');
+    };
+
+    return (
+        <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Plus size={14} /> Custom Properties
+            </h3>
+            {customEntries.map(([k, v]) => (
+                <div key={k} className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono text-muted-foreground w-24 truncate shrink-0">{k}</span>
+                    <Input
+                        value={String(v ?? '')}
+                        onChange={(e) => useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), [k]: e.target.value } })}
+                        className="h-7 text-xs flex-1"
+                    />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 hover:text-destructive"
+                        onClick={() => {
+                            const { [k]: _, ...rest } = metadata ?? {};
+                            useDiagramStore.getState().updateNode(nodeId, { metadata: rest });
+                        }}
+                    >
+                        <Trash size={12} />
+                    </Button>
+                </div>
+            ))}
+            <div className="flex items-center gap-1.5 pt-1">
+                <Input
+                    value={newKey}
+                    onChange={(e) => setNewKey(e.target.value)}
+                    placeholder="Key"
+                    className="h-7 text-xs w-24 shrink-0"
+                />
+                <Input
+                    value={newVal}
+                    onChange={(e) => setNewVal(e.target.value)}
+                    placeholder="Value"
+                    className="h-7 text-xs flex-1"
+                    onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
+                />
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={!newKey.trim()} onClick={commit}>
+                    <Plus size={12} />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 export default function PropertiesPanel() {
     const {
         selectedNodeId,
@@ -873,80 +941,7 @@ export default function PropertiesPanel() {
                             ) : null}
 
                             {/* Custom Properties */}
-                            {(() => {
-                                const updateNode = useDiagramStore.getState().updateNode;
-                                // Extract only user-defined keys (not reserved ones)
-                                const reserved = new Set([
-                                    'label', 'service', 'type', 'metadata', 'mock', 'simulation', 'pricing', 'layerId',
-                                    'provider', 'subtype', 'backgroundColor', 'borderColor', 'textColor', 'iconColor',
-                                    'borderWidth', 'opacity', 'customIcon', 'shape', 'title', 'description',
-                                    'text', 'color', 'pointerDirection', 'animated', 'noteColor', 'fontSize',
-                                ]);
-                                const customEntries = Object.entries(metadata ?? {}).filter(([k]) => !reserved.has(k));
-                                const [newKey, setNewKey] = React.useState('');
-                                const [newVal, setNewVal] = React.useState('');
-                                return (
-                                    <div className="space-y-2">
-                                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                                            <Plus size={14} /> Custom Properties
-                                        </h3>
-                                        {customEntries.map(([k, v]) => (
-                                            <div key={k} className="flex items-center gap-1.5">
-                                                <span className="text-xs font-mono text-muted-foreground w-24 truncate shrink-0">{k}</span>
-                                                <Input
-                                                    value={String(v ?? '')}
-                                                    onChange={(e) => updateNode(selectedNodeId, { metadata: { ...metadata, [k]: e.target.value } })}
-                                                    className="h-7 text-xs flex-1"
-                                                />
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 shrink-0 hover:text-destructive"
-                                                    onClick={() => {
-                                                        const { [k]: _, ...rest } = metadata ?? {};
-                                                        updateNode(selectedNodeId, { metadata: rest });
-                                                    }}
-                                                >
-                                                    <Trash size={12} />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        <div className="flex items-center gap-1.5 pt-1">
-                                            <Input
-                                                value={newKey}
-                                                onChange={(e) => setNewKey(e.target.value)}
-                                                placeholder="Key"
-                                                className="h-7 text-xs w-24 shrink-0"
-                                            />
-                                            <Input
-                                                value={newVal}
-                                                onChange={(e) => setNewVal(e.target.value)}
-                                                placeholder="Value"
-                                                className="h-7 text-xs flex-1"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && newKey.trim()) {
-                                                        updateNode(selectedNodeId, { metadata: { ...metadata, [newKey.trim()]: newVal } });
-                                                        setNewKey(''); setNewVal('');
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 shrink-0"
-                                                disabled={!newKey.trim()}
-                                                onClick={() => {
-                                                    if (!newKey.trim()) return;
-                                                    updateNode(selectedNodeId, { metadata: { ...metadata, [newKey.trim()]: newVal } });
-                                                    setNewKey(''); setNewVal('');
-                                                }}
-                                            >
-                                                <Plus size={12} />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
+                            <CustomPropertiesEditor nodeId={selectedNodeId} metadata={metadata} />
 
                             <Separator />
 
