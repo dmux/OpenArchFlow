@@ -66,8 +66,21 @@ const EMPTY_EDGES: any[] = [];
 
 const selector = (state: any) => {
     const activeDiagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
+    const layers: any[] = activeDiagram?.layers ?? [];
+    const hiddenLayerIds = new Set(layers.filter((l: any) => !l.visible).map((l: any) => l.id));
+    const lockedLayerIds = new Set(layers.filter((l: any) => l.locked).map((l: any) => l.id));
+
+    const rawNodes: any[] = activeDiagram?.nodes ?? EMPTY_NODES;
+    const visibleNodes = rawNodes
+        .filter((n: any) => !n.data?.layerId || !hiddenLayerIds.has(n.data.layerId))
+        .map((n: any) => {
+            const isLocked = n.data?.layerId && lockedLayerIds.has(n.data.layerId);
+            if (!isLocked) return n;
+            return { ...n, draggable: false, connectable: false, selectable: false };
+        });
+
     return {
-        nodes: activeDiagram?.nodes || EMPTY_NODES,
+        nodes: visibleNodes,
         edges: activeDiagram?.edges || EMPTY_EDGES,
         onNodesChange: state.onNodesChange,
         onEdgesChange: state.onEdgesChange,

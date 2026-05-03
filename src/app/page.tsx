@@ -27,6 +27,7 @@ import SpecificationDialog from '@/components/diagram/SpecificationDialog';
 import { UnifiedToolbar } from '@/components/layout/UnifiedToolbar';
 import { GeminiKeyDialog } from '@/components/layout/GeminiKeyDialog';
 import DiagramChat from '@/components/diagram/DiagramChat';
+import LayersPanel from '@/components/diagram/LayersPanel';
 
 // Service
 import { WebLLMService } from '@/lib/ai/webllm';
@@ -305,6 +306,8 @@ function HomeContent() {
                     currentEdges={currentEdges}
                     geminiApiKey={geminiApiKey}
                 />
+
+                <LayersPanel isOpen={activePanel === 'layers'} onClose={() => setActivePanel(null)} />
 
                 <PropertiesPanel />
 

@@ -26,6 +26,7 @@ import {
     ChevronDown,
     Undo2,
     Redo2,
+    Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -309,6 +310,13 @@ export function UnifiedToolbar({
             label: 'Diagram Chat',
             onClick: () => setActivePanel(activePanel === 'chat' ? null : 'chat'),
             active: activePanel === 'chat'
+        },
+        {
+            id: 'layers',
+            icon: Layers,
+            label: 'Layers',
+            onClick: () => setActivePanel(activePanel === 'layers' ? null : 'layers'),
+            active: activePanel === 'layers'
         }
     ];
 

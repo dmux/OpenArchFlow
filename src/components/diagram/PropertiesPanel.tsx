@@ -1,6 +1,6 @@
 import React from 'react';
-import { useDiagramStore } from '@/lib/store';
-import { X, ExternalLink, Info, Unplug, Trash2, PlayCircle, Settings, Plus, Trash } from 'lucide-react';
+import { useDiagramStore, Layer } from '@/lib/store';
+import { X, ExternalLink, Info, Unplug, Trash2, PlayCircle, Settings, Plus, Trash, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -23,7 +23,8 @@ export default function PropertiesPanel() {
         updateEdge,
         updateNodeMock,
         removeNode,
-        removeEdge
+        removeEdge,
+        moveNodeToLayer,
     } = useDiagramStore();
 
     const handleTriggerNode = () => {
@@ -90,6 +91,28 @@ export default function PropertiesPanel() {
                     <ScrollArea className="flex-1 p-4">
                         <div className="space-y-6">
 
+                            {/* Layer Assignment */}
+                            {(() => {
+                                const layers: Layer[] = activeDiagram.layers ?? [];
+                                if (layers.length <= 1) return null;
+                                const currentLayerId = selectedNode.data.layerId ?? 'default';
+                                return (
+                                    <div className="space-y-2">
+                                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Layers size={14} /> Layer
+                                        </h3>
+                                        <select
+                                            value={currentLayerId}
+                                            onChange={(e) => moveNodeToLayer(selectedNodeId, e.target.value)}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                        >
+                                            {layers.map((l) => (
+                                                <option key={l.id} value={l.id}>{l.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Frame-specific Properties */}
                             {isFrame && (
