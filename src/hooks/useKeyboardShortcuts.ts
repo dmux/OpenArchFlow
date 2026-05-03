@@ -93,6 +93,13 @@ export function useKeyboardShortcuts() {
                 return;
             }
 
+            // Keyboard Shortcuts Help — Ctrl+?  (key '/' with shift, or '?' directly)
+            if (mod && (e.key === '?' || (e.key === '/' && e.shiftKey))) {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent('openShortcutsDialog'));
+                return;
+            }
+
             // Delete / Backspace — remove selected nodes and edges
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 e.preventDefault();
