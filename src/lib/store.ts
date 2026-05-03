@@ -163,6 +163,9 @@ interface DiagramState {
     // Collaboration internal
     applyRemoteUpdate: (id: string, diagram: Diagram) => void;
 
+    // Batch update for multi-node styling
+    batchUpdateNodes: (ids: string[], data: Partial<AppNodeData>) => void;
+
     // Layer Actions
     addLayer: (name?: string) => void;
     removeLayer: (layerId: string) => void;
@@ -738,6 +741,23 @@ export const useDiagramStore = create<DiagramState>()(
 
                 set({ diagrams: newDiagrams });
                 syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+            },
+
+            batchUpdateNodes: (ids, data) => {
+                const { activeDiagramId, collaborationRoomId } = get();
+                if (!activeDiagramId) return;
+                set((state) => {
+                    const diagram = state.diagrams[activeDiagramId];
+                    const idSet = new Set(ids);
+                    const nodes = diagram.nodes.map((n) =>
+                        idSet.has(n.id)
+                            ? { ...n, data: { ...n.data, ...data, metadata: { ...(n.data.metadata ?? {}), ...(data.metadata ?? {}) } } }
+                            : n
+                    );
+                    const newDiagrams = { ...state.diagrams, [activeDiagramId]: { ...diagram, nodes, lastModified: Date.now() } };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
+                });
             },
 
             addLayer: (name) => {

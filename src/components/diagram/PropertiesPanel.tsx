@@ -25,6 +25,7 @@ export default function PropertiesPanel() {
         removeNode,
         removeEdge,
         moveNodeToLayer,
+        batchUpdateNodes,
     } = useDiagramStore();
 
     const handleTriggerNode = () => {
@@ -777,6 +778,92 @@ export default function PropertiesPanel() {
                                             </div>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {/* Universal Appearance — shown for all non-annotation, non-note nodes */}
+                            {!isAnnotation && !isNote && type !== 'generic' && (
+                                <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+                                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Settings size={14} /> Appearance
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <Label className="text-xs">Fill Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.backgroundColor || '#ffffff'}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { backgroundColor: e.target.value } });
+                                                }}
+                                                className="h-8 p-1 w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Border Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.borderColor || '#e2e8f0'}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { borderColor: e.target.value } });
+                                                }}
+                                                className="h-8 p-1 w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Text Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.textColor || '#0f172a'}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { textColor: e.target.value } });
+                                                }}
+                                                className="h-8 p-1 w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Border Width</Label>
+                                            <select
+                                                value={metadata?.borderWidth ?? 2}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { borderWidth: Number(e.target.value) } });
+                                                }}
+                                                className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                            >
+                                                <option value={1}>1px</option>
+                                                <option value={2}>2px (default)</option>
+                                                <option value={3}>3px</option>
+                                                <option value={4}>4px</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between mb-1">
+                                            <Label className="text-xs">Opacity</Label>
+                                            <span className="text-xs text-muted-foreground">{Math.round((metadata?.opacity ?? 1) * 100)}%</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min={0.1}
+                                            max={1}
+                                            step={0.05}
+                                            value={metadata?.opacity ?? 1}
+                                            onChange={(e) => {
+                                                const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                batchUpdateNodes(targets, { metadata: { opacity: parseFloat(e.target.value) } });
+                                            }}
+                                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                        />
+                                    </div>
                                 </div>
                             )}
 
