@@ -1021,6 +1021,59 @@ export default function PropertiesPanel() {
 
                             <Separator />
 
+                            {/* Connector Style */}
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                    <Settings size={14} /> Connector Style
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <Label className="text-xs">Routing</Label>
+                                        <select
+                                            value={selectedEdge.data?.edgeType ?? 'smoothstep'}
+                                            onChange={(e) => updateEdge(selectedEdgeId, { edgeType: e.target.value })}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                        >
+                                            <option value="smoothstep">Smooth Step</option>
+                                            <option value="straight">Straight</option>
+                                            <option value="step">Step</option>
+                                            <option value="bezier">Bezier</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Color</Label>
+                                        <Input
+                                            type="color"
+                                            value={selectedEdge.data?.strokeColor ?? '#94a3b8'}
+                                            onChange={(e) => updateEdge(selectedEdgeId, { strokeColor: e.target.value })}
+                                            className="h-8 p-1 w-full"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Width</Label>
+                                        <select
+                                            value={selectedEdge.data?.strokeWidth ?? 2}
+                                            onChange={(e) => updateEdge(selectedEdgeId, { strokeWidth: Number(e.target.value) })}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                        >
+                                            <option value={1}>1px</option>
+                                            <option value={2}>2px</option>
+                                            <option value={3}>3px</option>
+                                            <option value={4}>4px</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-4">
+                                        <Switch
+                                            checked={selectedEdge.data?.dashed ?? false}
+                                            onCheckedChange={(v) => updateEdge(selectedEdgeId, { dashed: v })}
+                                        />
+                                        <Label className="text-xs">Dashed</Label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+
                             {/* Simulation Action Configuration */}
                             <div className="space-y-3">
                                 <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">

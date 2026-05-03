@@ -18,6 +18,7 @@ import GenericNode from './GenericNode';
 import AlignmentToolbar from './AlignmentToolbar';
 import AlignmentGuides from './AlignmentGuides';
 import CollaborationCursors from './CollaborationCursors';
+import StyledEdge from './StyledEdge';
 import { publishCursor } from '@/lib/collaboration';
 
 const nodeTypes = {
@@ -64,6 +65,8 @@ const nodeTypes = {
 const EMPTY_NODES: any[] = [];
 const EMPTY_EDGES: any[] = [];
 const EMPTY_LAYERS: any[] = [];
+
+const edgeTypes = { styled: StyledEdge };
 
 const selector = (state: any) => {
     const activeDiagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
@@ -145,12 +148,18 @@ function FlowCanvas() {
     }, [isLaserMode]);
 
     const animatedEdges = React.useMemo(() => {
-        if (!isPlaying) return edges;
-        return edges.map((edge: any) => ({
-            ...edge,
-            animated: true,
-            style: { ...edge.style, stroke: 'hsl(var(--primary))', strokeWidth: 2 },
-        }));
+        return edges.map((edge: any) => {
+            // Edges with custom style data are rendered by StyledEdge
+            const hasStyle = edge.data?.strokeColor || edge.data?.strokeWidth || edge.data?.dashed || edge.data?.edgeType;
+            const type = hasStyle ? 'styled' : (edge.type ?? 'smoothstep');
+            if (!isPlaying) return { ...edge, type };
+            return {
+                ...edge,
+                type,
+                animated: true,
+                style: { ...edge.style, stroke: 'hsl(var(--primary))', strokeWidth: 2 },
+            };
+        });
     }, [edges, isPlaying]);
 
     // Initialize from store on mount if needed (Zustand persist handles hydration usually)
@@ -161,6 +170,7 @@ function FlowCanvas() {
             <TooltipProvider delayDuration={300}>
                 <ReactFlow
                     nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
                     onNodeClick={onNodeClick}
                     onEdgeClick={onEdgeClick}
                     onNodeDragStart={onNodeDragStart}
