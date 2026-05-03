@@ -195,6 +195,10 @@ interface DiagramState {
     collaborationRoomId: string | null;
     setCollaborationRoomId: (id: string | null) => void;
 
+    // Custom SVG Shapes
+    customShapes: { id: string; name: string; svgContent: string }[];
+    addCustomShape: (name: string, svgContent: string) => void;
+    removeCustomShape: (id: string) => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -213,6 +217,7 @@ export const useDiagramStore = create<DiagramState>()(
             generatedSpecification: null,
             interactionMode: 'default',
             collaborationRoomId: null,
+            customShapes: [],
 
             setCollaborationRoomId: (id) => {
                 set({ collaborationRoomId: id });
@@ -743,6 +748,14 @@ export const useDiagramStore = create<DiagramState>()(
                 syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
             },
 
+            addCustomShape: (name, svgContent) => set((state) => ({
+                customShapes: [...state.customShapes, { id: crypto.randomUUID(), name, svgContent }],
+            })),
+
+            removeCustomShape: (id) => set((state) => ({
+                customShapes: state.customShapes.filter((s) => s.id !== id),
+            })),
+
             batchUpdateNodes: (ids, data) => {
                 const { activeDiagramId, collaborationRoomId } = get();
                 if (!activeDiagramId) return;
@@ -859,6 +872,7 @@ export const useDiagramStore = create<DiagramState>()(
                 geminiApiKey: state.geminiApiKey,
                 isOfflineMode: state.isOfflineMode,
                 collaborationRoomId: state.collaborationRoomId,
+                customShapes: state.customShapes,
             }),
             onRehydrateStorage: () => (state) => {
                 // Ensure there is at least one diagram if none exist after hydration

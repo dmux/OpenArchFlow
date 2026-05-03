@@ -19,6 +19,7 @@ import AlignmentToolbar from './AlignmentToolbar';
 import AlignmentGuides from './AlignmentGuides';
 import CollaborationCursors from './CollaborationCursors';
 import StyledEdge from './StyledEdge';
+import CustomShapeNode from './CustomShapeNode';
 import { publishCursor } from '@/lib/collaboration';
 
 const nodeTypes = {
@@ -59,6 +60,7 @@ const nodeTypes = {
     'annotation': AnnotationNode,
     'note': NoteNode,
     'generic': GenericNode,
+    'custom-shape': CustomShapeNode,
     'default': CloudNode,
 };
 
