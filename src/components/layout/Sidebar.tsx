@@ -13,7 +13,7 @@ import { useDiagramStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLeft, ChevronRight, GitBranch } from 'lucide-react';
+import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLeft, ChevronRight, GitBranch, LayoutTemplate } from 'lucide-react';
 import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ import { APP_VERSION } from '@/lib/version';
 import { useState, useRef, useEffect } from 'react';
 import { parseMermaid } from '@/lib/import/mermaid';
 import { toast } from 'sonner';
+import TemplatesDialog from '@/components/diagram/TemplatesDialog';
 
 // Simple date formatter to avoid extra dependency for now
 const formatDate = (timestamp: number) => {
@@ -48,6 +49,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
     const [mermaidOpen, setMermaidOpen] = useState(false);
     const [mermaidCode, setMermaidCode] = useState('');
+    const [templatesOpen, setTemplatesOpen] = useState(false);
 
     const handleImportMermaid = () => {
         if (!mermaidCode.trim()) return;
@@ -363,10 +365,16 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                             onChange={handleImport}
                         />
                     </div>
-                    <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setMermaidOpen(true)}>
-                        <GitBranch className="w-3.5 h-3.5 mr-2" />
-                        Import Mermaid
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setTemplatesOpen(true)}>
+                            <LayoutTemplate className="w-3.5 h-3.5 mr-2" />
+                            Templates
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setMermaidOpen(true)}>
+                            <GitBranch className="w-3.5 h-3.5 mr-2" />
+                            Mermaid
+                        </Button>
+                    </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{sortedDiagrams.length} diagram{sortedDiagrams.length !== 1 ? 's' : ''} stored locally</span>
                         <span className="font-mono opacity-60">v{APP_VERSION}</span>
@@ -398,6 +406,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                         </div>
                     </div>
                 )}
+
+                <TemplatesDialog isOpen={templatesOpen} onClose={() => setTemplatesOpen(false)} />
             </div>
         </div>
     );

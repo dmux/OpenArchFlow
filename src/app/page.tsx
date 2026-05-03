@@ -29,6 +29,7 @@ import { GeminiKeyDialog } from '@/components/layout/GeminiKeyDialog';
 import DiagramChat from '@/components/diagram/DiagramChat';
 import LayersPanel from '@/components/diagram/LayersPanel';
 import KeyboardShortcutsDialog from '@/components/layout/KeyboardShortcutsDialog';
+import TemplatesDialog from '@/components/diagram/TemplatesDialog';
 
 // Service
 import { WebLLMService } from '@/lib/ai/webllm';
@@ -81,6 +82,7 @@ function HomeContent() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [apiKeyInvalid, setApiKeyInvalid] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
+    const [templatesOpen, setTemplatesOpen] = useState(false);
 
     useEffect(() => {
         const handler = () => setShortcutsOpen(true);
@@ -331,6 +333,7 @@ function HomeContent() {
 
                 <GeminiKeyDialog invalidKey={apiKeyInvalid} onDismiss={() => setApiKeyInvalid(false)} />
                 <KeyboardShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+                <TemplatesDialog isOpen={templatesOpen || activePanel === 'templates'} onClose={() => { setTemplatesOpen(false); if (activePanel === 'templates') setActivePanel(null); }} />
             </div>
         </ReactFlowProvider>
     );

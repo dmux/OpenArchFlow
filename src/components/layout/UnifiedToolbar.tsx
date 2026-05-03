@@ -27,6 +27,7 @@ import {
     Undo2,
     Redo2,
     Layers,
+    LayoutTemplate,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -317,6 +318,13 @@ export function UnifiedToolbar({
             label: 'Layers',
             onClick: () => setActivePanel(activePanel === 'layers' ? null : 'layers'),
             active: activePanel === 'layers'
+        },
+        {
+            id: 'templates',
+            icon: LayoutTemplate,
+            label: 'Templates',
+            onClick: () => setActivePanel(activePanel === 'templates' ? null : 'templates'),
+            active: activePanel === 'templates'
         }
     ];
 
