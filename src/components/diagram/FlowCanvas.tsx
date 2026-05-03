@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -63,25 +63,14 @@ const nodeTypes = {
 
 const EMPTY_NODES: any[] = [];
 const EMPTY_EDGES: any[] = [];
+const EMPTY_LAYERS: any[] = [];
 
 const selector = (state: any) => {
     const activeDiagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
-    const layers: any[] = activeDiagram?.layers ?? [];
-    const hiddenLayerIds = new Set(layers.filter((l: any) => !l.visible).map((l: any) => l.id));
-    const lockedLayerIds = new Set(layers.filter((l: any) => l.locked).map((l: any) => l.id));
-
-    const rawNodes: any[] = activeDiagram?.nodes ?? EMPTY_NODES;
-    const visibleNodes = rawNodes
-        .filter((n: any) => !n.data?.layerId || !hiddenLayerIds.has(n.data.layerId))
-        .map((n: any) => {
-            const isLocked = n.data?.layerId && lockedLayerIds.has(n.data.layerId);
-            if (!isLocked) return n;
-            return { ...n, draggable: false, connectable: false, selectable: false };
-        });
-
     return {
-        nodes: visibleNodes,
-        edges: activeDiagram?.edges || EMPTY_EDGES,
+        nodes: activeDiagram?.nodes ?? EMPTY_NODES,
+        edges: activeDiagram?.edges ?? EMPTY_EDGES,
+        layers: activeDiagram?.layers ?? EMPTY_LAYERS,
         onNodesChange: state.onNodesChange,
         onEdgesChange: state.onEdgesChange,
         onConnect: state.onConnect,
@@ -99,6 +88,7 @@ function FlowCanvas() {
     const {
         nodes,
         edges,
+        layers,
         onNodesChange,
         onEdgesChange,
         onConnect,
@@ -110,6 +100,19 @@ function FlowCanvas() {
     } = useDiagramStore(useShallow(selector));
 
     const isLaserMode = interactionMode === 'laser';
+
+    // Apply layer visibility / lock constraints in a stable memoized derivation
+    const visibleNodes = useMemo(() => {
+        const hidden = new Set(layers.filter((l: any) => !l.visible).map((l: any) => l.id as string));
+        const locked = new Set(layers.filter((l: any) => l.locked).map((l: any) => l.id as string));
+        if (hidden.size === 0 && locked.size === 0) return nodes;
+        return nodes
+            .filter((n: any) => !n.data?.layerId || !hidden.has(n.data.layerId))
+            .map((n: any) => {
+                if (!n.data?.layerId || !locked.has(n.data.layerId)) return n;
+                return { ...n, draggable: false, connectable: false, selectable: false };
+            });
+    }, [nodes, layers]);
 
     const onMouseMove = useCallback((e: React.MouseEvent) => {
         const vpEl = document.querySelector('.react-flow__viewport') as HTMLElement | null;
@@ -162,7 +165,7 @@ function FlowCanvas() {
                     onEdgeClick={onEdgeClick}
                     onNodeDragStart={onNodeDragStart}
                     onNodeDragStop={onNodeDragStop}
-                    nodes={nodes}
+                    nodes={visibleNodes}
                     edges={animatedEdges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
