@@ -533,7 +533,40 @@ export const useDiagramStore = create<DiagramState>()(
           if (!activeDiagramId || !diagrams[activeDiagramId]) return;
 
           const activeDiagram = diagrams[activeDiagramId];
-          const newNodes = applyNodeChanges(changes, activeDiagram.nodes);
+
+          // When a parent/group node is removed, unparent its children first
+          // so ReactFlow doesn't throw "Parent node not found"
+          const removedIds = new Set(
+            changes
+              .filter(
+                (c): c is { type: "remove"; id: string } => c.type === "remove",
+              )
+              .map((c) => c.id),
+          );
+
+          let baseNodes = activeDiagram.nodes;
+          if (removedIds.size > 0) {
+            baseNodes = baseNodes.map((node) => {
+              if (node.parentNode && removedIds.has(node.parentNode)) {
+                // Convert position back to absolute before un-parenting
+                const parent = activeDiagram.nodes.find(
+                  (n) => n.id === node.parentNode,
+                );
+                const absX = (parent?.position.x ?? 0) + node.position.x;
+                const absY = (parent?.position.y ?? 0) + node.position.y;
+                const unparented = {
+                  ...node,
+                  position: { x: absX, y: absY },
+                } as Record<string, unknown>;
+                delete unparented.parentNode;
+                delete unparented.extent;
+                return unparented as typeof node;
+              }
+              return node;
+            });
+          }
+
+          const newNodes = applyNodeChanges(changes, baseNodes);
 
           const newDiagrams = {
             ...diagrams,
@@ -685,8 +718,28 @@ export const useDiagramStore = create<DiagramState>()(
 
           set((state) => {
             const activeDiagram = state.diagrams[activeDiagramId];
-            // Remove node
-            const newNodes = activeDiagram.nodes.filter(
+
+            // If the node being removed is a parent, convert children to absolute
+            // positions and unparent them so ReactFlow doesn't throw "Parent not found"
+            const parentNode = activeDiagram.nodes.find((n) => n.id === id);
+            const nodesWithUnparentedChildren = activeDiagram.nodes.map(
+              (node) => {
+                if ((node as { parentNode?: string }).parentNode !== id)
+                  return node;
+                const absX = (parentNode?.position.x ?? 0) + node.position.x;
+                const absY = (parentNode?.position.y ?? 0) + node.position.y;
+                const unparented = {
+                  ...node,
+                  position: { x: absX, y: absY },
+                } as Record<string, unknown>;
+                delete unparented.parentNode;
+                delete unparented.extent;
+                return unparented as typeof node;
+              },
+            );
+
+            // Remove the target node
+            const newNodes = nodesWithUnparentedChildren.filter(
               (node) => node.id !== id,
             );
             // Remove connected edges
