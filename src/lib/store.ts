@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { temporal } from 'zundo';
 import {
     Connection,
     Edge,
@@ -91,6 +92,15 @@ export interface AppNodeData extends Record<string, unknown> {
     mock?: NodeMockData;
     simulation?: NodeSimulationStatus;
     pricing?: NodePricing;
+    layerId?: string;
+}
+
+export interface Layer {
+    id: string;
+    name: string;
+    visible: boolean;
+    locked: boolean;
+    color: string;
 }
 
 export interface SimulationLog {
@@ -107,6 +117,7 @@ export interface Diagram {
     name: string;
     nodes: AppNode[];
     edges: AppEdge[];
+    layers: Layer[];
     lastModified: number;
 }
 
@@ -152,6 +163,15 @@ interface DiagramState {
     // Collaboration internal
     applyRemoteUpdate: (id: string, diagram: Diagram) => void;
 
+    // Batch update for multi-node styling
+    batchUpdateNodes: (ids: string[], data: Partial<AppNodeData>) => void;
+
+    // Layer Actions
+    addLayer: (name?: string) => void;
+    removeLayer: (layerId: string) => void;
+    updateLayer: (layerId: string, patch: Partial<Omit<Layer, 'id'>>) => void;
+    moveNodeToLayer: (nodeId: string, layerId: string) => void;
+
     // Simulation State
     isPlaying: boolean;
     setIsPlaying: (isPlaying: boolean) => void;
@@ -175,10 +195,15 @@ interface DiagramState {
     collaborationRoomId: string | null;
     setCollaborationRoomId: (id: string | null) => void;
 
+    // Custom SVG Shapes
+    customShapes: { id: string; name: string; svgContent: string }[];
+    addCustomShape: (name: string, svgContent: string) => void;
+    removeCustomShape: (id: string) => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
-    persist(
+    temporal(
+      persist(
         (set, get) => ({
             diagrams: {},
             activeDiagramId: null,
@@ -192,6 +217,7 @@ export const useDiagramStore = create<DiagramState>()(
             generatedSpecification: null,
             interactionMode: 'default',
             collaborationRoomId: null,
+            customShapes: [],
 
             setCollaborationRoomId: (id) => {
                 set({ collaborationRoomId: id });
@@ -221,7 +247,8 @@ export const useDiagramStore = create<DiagramState>()(
                     ...diagram,
                     id: newId,
                     name: newName,
-                    lastModified: Date.now()
+                    lastModified: Date.now(),
+                    layers: diagram.layers?.length ? diagram.layers : [{ id: 'default', name: 'Default', visible: true, locked: false, color: '#6366f1' }],
                 };
 
                 const newDiagrams = { ...state.diagrams, [newId]: newDiagram };
@@ -380,11 +407,13 @@ export const useDiagramStore = create<DiagramState>()(
 
             createDiagram: (name = 'New Architecture') => {
                 const id = crypto.randomUUID();
+                const defaultLayer: Layer = { id: 'default', name: 'Default', visible: true, locked: false, color: '#6366f1' };
                 const newDiagram: Diagram = {
                     id,
                     name,
                     nodes: [],
                     edges: [],
+                    layers: [defaultLayer],
                     lastModified: Date.now(),
                 };
                 set((state) => ({
@@ -719,11 +748,118 @@ export const useDiagramStore = create<DiagramState>()(
                 syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
             },
 
+            addCustomShape: (name, svgContent) => set((state) => ({
+                customShapes: [...state.customShapes, { id: crypto.randomUUID(), name, svgContent }],
+            })),
+
+            removeCustomShape: (id) => set((state) => ({
+                customShapes: state.customShapes.filter((s) => s.id !== id),
+            })),
+
+            batchUpdateNodes: (ids, data) => {
+                const { activeDiagramId, collaborationRoomId } = get();
+                if (!activeDiagramId) return;
+                set((state) => {
+                    const diagram = state.diagrams[activeDiagramId];
+                    const idSet = new Set(ids);
+                    const nodes = diagram.nodes.map((n) =>
+                        idSet.has(n.id)
+                            ? { ...n, data: { ...n.data, ...data, metadata: { ...(n.data.metadata ?? {}), ...(data.metadata ?? {}) } } }
+                            : n
+                    );
+                    const newDiagrams = { ...state.diagrams, [activeDiagramId]: { ...diagram, nodes, lastModified: Date.now() } };
+                    syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+                    return { diagrams: newDiagrams };
+                });
+            },
+
+            addLayer: (name) => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+                const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6'];
+                set((state) => {
+                    const diagram = state.diagrams[activeDiagramId];
+                    const newLayer: Layer = {
+                        id: crypto.randomUUID(),
+                        name: name ?? `Layer ${(diagram.layers?.length ?? 0) + 1}`,
+                        visible: true,
+                        locked: false,
+                        color: colors[(diagram.layers?.length ?? 0) % colors.length],
+                    };
+                    return {
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: {
+                                ...diagram,
+                                layers: [...(diagram.layers ?? []), newLayer],
+                                lastModified: Date.now(),
+                            },
+                        },
+                    };
+                });
+            },
+
+            removeLayer: (layerId) => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+                set((state) => {
+                    const diagram = state.diagrams[activeDiagramId];
+                    const remaining = (diagram.layers ?? []).filter((l) => l.id !== layerId);
+                    const fallbackId = remaining[0]?.id ?? 'default';
+                    const updatedNodes = diagram.nodes.map((n) =>
+                        n.data.layerId === layerId ? { ...n, data: { ...n.data, layerId: fallbackId } } : n
+                    );
+                    return {
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: {
+                                ...diagram,
+                                layers: remaining.length > 0 ? remaining : [{ id: 'default', name: 'Default', visible: true, locked: false, color: '#6366f1' }],
+                                nodes: updatedNodes,
+                                lastModified: Date.now(),
+                            },
+                        },
+                    };
+                });
+            },
+
+            updateLayer: (layerId, patch) => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+                set((state) => {
+                    const diagram = state.diagrams[activeDiagramId];
+                    const layers = (diagram.layers ?? []).map((l) => l.id === layerId ? { ...l, ...patch } : l);
+                    return {
+                        diagrams: {
+                            ...state.diagrams,
+                            [activeDiagramId]: { ...diagram, layers, lastModified: Date.now() },
+                        },
+                    };
+                });
+            },
+
+            moveNodeToLayer: (nodeId, layerId) => {
+                const { activeDiagramId } = get();
+                if (!activeDiagramId) return;
+                set((state) => {
+                    const diagram = state.diagrams[activeDiagramId];
+                    const nodes = diagram.nodes.map((n) =>
+                        n.id === nodeId ? { ...n, data: { ...n.data, layerId } } : n
+                    );
+                    return {
+                        diagrams: { ...state.diagrams, [activeDiagramId]: { ...diagram, nodes, lastModified: Date.now() } },
+                    };
+                });
+            },
+
             applyRemoteUpdate: (id, diagram) => {
                 set((state) => ({
                     diagrams: {
                         ...state.diagrams,
-                        [id]: diagram
+                        [id]: {
+                            ...diagram,
+                            layers: diagram.layers?.length ? diagram.layers : [{ id: 'default', name: 'Default', visible: true, locked: false, color: '#6366f1' }],
+                        },
                     }
                 }));
             },
@@ -736,11 +872,21 @@ export const useDiagramStore = create<DiagramState>()(
                 geminiApiKey: state.geminiApiKey,
                 isOfflineMode: state.isOfflineMode,
                 collaborationRoomId: state.collaborationRoomId,
+                customShapes: state.customShapes,
             }),
             onRehydrateStorage: () => (state) => {
                 // Ensure there is at least one diagram if none exist after hydration
                 if (state && (!state.activeDiagramId || Object.keys(state.diagrams).length === 0)) {
                     state.createDiagram('Untitled Architecture');
+                }
+                // Back-fill `layers` for diagrams saved before the layer system
+                if (state) {
+                    const defaultLayer = { id: 'default', name: 'Default', visible: true, locked: false, color: '#6366f1' };
+                    Object.values(state.diagrams).forEach((d) => {
+                        if (!d.layers || d.layers.length === 0) {
+                            (d as any).layers = [defaultLayer];
+                        }
+                    });
                 }
                 // Re-initialize collaboration if room ID is present
                 if (state?.collaborationRoomId) {
@@ -748,17 +894,28 @@ export const useDiagramStore = create<DiagramState>()(
                 }
             }
         }
+      ),
+      {
+          partialize: (state) => ({
+              diagrams: state.diagrams,
+              activeDiagramId: state.activeDiagramId,
+          }),
+          limit: 50,
+      }
     )
 );
 
 // Subscribe to Yjs changes to update Zustand store
+// Remote updates must not pollute the local undo history
 sharedDiagrams.observe((event) => {
     if (!event.transaction.local) {
         const state = useDiagramStore.getState();
         const activeId = state.activeDiagramId;
         if (activeId && sharedDiagrams.has(activeId)) {
             const remoteDiagram = sharedDiagrams.get(activeId) as Diagram;
+            useDiagramStore.temporal.getState().pause();
             state.applyRemoteUpdate(activeId, remoteDiagram);
+            useDiagramStore.temporal.getState().resume();
         }
     }
 });

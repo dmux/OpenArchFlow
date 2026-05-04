@@ -52,3 +52,72 @@ export const getProvider = () => provider;
  * Returns the awareness instance for presence features (cursors, active users).
  */
 export const getAwareness = () => provider?.awareness;
+
+const PEER_COLORS = [
+    '#f87171', '#fb923c', '#a3e635', '#34d399',
+    '#22d3ee', '#818cf8', '#e879f9', '#f472b6',
+];
+
+let localColor = PEER_COLORS[Math.floor(Math.random() * PEER_COLORS.length)];
+
+const STORAGE_KEY = 'openarchflow:username';
+let localName: string = (() => {
+    try {
+        return localStorage.getItem(STORAGE_KEY) || `Guest ${Math.floor(Math.random() * 9000) + 1000}`;
+    } catch {
+        return `Guest ${Math.floor(Math.random() * 9000) + 1000}`;
+    }
+})();
+
+export const getLocalName = () => localName;
+export const getLocalColor = () => localColor;
+
+export const setLocalName = (name: string) => {
+    localName = name.trim() || localName;
+    try { localStorage.setItem(STORAGE_KEY, localName); } catch { /* ignore */ }
+    // Broadcast the new name immediately via awareness
+    const awareness = provider?.awareness;
+    if (awareness) awareness.setLocalStateField('name', localName);
+};
+
+/**
+ * Publishes this peer's cursor position to the awareness channel.
+ */
+export const publishCursor = (x: number, y: number) => {
+    const awareness = provider?.awareness;
+    if (!awareness) return;
+    awareness.setLocalStateField('cursor', { x, y });
+    awareness.setLocalStateField('color', localColor);
+    awareness.setLocalStateField('name', localName);
+};
+
+export interface RemoteCursor {
+    clientId: number;
+    x: number;
+    y: number;
+    color: string;
+    name: string;
+}
+
+/**
+ * Returns current remote peer cursors from the awareness state.
+ */
+export const getRemoteCursors = (): RemoteCursor[] => {
+    const awareness = provider?.awareness;
+    if (!awareness) return [];
+    const localId = awareness.clientID;
+    const result: RemoteCursor[] = [];
+    awareness.getStates().forEach((state: any, clientId: number) => {
+        if (clientId === localId) return;
+        if (state?.cursor) {
+            result.push({
+                clientId,
+                x: state.cursor.x,
+                y: state.cursor.y,
+                color: state.color ?? '#888',
+                name: state.name ?? `Peer ${clientId}`,
+            });
+        }
+    });
+    return result;
+};

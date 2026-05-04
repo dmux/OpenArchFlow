@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-05-03
+
+### Added
+
+**Editor Foundations (draw.io feature parity — Phase 1)**
+- **Undo / Redo** — Full temporal history via `zundo` middleware. `Ctrl+Z` undoes, `Ctrl+Y` redoes. Node drag operations are batched as single undo steps.
+- **Global Keyboard Shortcuts** — `Ctrl+C/V` copy/paste (new UUIDs on paste), `Ctrl+D` duplicate, `Ctrl+A` select all, `Ctrl+L` auto-layout, `Delete` remove selected nodes, `Ctrl+?` open shortcuts help dialog.
+- **Keyboard Shortcuts Dialog** — Centralized shortcut definitions grouped by category, accessible via `Ctrl+?`.
+- **Alignment Toolbar** — Contextual floating toolbar appears when 2+ nodes are selected: align left / center / right / top / middle / bottom, distribute horizontally / vertically.
+- **Export SVG & PDF** — Export dropdown now offers PNG, SVG, and PDF in addition to the previous PNG-only option.
+- **Snap-to-Grid** — All nodes snap to a 16×16 grid by default.
+- **Smart Alignment Guides** — Figma-style temporary guide lines appear during node drag when edges or centers align with neighboring nodes.
+- **Collaboration Cursors** — Real-time remote cursors with peer name labels rendered as an overlay on the canvas.
+
+**Power User Productivity (Phase 2)**
+- **Layer System** — Diagrams now support named layers with show/hide, lock, and color options. Nodes can be assigned to layers. Locked layers prevent drag/connect/select. Hidden layers are filtered from the canvas.
+- **Template Library** — 7 ready-to-use architecture templates: AWS Three-Tier Web App, AWS Serverless API, AWS Event-Driven Architecture, AWS Microservices Platform, AWS Data Lake, Generic Flowchart, and CI/CD Pipeline.
+- **Mermaid Import** — Import `flowchart`, `sequenceDiagram`, and `classDiagram` Mermaid code directly from the Sidebar. Pure text parser — no heavy Mermaid runtime bundled.
+- **Universal Style Panel** — Fill color, border color, text color, border width, and opacity controls for all node types. Applies to all selected nodes simultaneously (batch).
+- **Connector Style Panel** — Per-edge controls for routing type (smooth step / straight / step / bezier), color, width, and dashed line toggle.
+- **Custom Properties Editor** — Add, edit, and delete arbitrary key-value metadata on any node directly from the Properties Panel.
+
+**New Diagram Types (Phase 3)**
+- **ER / Database Diagrams** — `TableNode` displays entity name, columns with PK (amber) and FK (blue) key icons, type, and nullable markers. Per-row source/target handles for FK relationship edges. Inline column editor in the Properties Panel (add/edit/delete columns with PK/FK/NN flags). SQL DDL import modal in Sidebar parses `CREATE TABLE` statements and auto-links foreign keys.
+- **Sequence UML Diagrams** — `SequenceActorNode` renders an actor box, a dashed vertical lifeline with 16 message-slot handles, and a bottom box. Mermaid `sequenceDiagram` parser updated to wire edges to the correct lifeline slot handles. UML Sequence category added to the Component Palette (Actor, System).
+- **Swimlane Diagrams** — `SwimlaneNode` with configurable lanes (horizontal or vertical direction), per-lane color and title, add/delete lanes from the Properties Panel.
+- **Custom SVG Shape Upload** — Upload `.svg` files from the Component Palette. Shapes are sanitized client-side via the native `DOMParser` (strips `<script>`, `<foreignObject>`, `on*` attributes, and `javascript:` hrefs) and stored in the diagram state.
+- **Waypoints & Connector Styles** — `StyledEdge` custom edge type supports all routing modes, custom stroke color/width, and dashed lines via the Properties Panel.
+
+**Collaboration**
+- **Rename Guest User** — Users can now set a custom display name directly in the Collaboration popover. The name is persisted in `localStorage` and immediately broadcast to all peers via Yjs awareness.
+
+### Fixed
+
+- Replaced `dompurify` (SSR-unsafe) with a native `DOMParser`-based SVG sanitizer, fixing Vercel build failures caused by browser globals being accessed during server-side rendering.
+- Extracted `CustomPropertiesEditor` to a top-level component to fix a React Rules of Hooks violation (hooks called inside an IIFE in JSX).
+- Moved layer filtering from the Zustand selector into a `useMemo` hook to prevent an infinite re-render loop caused by `useShallow` detecting new array references on every render.
+
+### Technical
+
+- Added `zundo` for temporal undo/redo middleware on the Zustand store.
+- Added `jspdf` for PDF export support.
+- New files: `SequenceActorNode`, `TableNode`, `SwimlaneNode`, `CustomShapeNode`, `StyledEdge`, `AlignmentToolbar`, `AlignmentGuides`, `CollaborationCursors`, `LayersPanel`, `TemplatesDialog`, `KeyboardShortcutsDialog`.
+- New libs: `src/lib/import/mermaid.ts`, `src/lib/import/sql-ddl.ts`, `src/lib/templates/index.ts`, `src/lib/shortcuts.ts`.
+
+---
+
 ## [0.4.0] - 2026-04-29
 
 ### Added
@@ -207,6 +254,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/dmux/OpenArchFlow/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/dmux/OpenArchFlow/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/dmux/OpenArchFlow/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/dmux/OpenArchFlow/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/dmux/OpenArchFlow/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/dmux/OpenArchFlow/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/dmux/OpenArchFlow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dmux/OpenArchFlow/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/dmux/OpenArchFlow/releases/tag/v0.1.0

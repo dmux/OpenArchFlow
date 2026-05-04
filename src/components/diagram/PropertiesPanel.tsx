@@ -1,6 +1,7 @@
 import React from 'react';
-import { useDiagramStore } from '@/lib/store';
-import { X, ExternalLink, Info, Unplug, Trash2, PlayCircle, Settings, Plus, Trash } from 'lucide-react';
+import { useDiagramStore, Layer } from '@/lib/store';
+import { X, ExternalLink, Info, Unplug, Trash2, PlayCircle, Settings, Plus, Trash, Layers, Table2 } from 'lucide-react';
+import type { TableColumn } from '@/components/diagram/TableNode';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +12,238 @@ import { Label } from '@/components/ui/label';
 import { Switch } from "@/components/ui/switch";
 import JsonEditor from './JsonEditor';
 import PricingSection from './PricingSection';
+
+const LANE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#ef4444', '#8b5cf6'];
+
+function SwimlaneEditor({ nodeId, metadata }: { nodeId: string; metadata: Record<string, any> | undefined }) {
+    const lanes: { id: string; title: string; color: string }[] = metadata?.lanes ?? [
+        { id: 'lane-1', title: 'Lane 1', color: '#6366f1' },
+        { id: 'lane-2', title: 'Lane 2', color: '#10b981' },
+    ];
+    const direction: string = metadata?.direction ?? 'horizontal';
+
+    const updateMeta = (patch: Record<string, any>) => {
+        useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), ...patch } });
+    };
+
+    const updateLane = (id: string, patch: Partial<{ title: string; color: string }>) => {
+        updateMeta({ lanes: lanes.map((l) => l.id === id ? { ...l, ...patch } : l) });
+    };
+
+    const addLane = () => {
+        const next = { id: crypto.randomUUID(), title: `Lane ${lanes.length + 1}`, color: LANE_COLORS[lanes.length % LANE_COLORS.length] };
+        updateMeta({ lanes: [...lanes, next] });
+    };
+
+    const removeLane = (id: string) => {
+        if (lanes.length <= 1) return;
+        updateMeta({ lanes: lanes.filter((l) => l.id !== id) });
+    };
+
+    return (
+        <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Settings size={14} /> Swimlane Properties
+            </h3>
+            <div>
+                <Label className="text-xs">Direction</Label>
+                <select
+                    value={direction}
+                    onChange={(e) => updateMeta({ direction: e.target.value })}
+                    className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring mt-1"
+                >
+                    <option value="horizontal">Horizontal lanes</option>
+                    <option value="vertical">Vertical lanes</option>
+                </select>
+            </div>
+            <div className="space-y-2">
+                <Label className="text-xs">Lanes</Label>
+                {lanes.map((lane) => (
+                    <div key={lane.id} className="flex items-center gap-1.5">
+                        <input
+                            type="color"
+                            value={lane.color}
+                            onChange={(e) => updateLane(lane.id, { color: e.target.value })}
+                            className="h-7 w-7 rounded p-0.5 border border-input cursor-pointer shrink-0"
+                        />
+                        <Input
+                            value={lane.title}
+                            onChange={(e) => updateLane(lane.id, { title: e.target.value })}
+                            className="h-7 text-xs flex-1"
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 hover:text-destructive" onClick={() => removeLane(lane.id)}>
+                            <Trash size={12} />
+                        </Button>
+                    </div>
+                ))}
+                <Button variant="ghost" size="sm" className="w-full h-7 text-xs gap-1.5" onClick={addLane}>
+                    <Plus size={12} /> Add Lane
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function TableColumnEditor({ nodeId, metadata }: { nodeId: string; metadata: Record<string, any> | undefined }) {
+    const columns: TableColumn[] = (metadata?.columns as TableColumn[]) ?? [];
+    const [newName, setNewName] = React.useState('');
+    const [newType, setNewType] = React.useState('VARCHAR(255)');
+
+    const updateColumns = (cols: TableColumn[]) => {
+        useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), columns: cols } });
+    };
+
+    const addColumn = () => {
+        if (!newName.trim()) return;
+        const col: TableColumn = {
+            id: `col-${nodeId}-${crypto.randomUUID().slice(0, 8)}`,
+            name: newName.trim(),
+            type: newType.trim() || 'VARCHAR(255)',
+            isPrimaryKey: false,
+            isForeignKey: false,
+            nullable: true,
+        };
+        updateColumns([...columns, col]);
+        setNewName('');
+        setNewType('VARCHAR(255)');
+    };
+
+    const removeColumn = (id: string) => updateColumns(columns.filter((c) => c.id !== id));
+    const updateColumn = (id: string, patch: Partial<TableColumn>) =>
+        updateColumns(columns.map((c) => c.id === id ? { ...c, ...patch } : c));
+
+    return (
+        <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Table2 size={14} /> Columns
+            </h3>
+            <div className="space-y-1">
+                {columns.map((col) => (
+                    <div key={col.id} className="flex items-center gap-1 bg-muted/30 rounded px-1.5 py-1">
+                        <Input
+                            value={col.name}
+                            onChange={(e) => updateColumn(col.id, { name: e.target.value })}
+                            className="h-6 text-xs w-24 shrink-0"
+                            placeholder="name"
+                        />
+                        <Input
+                            value={col.type}
+                            onChange={(e) => updateColumn(col.id, { type: e.target.value })}
+                            className="h-6 text-xs flex-1 font-mono"
+                            placeholder="type"
+                        />
+                        <button
+                            title="Primary Key"
+                            onClick={() => updateColumn(col.id, { isPrimaryKey: !col.isPrimaryKey })}
+                            className={`text-[10px] px-1 rounded font-bold shrink-0 ${col.isPrimaryKey ? 'bg-amber-400/20 text-amber-600' : 'text-muted-foreground hover:text-amber-500'}`}
+                        >PK</button>
+                        <button
+                            title="Foreign Key"
+                            onClick={() => updateColumn(col.id, { isForeignKey: !col.isForeignKey })}
+                            className={`text-[10px] px-1 rounded font-bold shrink-0 ${col.isForeignKey ? 'bg-blue-400/20 text-blue-500' : 'text-muted-foreground hover:text-blue-400'}`}
+                        >FK</button>
+                        <button
+                            title="Nullable"
+                            onClick={() => updateColumn(col.id, { nullable: !col.nullable })}
+                            className={`text-[10px] px-1 rounded shrink-0 ${col.nullable ? 'text-muted-foreground' : 'bg-red-400/20 text-red-500 font-bold'}`}
+                        >NN</button>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 hover:text-destructive" onClick={() => removeColumn(col.id)}>
+                            <Trash size={10} />
+                        </Button>
+                    </div>
+                ))}
+            </div>
+            <div className="flex items-center gap-1.5 pt-1">
+                <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="column_name"
+                    className="h-7 text-xs w-28 shrink-0"
+                    onKeyDown={(e) => { if (e.key === 'Enter') addColumn(); }}
+                />
+                <Input
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    placeholder="VARCHAR(255)"
+                    className="h-7 text-xs flex-1 font-mono"
+                    onKeyDown={(e) => { if (e.key === 'Enter') addColumn(); }}
+                />
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={!newName.trim()} onClick={addColumn}>
+                    <Plus size={12} />
+                </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">PK = Primary Key · FK = Foreign Key · NN = Not Null</p>
+        </div>
+    );
+}
+
+const RESERVED_METADATA_KEYS = new Set([
+    'label', 'service', 'type', 'metadata', 'mock', 'simulation', 'pricing', 'layerId',
+    'provider', 'subtype', 'backgroundColor', 'borderColor', 'textColor', 'iconColor',
+    'borderWidth', 'opacity', 'customIcon', 'shape', 'title', 'description',
+    'text', 'color', 'pointerDirection', 'animated', 'noteColor', 'fontSize',
+]);
+
+function CustomPropertiesEditor({ nodeId, metadata }: { nodeId: string; metadata: Record<string, any> | undefined }) {
+    const [newKey, setNewKey] = React.useState('');
+    const [newVal, setNewVal] = React.useState('');
+
+    const customEntries = Object.entries(metadata ?? {}).filter(([k]) => !RESERVED_METADATA_KEYS.has(k));
+
+    const commit = () => {
+        if (!newKey.trim()) return;
+        useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), [newKey.trim()]: newVal } });
+        setNewKey('');
+        setNewVal('');
+    };
+
+    return (
+        <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Plus size={14} /> Custom Properties
+            </h3>
+            {customEntries.map(([k, v]) => (
+                <div key={k} className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono text-muted-foreground w-24 truncate shrink-0">{k}</span>
+                    <Input
+                        value={String(v ?? '')}
+                        onChange={(e) => useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), [k]: e.target.value } })}
+                        className="h-7 text-xs flex-1"
+                    />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 hover:text-destructive"
+                        onClick={() => {
+                            const { [k]: _, ...rest } = metadata ?? {};
+                            useDiagramStore.getState().updateNode(nodeId, { metadata: rest });
+                        }}
+                    >
+                        <Trash size={12} />
+                    </Button>
+                </div>
+            ))}
+            <div className="flex items-center gap-1.5 pt-1">
+                <Input
+                    value={newKey}
+                    onChange={(e) => setNewKey(e.target.value)}
+                    placeholder="Key"
+                    className="h-7 text-xs w-24 shrink-0"
+                />
+                <Input
+                    value={newVal}
+                    onChange={(e) => setNewVal(e.target.value)}
+                    placeholder="Value"
+                    className="h-7 text-xs flex-1"
+                    onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
+                />
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={!newKey.trim()} onClick={commit}>
+                    <Plus size={12} />
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 export default function PropertiesPanel() {
     const {
@@ -23,7 +256,9 @@ export default function PropertiesPanel() {
         updateEdge,
         updateNodeMock,
         removeNode,
-        removeEdge
+        removeEdge,
+        moveNodeToLayer,
+        batchUpdateNodes,
     } = useDiagramStore();
 
     const handleTriggerNode = () => {
@@ -51,6 +286,8 @@ export default function PropertiesPanel() {
 
         // Helper to determine node category
         const isFrame = type === 'frame';
+        const isSwimlane = type === 'swimlane';
+        const isTable = type === 'table';
         const isAnnotation = type === 'annotation';
         const isNote = type === 'note';
         const isGateway = service?.toLowerCase().includes('gateway') || service?.toLowerCase().includes('balancer') || service?.toLowerCase().includes('appsync');
@@ -90,6 +327,28 @@ export default function PropertiesPanel() {
                     <ScrollArea className="flex-1 p-4">
                         <div className="space-y-6">
 
+                            {/* Layer Assignment */}
+                            {(() => {
+                                const layers: Layer[] = activeDiagram.layers ?? [];
+                                if (layers.length <= 1) return null;
+                                const currentLayerId = selectedNode.data.layerId ?? 'default';
+                                return (
+                                    <div className="space-y-2">
+                                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Layers size={14} /> Layer
+                                        </h3>
+                                        <select
+                                            value={currentLayerId}
+                                            onChange={(e) => moveNodeToLayer(selectedNodeId, e.target.value)}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                        >
+                                            {layers.map((l) => (
+                                                <option key={l.id} value={l.id}>{l.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Frame-specific Properties */}
                             {isFrame && (
@@ -152,6 +411,16 @@ export default function PropertiesPanel() {
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Swimlane Properties */}
+                            {isSwimlane && (
+                                <SwimlaneEditor nodeId={selectedNodeId} metadata={metadata} />
+                            )}
+
+                            {/* Table / ER Diagram Properties */}
+                            {isTable && (
+                                <TableColumnEditor nodeId={selectedNodeId} metadata={metadata} />
                             )}
 
                             {/* Annotation-specific Properties */}
@@ -316,7 +585,7 @@ export default function PropertiesPanel() {
                             )}
 
                             {/* Regular Metadata Section for other nodes */}
-                            {!isFrame && !isAnnotation && !isNote && (
+                            {!isFrame && !isAnnotation && !isNote && !isTable && (
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                                         <Info size={14} /> Configuration & Details
@@ -757,10 +1026,99 @@ export default function PropertiesPanel() {
                                 </div>
                             )}
 
+                            {/* Universal Appearance — shown for all non-annotation, non-note nodes */}
+                            {!isAnnotation && !isNote && type !== 'generic' && (
+                                <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+                                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Settings size={14} /> Appearance
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <Label className="text-xs">Fill Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.backgroundColor || '#ffffff'}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { backgroundColor: e.target.value } });
+                                                }}
+                                                className="h-8 p-1 w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Border Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.borderColor || '#e2e8f0'}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { borderColor: e.target.value } });
+                                                }}
+                                                className="h-8 p-1 w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Text Color</Label>
+                                            <Input
+                                                type="color"
+                                                value={metadata?.textColor || '#0f172a'}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { textColor: e.target.value } });
+                                                }}
+                                                className="h-8 p-1 w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Border Width</Label>
+                                            <select
+                                                value={metadata?.borderWidth ?? 2}
+                                                onChange={(e) => {
+                                                    const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                    const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                    batchUpdateNodes(targets, { metadata: { borderWidth: Number(e.target.value) } });
+                                                }}
+                                                className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                            >
+                                                <option value={1}>1px</option>
+                                                <option value={2}>2px (default)</option>
+                                                <option value={3}>3px</option>
+                                                <option value={4}>4px</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between mb-1">
+                                            <Label className="text-xs">Opacity</Label>
+                                            <span className="text-xs text-muted-foreground">{Math.round((metadata?.opacity ?? 1) * 100)}%</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min={0.1}
+                                            max={1}
+                                            step={0.05}
+                                            value={metadata?.opacity ?? 1}
+                                            onChange={(e) => {
+                                                const ids = activeDiagram.nodes.filter((n) => n.selected).map((n) => n.id);
+                                                const targets = ids.length > 1 ? ids : [selectedNodeId];
+                                                batchUpdateNodes(targets, { metadata: { opacity: parseFloat(e.target.value) } });
+                                            }}
+                                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Pricing Section - Only for AWS nodes */}
                             {service?.toLowerCase().includes('aws') || selectedNode.data.service ? (
                                 <PricingSection node={selectedNode} />
                             ) : null}
+
+                            {/* Custom Properties */}
+                            <CustomPropertiesEditor nodeId={selectedNodeId} metadata={metadata} />
 
                             <Separator />
 
@@ -835,6 +1193,59 @@ export default function PropertiesPanel() {
                                     <p className="text-xs text-muted-foreground">
                                         Text to display on the connection line.
                                     </p>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Connector Style */}
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                    <Settings size={14} /> Connector Style
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <Label className="text-xs">Routing</Label>
+                                        <select
+                                            value={selectedEdge.data?.edgeType ?? 'smoothstep'}
+                                            onChange={(e) => updateEdge(selectedEdgeId, { edgeType: e.target.value })}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                        >
+                                            <option value="smoothstep">Smooth Step</option>
+                                            <option value="straight">Straight</option>
+                                            <option value="step">Step</option>
+                                            <option value="bezier">Bezier</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Color</Label>
+                                        <Input
+                                            type="color"
+                                            value={selectedEdge.data?.strokeColor ?? '#94a3b8'}
+                                            onChange={(e) => updateEdge(selectedEdgeId, { strokeColor: e.target.value })}
+                                            className="h-8 p-1 w-full"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Width</Label>
+                                        <select
+                                            value={selectedEdge.data?.strokeWidth ?? 2}
+                                            onChange={(e) => updateEdge(selectedEdgeId, { strokeWidth: Number(e.target.value) })}
+                                            className="w-full h-8 text-xs rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                        >
+                                            <option value={1}>1px</option>
+                                            <option value={2}>2px</option>
+                                            <option value={3}>3px</option>
+                                            <option value={4}>4px</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-4">
+                                        <Switch
+                                            checked={selectedEdge.data?.dashed ?? false}
+                                            onCheckedChange={(v) => updateEdge(selectedEdgeId, { dashed: v })}
+                                        />
+                                        <Label className="text-xs">Dashed</Label>
+                                    </div>
                                 </div>
                             </div>
 

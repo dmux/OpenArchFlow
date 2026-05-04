@@ -5,6 +5,7 @@ export const GENERIC_SERVICES: ServiceCategory[] = [
         category: "Diagram Tools",
         items: [
             { name: "Frame/Group", service: "frame", type: "frame", description: "Groups multiple components together visually." },
+            { name: "Swimlane", service: "swimlane", type: "swimlane", description: "Horizontal or vertical swimlane diagram with configurable lanes." },
             { name: "Sticky Note", service: "note", type: "note", description: "Add text notes or annotations to your diagram." },
             { name: "Custom Element", service: "generic", type: "generic", subtype: "custom", description: "A fully customizable generic component." },
             { name: "Process", service: "generic", type: "generic", subtype: "process", description: "A generic process step or action." },
@@ -27,6 +28,13 @@ export const GENERIC_SERVICES: ServiceCategory[] = [
             { name: "Internet",        service: "aws-internet",      type: "frame", subtype: "internet",          description: "Represents the public internet or AWS Cloud boundary." },
             { name: "On-Premises",     service: "aws-on-premises",   type: "frame", subtype: "on-premises",       description: "Corporate data center or on-premises environment connected via VPN or Direct Connect." },
             { name: "Security Zone",   service: "aws-security-zone", type: "frame", subtype: "security-zone",     description: "A DMZ or security perimeter grouping security-sensitive components." },
+        ]
+    },
+    {
+        category: "UML Sequence",
+        items: [
+            { name: "Actor", service: "uml-actor", type: "sequence-actor", description: "UML sequence diagram actor or participant." },
+            { name: "System", service: "uml-system", type: "sequence-actor", subtype: "system", description: "External system or boundary in a sequence diagram." },
         ]
     },
     {
