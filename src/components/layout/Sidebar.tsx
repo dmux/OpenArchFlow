@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { APP_VERSION } from '@/lib/version';
 import { useState, useRef, useEffect } from 'react';
 import { parseMermaid } from '@/lib/import/mermaid';
+import { parseSqlDdl } from '@/lib/import/sql-ddl';
 import { toast } from 'sonner';
 import TemplatesDialog from '@/components/diagram/TemplatesDialog';
 
@@ -50,6 +51,26 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     const [mermaidOpen, setMermaidOpen] = useState(false);
     const [mermaidCode, setMermaidCode] = useState('');
     const [templatesOpen, setTemplatesOpen] = useState(false);
+    const [sqlOpen, setSqlOpen] = useState(false);
+    const [sqlCode, setSqlCode] = useState('');
+
+    const handleImportSqlDdl = () => {
+        if (!sqlCode.trim()) return;
+        try {
+            const { nodes, edges } = parseSqlDdl(sqlCode);
+            if (nodes.length === 0) { toast.error('No tables found in SQL DDL'); return; }
+            createDiagram('SQL Import');
+            setTimeout(() => {
+                setNodes(nodes);
+                setEdges(edges);
+                toast.success(`Imported ${nodes.length} table${nodes.length !== 1 ? 's' : ''} from SQL DDL`);
+            }, 0);
+            setSqlOpen(false);
+            setSqlCode('');
+        } catch {
+            toast.error('Failed to parse SQL DDL');
+        }
+    };
 
     const handleImportMermaid = () => {
         if (!mermaidCode.trim()) return;
@@ -375,6 +396,12 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                             Mermaid
                         </Button>
                     </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setSqlOpen(true)}>
+                            <Download className="w-3.5 h-3.5 mr-2" />
+                            SQL DDL
+                        </Button>
+                    </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{sortedDiagrams.length} diagram{sortedDiagrams.length !== 1 ? 's' : ''} stored locally</span>
                         <span className="font-mono opacity-60">v{APP_VERSION}</span>
@@ -408,6 +435,32 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 )}
 
                 <TemplatesDialog isOpen={templatesOpen} onClose={() => setTemplatesOpen(false)} />
+
+                {/* SQL DDL Import Dialog */}
+                {sqlOpen && (
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSqlOpen(false)}>
+                        <div className="bg-background border border-border rounded-xl shadow-2xl p-5 w-[520px] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-semibold text-sm">Import SQL DDL</span>
+                                <button onClick={() => setSqlOpen(false)} className="text-muted-foreground hover:text-foreground">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">Paste <code className="font-mono bg-muted px-1 rounded">CREATE TABLE</code> statements. Foreign keys are auto-linked.</p>
+                            <textarea
+                                autoFocus
+                                value={sqlCode}
+                                onChange={(e) => setSqlCode(e.target.value)}
+                                placeholder={`CREATE TABLE users (\n  id INT PRIMARY KEY,\n  email VARCHAR(255) NOT NULL\n);\n\nCREATE TABLE posts (\n  id INT PRIMARY KEY,\n  user_id INT,\n  FOREIGN KEY (user_id) REFERENCES users(id)\n);`}
+                                className="w-full h-52 text-xs font-mono bg-muted border border-border rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                            />
+                            <div className="flex gap-2 mt-3 justify-end">
+                                <Button variant="ghost" size="sm" onClick={() => setSqlOpen(false)}>Cancel</Button>
+                                <Button size="sm" onClick={handleImportSqlDdl}>Import</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

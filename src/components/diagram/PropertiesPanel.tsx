@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDiagramStore, Layer } from '@/lib/store';
-import { X, ExternalLink, Info, Unplug, Trash2, PlayCircle, Settings, Plus, Trash, Layers } from 'lucide-react';
+import { X, ExternalLink, Info, Unplug, Trash2, PlayCircle, Settings, Plus, Trash, Layers, Table2 } from 'lucide-react';
+import type { TableColumn } from '@/components/diagram/TableNode';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -79,6 +80,99 @@ function SwimlaneEditor({ nodeId, metadata }: { nodeId: string; metadata: Record
                     <Plus size={12} /> Add Lane
                 </Button>
             </div>
+        </div>
+    );
+}
+
+function TableColumnEditor({ nodeId, metadata }: { nodeId: string; metadata: Record<string, any> | undefined }) {
+    const columns: TableColumn[] = (metadata?.columns as TableColumn[]) ?? [];
+    const [newName, setNewName] = React.useState('');
+    const [newType, setNewType] = React.useState('VARCHAR(255)');
+
+    const updateColumns = (cols: TableColumn[]) => {
+        useDiagramStore.getState().updateNode(nodeId, { metadata: { ...(metadata ?? {}), columns: cols } });
+    };
+
+    const addColumn = () => {
+        if (!newName.trim()) return;
+        const col: TableColumn = {
+            id: `col-${nodeId}-${crypto.randomUUID().slice(0, 8)}`,
+            name: newName.trim(),
+            type: newType.trim() || 'VARCHAR(255)',
+            isPrimaryKey: false,
+            isForeignKey: false,
+            nullable: true,
+        };
+        updateColumns([...columns, col]);
+        setNewName('');
+        setNewType('VARCHAR(255)');
+    };
+
+    const removeColumn = (id: string) => updateColumns(columns.filter((c) => c.id !== id));
+    const updateColumn = (id: string, patch: Partial<TableColumn>) =>
+        updateColumns(columns.map((c) => c.id === id ? { ...c, ...patch } : c));
+
+    return (
+        <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Table2 size={14} /> Columns
+            </h3>
+            <div className="space-y-1">
+                {columns.map((col) => (
+                    <div key={col.id} className="flex items-center gap-1 bg-muted/30 rounded px-1.5 py-1">
+                        <Input
+                            value={col.name}
+                            onChange={(e) => updateColumn(col.id, { name: e.target.value })}
+                            className="h-6 text-xs w-24 shrink-0"
+                            placeholder="name"
+                        />
+                        <Input
+                            value={col.type}
+                            onChange={(e) => updateColumn(col.id, { type: e.target.value })}
+                            className="h-6 text-xs flex-1 font-mono"
+                            placeholder="type"
+                        />
+                        <button
+                            title="Primary Key"
+                            onClick={() => updateColumn(col.id, { isPrimaryKey: !col.isPrimaryKey })}
+                            className={`text-[10px] px-1 rounded font-bold shrink-0 ${col.isPrimaryKey ? 'bg-amber-400/20 text-amber-600' : 'text-muted-foreground hover:text-amber-500'}`}
+                        >PK</button>
+                        <button
+                            title="Foreign Key"
+                            onClick={() => updateColumn(col.id, { isForeignKey: !col.isForeignKey })}
+                            className={`text-[10px] px-1 rounded font-bold shrink-0 ${col.isForeignKey ? 'bg-blue-400/20 text-blue-500' : 'text-muted-foreground hover:text-blue-400'}`}
+                        >FK</button>
+                        <button
+                            title="Nullable"
+                            onClick={() => updateColumn(col.id, { nullable: !col.nullable })}
+                            className={`text-[10px] px-1 rounded shrink-0 ${col.nullable ? 'text-muted-foreground' : 'bg-red-400/20 text-red-500 font-bold'}`}
+                        >NN</button>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 hover:text-destructive" onClick={() => removeColumn(col.id)}>
+                            <Trash size={10} />
+                        </Button>
+                    </div>
+                ))}
+            </div>
+            <div className="flex items-center gap-1.5 pt-1">
+                <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="column_name"
+                    className="h-7 text-xs w-28 shrink-0"
+                    onKeyDown={(e) => { if (e.key === 'Enter') addColumn(); }}
+                />
+                <Input
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    placeholder="VARCHAR(255)"
+                    className="h-7 text-xs flex-1 font-mono"
+                    onKeyDown={(e) => { if (e.key === 'Enter') addColumn(); }}
+                />
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={!newName.trim()} onClick={addColumn}>
+                    <Plus size={12} />
+                </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">PK = Primary Key · FK = Foreign Key · NN = Not Null</p>
         </div>
     );
 }
@@ -193,6 +287,7 @@ export default function PropertiesPanel() {
         // Helper to determine node category
         const isFrame = type === 'frame';
         const isSwimlane = type === 'swimlane';
+        const isTable = type === 'table';
         const isAnnotation = type === 'annotation';
         const isNote = type === 'note';
         const isGateway = service?.toLowerCase().includes('gateway') || service?.toLowerCase().includes('balancer') || service?.toLowerCase().includes('appsync');
@@ -321,6 +416,11 @@ export default function PropertiesPanel() {
                             {/* Swimlane Properties */}
                             {isSwimlane && (
                                 <SwimlaneEditor nodeId={selectedNodeId} metadata={metadata} />
+                            )}
+
+                            {/* Table / ER Diagram Properties */}
+                            {isTable && (
+                                <TableColumnEditor nodeId={selectedNodeId} metadata={metadata} />
                             )}
 
                             {/* Annotation-specific Properties */}
@@ -485,7 +585,7 @@ export default function PropertiesPanel() {
                             )}
 
                             {/* Regular Metadata Section for other nodes */}
-                            {!isFrame && !isAnnotation && !isNote && (
+                            {!isFrame && !isAnnotation && !isNote && !isTable && (
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                                         <Info size={14} /> Configuration & Details
