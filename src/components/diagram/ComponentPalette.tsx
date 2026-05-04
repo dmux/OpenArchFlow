@@ -56,9 +56,22 @@ export default function ComponentPalette({ isOpen, onOpenChange }: ComponentPale
         const file = e.target.files?.[0];
         if (!file) return;
         const text = await file.text();
-        const { default: DOMPurify } = await import('dompurify');
-        const clean = DOMPurify.sanitize(text, { USE_PROFILES: { svg: true, svgFilters: true } });
-        if (!clean.includes('<svg')) { toast.error('Invalid SVG file'); return; }
+        // Sanitize using the native browser DOMParser — no SSR-unsafe imports needed
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'image/svg+xml');
+        const svgEl = doc.querySelector('svg');
+        if (!svgEl) { toast.error('Invalid SVG file'); return; }
+        // Strip dangerous elements and attributes
+        svgEl.querySelectorAll('script, foreignObject').forEach(el => el.remove());
+        svgEl.querySelectorAll('*').forEach(el => {
+            [...el.attributes].forEach(attr => {
+                if (
+                    attr.name.startsWith('on') ||
+                    ((attr.name === 'href' || attr.name === 'xlink:href') && attr.value.trimStart().toLowerCase().startsWith('javascript:'))
+                ) el.removeAttribute(attr.name);
+            });
+        });
+        const clean = svgEl.outerHTML;
         addCustomShape(file.name.replace(/\.svg$/i, ''), clean);
         toast.success(`Shape "${file.name}" added`);
         e.target.value = '';
