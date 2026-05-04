@@ -497,33 +497,49 @@ export default function PropertiesPanel() {
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-6">
               {/* Quick Start traffic banner — shown on client/entry nodes with no traffic configured */}
-              {(isClient || isGateway) && !isPlaying && !(mock?.requestsPerSecond) && (
-                <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 flex items-start gap-3">
-                  <div className="mt-0.5 shrink-0">
-                    <PlayCircle size={16} className="text-blue-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">Enable simulation traffic</p>
-                    <p className="text-[11px] text-muted-foreground mb-2">
-                      This node has no requests configured. Set it as the traffic entry point to visualize HTTP flow through your architecture.
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateNodeMock(selectedNodeId, { requestsPerSecond: 5, enabled: true })}
-                        className="text-[11px] font-medium px-2.5 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                      >
-                        5 req/s
-                      </button>
-                      <button
-                        onClick={() => updateNodeMock(selectedNodeId, { requestsPerSecond: 20, enabled: true })}
-                        className="text-[11px] font-medium px-2.5 py-1 rounded bg-blue-500/20 text-blue-600 hover:bg-blue-500/30 transition-colors dark:text-blue-400"
-                      >
-                        20 req/s
-                      </button>
+              {(isClient || isGateway) &&
+                !isPlaying &&
+                !mock?.requestsPerSecond && (
+                  <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 flex items-start gap-3">
+                    <div className="mt-0.5 shrink-0">
+                      <PlayCircle size={16} className="text-blue-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">
+                        Enable simulation traffic
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mb-2">
+                        This node has no requests configured. Set it as the
+                        traffic entry point to visualize HTTP flow through your
+                        architecture.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            updateNodeMock(selectedNodeId, {
+                              requestsPerSecond: 5,
+                              enabled: true,
+                            })
+                          }
+                          className="text-[11px] font-medium px-2.5 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                        >
+                          5 req/s
+                        </button>
+                        <button
+                          onClick={() =>
+                            updateNodeMock(selectedNodeId, {
+                              requestsPerSecond: 20,
+                              enabled: true,
+                            })
+                          }
+                          className="text-[11px] font-medium px-2.5 py-1 rounded bg-blue-500/20 text-blue-600 hover:bg-blue-500/30 transition-colors dark:text-blue-400"
+                        >
+                          20 req/s
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Layer Assignment */}
               {(() => {

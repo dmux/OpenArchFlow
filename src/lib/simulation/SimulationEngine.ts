@@ -254,9 +254,9 @@ export class SimulationEngine {
       // ── Killed node ────────────────────────────────────────────────────
       if (this.killedNodes.has(currentNode.id)) {
         // Mark inbound edges as error
-        edges.filter(e => e.target === currentNode.id).forEach(e =>
-          activeEdgeIds.push({ id: e.id, status: 'error' })
-        );
+        edges
+          .filter((e) => e.target === currentNode.id)
+          .forEach((e) => activeEdgeIds.push({ id: e.id, status: "error" }));
         logs.push({
           nodeId: currentNode.id,
           level: "error",
@@ -295,9 +295,11 @@ export class SimulationEngine {
             errors: 1,
             throttled: true,
           });
-          edges.filter(e => e.target === currentNode.id).forEach(e =>
-            activeEdgeIds.push({ id: e.id, status: 'throttled' })
-          );
+          edges
+            .filter((e) => e.target === currentNode.id)
+            .forEach((e) =>
+              activeEdgeIds.push({ id: e.id, status: "throttled" }),
+            );
           req.hops.push({
             nodeId: currentNode.id,
             nodeLabel: currentNode.data.label,
@@ -342,9 +344,9 @@ export class SimulationEngine {
           level: "error",
           message: `✗ Request failed at [${currentNode.data.label}]`,
         });
-        edges.filter(e => e.target === currentNode.id).forEach(e =>
-          activeEdgeIds.push({ id: e.id, status: 'error' })
-        );
+        edges
+          .filter((e) => e.target === currentNode.id)
+          .forEach((e) => activeEdgeIds.push({ id: e.id, status: "error" }));
         req.hops.push({
           nodeId: currentNode.id,
           nodeLabel: currentNode.data.label,
@@ -411,7 +413,7 @@ export class SimulationEngine {
           });
           for (let c = 0; c < consumeCount; c++) {
             const edge = outEdges[Math.floor(Math.random() * outEdges.length)];
-            activeEdgeIds.push({ id: edge.id, status: 'active' });
+            activeEdgeIds.push({ id: edge.id, status: "active" });
             nextRequests.push({
               id: crypto.randomUUID(),
               currentNodeId: edge.target,
@@ -510,7 +512,7 @@ export class SimulationEngine {
           message: `📣 [${currentNode.data.label}] fan-out → ${outEdges.length} targets`,
         });
         outEdges.forEach((edge) => {
-          activeEdgeIds.push({ id: edge.id, status: 'active' });
+          activeEdgeIds.push({ id: edge.id, status: "active" });
           nextRequests.push({
             id: crypto.randomUUID(),
             currentNodeId: edge.target,
@@ -531,7 +533,7 @@ export class SimulationEngine {
         const counter = rrCounters.get(currentNode.id) ?? 0;
         const chosenEdge = outEdges[counter % outEdges.length];
         rrCounters.set(currentNode.id, counter + 1);
-        activeEdgeIds.push({ id: chosenEdge.id, status: 'active' });
+        activeEdgeIds.push({ id: chosenEdge.id, status: "active" });
         req.hops.push({
           nodeId: currentNode.id,
           nodeLabel: currentNode.data.label,
@@ -550,7 +552,7 @@ export class SimulationEngine {
 
       // ── Default / unicast / passthrough ──────────────────────────────
       const chosenEdge = outEdges[Math.floor(Math.random() * outEdges.length)];
-      activeEdgeIds.push({ id: chosenEdge.id, status: 'active' });
+      activeEdgeIds.push({ id: chosenEdge.id, status: "active" });
 
       const edgeAction = (
         chosenEdge.data as { simulationAction?: { type: string } } | undefined
@@ -605,7 +607,11 @@ export class SimulationEngine {
     const edgeMap = new Map<string, ActiveEdgeState>();
     for (const e of activeEdgeIds) {
       const existing = edgeMap.get(e.id);
-      if (!existing || (e.status === 'error') || (e.status === 'throttled' && existing.status === 'active')) {
+      if (
+        !existing ||
+        e.status === "error" ||
+        (e.status === "throttled" && existing.status === "active")
+      ) {
         edgeMap.set(e.id, e);
       }
     }

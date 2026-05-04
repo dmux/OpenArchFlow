@@ -79,7 +79,7 @@ export class SimulationEngine {
         }
 
         // ── Live edge states ────────────────────────────────────────────
-        const edgeMap = new Map<string, 'active' | 'error' | 'throttled'>();
+        const edgeMap = new Map<string, "active" | "error" | "throttled">();
         for (const e of activeEdgeIds) edgeMap.set(e.id, e.status);
         s.setActiveSimulationEdges(edgeMap);
 

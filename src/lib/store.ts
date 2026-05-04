@@ -242,7 +242,9 @@ interface DiagramState {
 
   // Live edge activity (ephemeral, per-tick)
   activeSimulationEdges: Map<string, "active" | "error" | "throttled">;
-  setActiveSimulationEdges: (edges: Map<string, "active" | "error" | "throttled">) => void;
+  setActiveSimulationEdges: (
+    edges: Map<string, "active" | "error" | "throttled">,
+  ) => void;
 
   // Simulation traces (ephemeral, last 50)
   simulationTraces: import("./simulation/SimulationEngine").RequestTrace[];
@@ -285,7 +287,10 @@ export const useDiagramStore = create<DiagramState>()(
         killedNodes: new Set<string>(),
         trafficMultiplier: 1,
         simulationTraces: [],
-        activeSimulationEdges: new Map<string, "active" | "error" | "throttled">(),
+        activeSimulationEdges: new Map<
+          string,
+          "active" | "error" | "throttled"
+        >(),
 
         setCollaborationRoomId: (id) => {
           if (!id) {
@@ -391,7 +396,8 @@ export const useDiagramStore = create<DiagramState>()(
 
         setTrafficMultiplier: (m) => set({ trafficMultiplier: Math.max(1, m) }),
 
-        setActiveSimulationEdges: (edges) => set({ activeSimulationEdges: edges }),
+        setActiveSimulationEdges: (edges) =>
+          set({ activeSimulationEdges: edges }),
 
         addSimulationTraces: (traces) =>
           set((state) => ({

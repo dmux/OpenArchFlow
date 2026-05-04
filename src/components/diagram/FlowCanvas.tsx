@@ -217,10 +217,13 @@ function FlowCanvas() {
 
       const simStatus = activeSimulationEdges.get(edge.id);
       const strokeColor =
-        simStatus === 'error' ? '#ef4444' :
-        simStatus === 'throttled' ? '#f97316' :
-        simStatus === 'active' ? '#22c55e' :
-        'hsl(var(--primary))';
+        simStatus === "error"
+          ? "#ef4444"
+          : simStatus === "throttled"
+            ? "#f97316"
+            : simStatus === "active"
+              ? "#22c55e"
+              : "hsl(var(--primary))";
       const strokeWidth = simStatus ? 3 : 2;
 
       return {
