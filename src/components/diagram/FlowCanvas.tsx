@@ -250,6 +250,8 @@ function FlowCanvas() {
           nodesDraggable={!isLaserMode}
           nodesConnectable={!isLaserMode}
           elementsSelectable={!isLaserMode}
+          selectionOnDrag={!isLaserMode}
+          panOnDrag={isLaserMode ? true : [1, 2]}
           snapToGrid
           snapGrid={[16, 16]}
           defaultEdgeOptions={{

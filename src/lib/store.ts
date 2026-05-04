@@ -174,6 +174,11 @@ interface DiagramState {
   // Batch update for multi-node styling
   batchUpdateNodes: (ids: string[], data: Partial<AppNodeData>) => void;
 
+  // Grouping
+  groupNodes: (ids: string[]) => void;
+  ungroupNodes: (groupId: string) => void;
+  setGroupLocked: (groupId: string, locked: boolean) => void;
+
   // Layer Actions
   addLayer: (name?: string) => void;
   removeLayer: (layerId: string) => void;
@@ -804,22 +809,36 @@ export const useDiagramStore = create<DiagramState>()(
               "elk.spacing.nodeNode": "80",
               "elk.layered.spacing.nodeNodeBetweenLayers": "100",
             },
-            children: nodes.map((node) => ({
-              id: node.id,
-              width: node.width ?? 150,
-              height: node.height ?? 50,
-            })),
-            edges: edges.map((edge) => ({
-              id: edge.id,
-              sources: [edge.source],
-              targets: [edge.target],
-            })),
+            children: nodes
+              .filter((node) => !(node as any).parentNode)
+              .map((node) => ({
+                id: node.id,
+                width: node.width ?? 150,
+                height: node.height ?? 50,
+              })),
+            edges: edges
+              .filter(
+                (edge) =>
+                  !nodes.find(
+                    (n) => n.id === edge.source && (n as any).parentNode,
+                  ) &&
+                  !nodes.find(
+                    (n) => n.id === edge.target && (n as any).parentNode,
+                  ),
+              )
+              .map((edge) => ({
+                id: edge.id,
+                sources: [edge.source],
+                targets: [edge.target],
+              })),
           };
 
           try {
             const layoutedGraph = await elk.layout(graph);
 
             const layoutedNodes = nodes.map((node) => {
+              // Don't move child nodes — their positions are relative to the parent
+              if ((node as any).parentNode) return node;
               const layoutNode = layoutedGraph.children?.find(
                 (n) => n.id === node.id,
               );
@@ -881,6 +900,140 @@ export const useDiagramStore = create<DiagramState>()(
           set((state) => ({
             customShapes: state.customShapes.filter((s) => s.id !== id),
           })),
+
+        groupNodes: (ids) => {
+          const { activeDiagramId, collaborationRoomId } = get();
+          if (!activeDiagramId) return;
+          const temporal = useDiagramStore.temporal.getState();
+          temporal.pause();
+          set((state) => {
+            const diagram = state.diagrams[activeDiagramId];
+            const toGroup = diagram.nodes.filter((n) => ids.includes(n.id));
+            if (toGroup.length < 2) return state;
+
+            const PADDING = 24;
+            const minX =
+              Math.min(...toGroup.map((n) => n.position.x)) - PADDING;
+            const minY =
+              Math.min(...toGroup.map((n) => n.position.y)) - PADDING;
+            const maxX =
+              Math.max(...toGroup.map((n) => n.position.x + (n.width ?? 150))) +
+              PADDING;
+            const maxY =
+              Math.max(...toGroup.map((n) => n.position.y + (n.height ?? 50))) +
+              PADDING;
+
+            const groupId = crypto.randomUUID();
+            const frameNode: AppNode = {
+              id: groupId,
+              type: "frame",
+              position: { x: minX, y: minY },
+              width: maxX - minX,
+              height: maxY - minY,
+              data: {
+                label: "Group",
+                service: "frame",
+                subtype: "default",
+                locked: false,
+              },
+              style: { width: maxX - minX, height: maxY - minY },
+              selected: false,
+            };
+
+            const others = diagram.nodes.filter((n) => !ids.includes(n.id));
+            const children = toGroup.map((n) => ({
+              ...n,
+              parentNode: groupId,
+              extent: "parent" as const,
+              position: { x: n.position.x - minX, y: n.position.y - minY },
+              selected: false,
+            }));
+
+            // frame must come before its children in the array
+            const newNodes = [...others, frameNode, ...children];
+            const newDiagrams = {
+              ...state.diagrams,
+              [activeDiagramId]: {
+                ...diagram,
+                nodes: newNodes,
+                lastModified: Date.now(),
+              },
+            };
+            syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+            return { diagrams: newDiagrams, selectedNodeId: groupId };
+          });
+          temporal.resume();
+        },
+
+        ungroupNodes: (groupId) => {
+          const { activeDiagramId, collaborationRoomId } = get();
+          if (!activeDiagramId) return;
+          const temporal = useDiagramStore.temporal.getState();
+          temporal.pause();
+          set((state) => {
+            const diagram = state.diagrams[activeDiagramId];
+            const frame = diagram.nodes.find((n) => n.id === groupId);
+            if (!frame) return state;
+
+            const newNodes = diagram.nodes
+              .filter((n) => n.id !== groupId)
+              .map((n) => {
+                if (n.parentNode !== groupId) return n;
+                // Convert relative position back to absolute
+                const { parentNode: _p, extent: _e, ...rest } = n as any;
+                return {
+                  ...rest,
+                  position: {
+                    x: frame.position.x + n.position.x,
+                    y: frame.position.y + n.position.y,
+                  },
+                  selected: true,
+                };
+              });
+
+            const newDiagrams = {
+              ...state.diagrams,
+              [activeDiagramId]: {
+                ...diagram,
+                nodes: newNodes,
+                lastModified: Date.now(),
+              },
+            };
+            syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+            return { diagrams: newDiagrams, selectedNodeId: null };
+          });
+          temporal.resume();
+        },
+
+        setGroupLocked: (groupId, locked) => {
+          const { activeDiagramId, collaborationRoomId } = get();
+          if (!activeDiagramId) return;
+          const temporal = useDiagramStore.temporal.getState();
+          temporal.pause();
+          set((state) => {
+            const diagram = state.diagrams[activeDiagramId];
+            const newNodes = diagram.nodes.map((n) => {
+              if (n.id === groupId) {
+                return { ...n, data: { ...n.data, locked } };
+              }
+              if ((n as any).parentNode === groupId) {
+                return { ...n, draggable: !locked, selectable: !locked };
+              }
+              return n;
+            });
+            const newDiagrams = {
+              ...state.diagrams,
+              [activeDiagramId]: {
+                ...diagram,
+                nodes: newNodes,
+                lastModified: Date.now(),
+              },
+            };
+            syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+            return { diagrams: newDiagrams };
+          });
+          temporal.resume();
+        },
 
         batchUpdateNodes: (ids, data) => {
           const { activeDiagramId, collaborationRoomId } = get();

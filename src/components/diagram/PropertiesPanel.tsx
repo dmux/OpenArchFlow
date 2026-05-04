@@ -12,6 +12,9 @@ import {
   Trash,
   Layers,
   Table2,
+  Lock,
+  LockOpen,
+  Ungroup,
 } from "lucide-react";
 import type { TableColumn } from "@/components/diagram/TableNode";
 import { Button } from "@/components/ui/button";
@@ -309,11 +312,9 @@ function CustomPropertiesEditor({
 
   const commit = () => {
     if (!newKey.trim()) return;
-    useDiagramStore
-      .getState()
-      .updateNode(nodeId, {
-        metadata: { ...(metadata ?? {}), [newKey.trim()]: newVal },
-      });
+    useDiagramStore.getState().updateNode(nodeId, {
+      metadata: { ...(metadata ?? {}), [newKey.trim()]: newVal },
+    });
     setNewKey("");
     setNewVal("");
   };
@@ -331,11 +332,9 @@ function CustomPropertiesEditor({
           <Input
             value={String(v ?? "")}
             onChange={(e) =>
-              useDiagramStore
-                .getState()
-                .updateNode(nodeId, {
-                  metadata: { ...(metadata ?? {}), [k]: e.target.value },
-                })
+              useDiagramStore.getState().updateNode(nodeId, {
+                metadata: { ...(metadata ?? {}), [k]: e.target.value },
+              })
             }
             className="h-7 text-xs flex-1"
           />
@@ -395,6 +394,8 @@ export default function PropertiesPanel() {
     removeNode,
     removeEdge,
     moveNodeToLayer,
+    ungroupNodes,
+    setGroupLocked,
     batchUpdateNodes,
   } = useDiagramStore();
 
@@ -425,6 +426,8 @@ export default function PropertiesPanel() {
 
     // Helper to determine node category
     const isFrame = type === "frame";
+    const isGroup = isFrame && "locked" in selectedNode.data; // group frames have a 'locked' field
+    const isGroupLocked = selectedNode.data.locked as boolean | undefined;
     const isSwimlane = type === "swimlane";
     const isTable = type === "table";
     const isAnnotation = type === "annotation";
@@ -521,6 +524,37 @@ export default function PropertiesPanel() {
                   <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                     <Settings size={14} /> Frame Properties
                   </h3>
+                  {/* Group actions (only for grouped frames) */}
+                  {isGroup && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5"
+                        onClick={() => {
+                          setGroupLocked(selectedNodeId, !isGroupLocked);
+                        }}
+                      >
+                        {isGroupLocked ? (
+                          <>
+                            <LockOpen size={12} /> Desbloquear grupo
+                          </>
+                        ) : (
+                          <>
+                            <Lock size={12} /> Bloquear grupo
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                        onClick={() => ungroupNodes(selectedNodeId)}
+                      >
+                        <Ungroup size={12} /> Desagrupar
+                      </Button>
+                    </div>
+                  )}
                   <div className="space-y-3">
                     <div>
                       <Label className="text-xs">Title</Label>

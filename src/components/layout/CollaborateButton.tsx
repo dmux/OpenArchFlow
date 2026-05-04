@@ -85,7 +85,6 @@ export function CollaborateButton() {
       // Clear it so we don't silently stay connected to the old room.
       setCollaborationRoomId(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentionally run only once on mount
 
   const startCollaboration = useCallback(() => {
