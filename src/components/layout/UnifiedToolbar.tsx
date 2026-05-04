@@ -23,7 +23,11 @@ import {
     Check,
     MessageSquare,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    Undo2,
+    Redo2,
+    Layers,
+    LayoutTemplate,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,6 +57,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { useDiagramStore } from '@/lib/store';
+import { useStore } from 'zustand';
+import { exportSvg } from '@/lib/export/svg';
+import { exportPdf } from '@/lib/export/pdf';
 import { SimulationEngine } from '@/lib/simulation';
 import { useReactFlow } from 'reactflow';
 import { getLayoutedElements } from '@/lib/layout-utils';
@@ -92,6 +99,10 @@ export function UnifiedToolbar({
     const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
     const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
     const { setTheme, theme } = useTheme();
+
+    const { undo, redo, pastStates, futureStates } = useStore(useDiagramStore.temporal);
+    const canUndo = pastStates.length > 0;
+    const canRedo = futureStates.length > 0;
 
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showBOM, setShowBOM] = useState(false);
@@ -204,6 +215,28 @@ export function UnifiedToolbar({
         }
     }, [getNodes]);
 
+    const handleExportSvg = useCallback(async () => {
+        const nodes = getNodes();
+        if (nodes.length === 0) { toast.error('No diagram to export'); return; }
+        try {
+            await exportSvg(nodes);
+            toast.success('SVG exported successfully!');
+        } catch {
+            toast.error('Failed to export SVG.');
+        }
+    }, [getNodes]);
+
+    const handleExportPdf = useCallback(async () => {
+        const nodes = getNodes();
+        if (nodes.length === 0) { toast.error('No diagram to export'); return; }
+        try {
+            await exportPdf(nodes);
+            toast.success('PDF exported successfully!');
+        } catch {
+            toast.error('Failed to export PDF.');
+        }
+    }, [getNodes]);
+
     const handleGenerateSpec = useCallback(async () => {
         if (nodes.length === 0) {
             toast.error('No diagram to generate specification for');
@@ -278,22 +311,45 @@ export function UnifiedToolbar({
             label: 'Diagram Chat',
             onClick: () => setActivePanel(activePanel === 'chat' ? null : 'chat'),
             active: activePanel === 'chat'
+        },
+        {
+            id: 'layers',
+            icon: Layers,
+            label: 'Layers',
+            onClick: () => setActivePanel(activePanel === 'layers' ? null : 'layers'),
+            active: activePanel === 'layers'
+        },
+        {
+            id: 'templates',
+            icon: LayoutTemplate,
+            label: 'Templates',
+            onClick: () => setActivePanel(activePanel === 'templates' ? null : 'templates'),
+            active: activePanel === 'templates'
         }
     ];
 
     const actionTools = [
         {
+            id: 'undo',
+            icon: Undo2,
+            label: 'Undo (Ctrl+Z)',
+            onClick: () => undo(),
+            active: false,
+            disabled: !canUndo,
+        },
+        {
+            id: 'redo',
+            icon: Redo2,
+            label: 'Redo (Ctrl+Y)',
+            onClick: () => redo(),
+            active: false,
+            disabled: !canRedo,
+        },
+        {
             id: 'layout',
             icon: Workflow,
             label: 'Auto Layout',
             onClick: handleAutoLayout,
-            active: false
-        },
-        {
-            id: 'export',
-            icon: Download,
-            label: 'Export PNG',
-            onClick: handleExport,
             active: false
         },
         {
@@ -401,18 +457,51 @@ export function UnifiedToolbar({
                                         variant={tool.active ? 'secondary' : 'ghost'}
                                         size="icon"
                                         onClick={tool.onClick}
+                                        disabled={(tool as any).disabled}
                                         className={cn(
                                             "h-9 w-9 rounded-lg transition-all duration-200",
                                             tool.active && "bg-secondary text-secondary-foreground shadow-sm",
-                                            !tool.active && "hover:bg-accent hover:text-accent-foreground"
+                                            !tool.active && "hover:bg-accent hover:text-accent-foreground",
+                                            (tool as any).disabled && "opacity-30 cursor-not-allowed"
                                         )}
                                     >
-                                        <tool.icon className={cn("h-4.5 w-4.5", tool.id === 'laser' && tool.active && "text-red-500", tool.className)} />
+                                        <tool.icon className={cn("h-4.5 w-4.5", tool.id === 'laser' && tool.active && "text-red-500", (tool as any).className)} />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" sideOffset={10}><p className="font-medium">{tool.label}</p></TooltipContent>
                             </Tooltip>
                         ))}
+
+                        {/* Export Dropdown */}
+                        <DropdownMenu>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 rounded-lg hover:bg-accent hover:text-accent-foreground"
+                                        >
+                                            <Download className="h-4.5 w-4.5" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" sideOffset={10}><p className="font-medium">Export</p></TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent side="right" align="start" sideOffset={15} className="w-40 p-1.5 rounded-xl shadow-2xl border-border bg-background/95 backdrop-blur-xl">
+                                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1">Export As</DropdownMenuLabel>
+                                <DropdownMenuSeparator className="my-1" />
+                                <DropdownMenuItem onClick={handleExport} className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium">
+                                    PNG Image
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExportSvg} className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium">
+                                    SVG Vector
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExportPdf} className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium">
+                                    PDF Document
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
 
                     <div className="w-6 h-px bg-border my-0.5" />

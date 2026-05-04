@@ -8,13 +8,19 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-    const { label, service, simulation, provider } = data as any;
+    const { label, service, simulation, provider, metadata } = data as any;
     const isProcessing = simulation?.status === 'processing';
     const isSuccess = simulation?.status === 'success';
     const isError = simulation?.status === 'error';
 
     // Fallback to 'aws' provider for backward compatibility with existing saved layouts
     const resolvedProvider = provider || 'aws';
+
+    const styleOverrides: React.CSSProperties = {};
+    if (metadata?.backgroundColor) styleOverrides.backgroundColor = metadata.backgroundColor;
+    if (metadata?.borderColor && !isProcessing && !isSuccess && !isError) styleOverrides.borderColor = metadata.borderColor;
+    if (metadata?.borderWidth) styleOverrides.borderWidth = `${metadata.borderWidth}px`;
+    if (metadata?.opacity !== undefined) styleOverrides.opacity = metadata.opacity;
 
     const Icon = getServiceIcon(
         resolvedProvider,
@@ -42,6 +48,7 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
                         isSuccess && "border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]",
                         isError && "border-destructive shadow-[0_0_15px_rgba(239,68,68,0.5)]"
                     )}
+                    style={styleOverrides}
                 >
                     {/* Simulation Status Badge */}
                     {simulation?.status && simulation.status !== 'idle' && (
@@ -82,7 +89,7 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
 
                     {/* Labels */}
                     <div className="text-center">
-                        <div className="font-semibold text-sm text-foreground leading-tight">{label}</div>
+                        <div className="font-semibold text-sm text-foreground leading-tight" style={metadata?.textColor ? { color: metadata.textColor } : undefined}>{label}</div>
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-medium bg-muted/50 px-2 py-0.5 rounded-full inline-block">
                             {service} {resolvedProvider !== 'aws' && resolvedProvider !== 'generic' ? `(${resolvedProvider})` : ''}
                         </div>

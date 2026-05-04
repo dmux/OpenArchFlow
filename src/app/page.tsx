@@ -27,9 +27,13 @@ import SpecificationDialog from '@/components/diagram/SpecificationDialog';
 import { UnifiedToolbar } from '@/components/layout/UnifiedToolbar';
 import { GeminiKeyDialog } from '@/components/layout/GeminiKeyDialog';
 import DiagramChat from '@/components/diagram/DiagramChat';
+import LayersPanel from '@/components/diagram/LayersPanel';
+import KeyboardShortcutsDialog from '@/components/layout/KeyboardShortcutsDialog';
+import TemplatesDialog from '@/components/diagram/TemplatesDialog';
 
 // Service
 import { WebLLMService } from '@/lib/ai/webllm';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // UI Components
 import { Switch } from '@/components/ui/switch';
@@ -49,6 +53,8 @@ export default function Home() {
 }
 
 function HomeContent() {
+    useKeyboardShortcuts();
+
     const setNodes = useDiagramStore((state) => state.setNodes);
     const setEdges = useDiagramStore((state) => state.setEdges);
 
@@ -75,6 +81,14 @@ function HomeContent() {
     const [activePanel, setActivePanel] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [apiKeyInvalid, setApiKeyInvalid] = useState(false);
+    const [shortcutsOpen, setShortcutsOpen] = useState(false);
+    const [templatesOpen, setTemplatesOpen] = useState(false);
+
+    useEffect(() => {
+        const handler = () => setShortcutsOpen(true);
+        window.addEventListener('openShortcutsDialog', handler);
+        return () => window.removeEventListener('openShortcutsDialog', handler);
+    }, []);
 
     // Initialize Local AI model if needed
     useEffect(() => {
@@ -303,6 +317,8 @@ function HomeContent() {
                     geminiApiKey={geminiApiKey}
                 />
 
+                <LayersPanel isOpen={activePanel === 'layers'} onClose={() => setActivePanel(null)} />
+
                 <PropertiesPanel />
 
                 {/* Sidebar (Left Drawer) */}
@@ -316,6 +332,8 @@ function HomeContent() {
                 />
 
                 <GeminiKeyDialog invalidKey={apiKeyInvalid} onDismiss={() => setApiKeyInvalid(false)} />
+                <KeyboardShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+                <TemplatesDialog isOpen={templatesOpen || activePanel === 'templates'} onClose={() => { setTemplatesOpen(false); if (activePanel === 'templates') setActivePanel(null); }} />
             </div>
         </ReactFlowProvider>
     );
