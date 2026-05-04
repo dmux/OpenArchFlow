@@ -270,11 +270,11 @@ export function Sidebar({
       className={cn(
         "h-full bg-background border-r overflow-hidden flex-shrink-0",
         isOpen
-          ? "fixed inset-y-0 left-0 z-[70] w-72 shadow-2xl md:relative md:w-60 md:z-auto md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out"
+          ? "fixed inset-y-0 left-0 z-[70] w-72 shadow-2xl md:relative md:w-72 md:z-auto md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out"
           : "hidden md:block md:w-0 md:border-r-0 md:transition-[width] md:duration-300 md:ease-in-out",
       )}
     >
-      <div className="w-72 md:w-60 h-full flex flex-col">
+      <div className="w-72 h-full flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="font-semibold text-lg flex items-center gap-2">
             <Layout className="w-5 h-5" />
@@ -316,7 +316,7 @@ export function Sidebar({
                       : "bg-card",
                   )}
                 >
-                  <div className="flex-1 min-w-0 mr-2 overflow-hidden max-w-[180px]">
+                  <div className="flex-1 min-w-0 mr-2 overflow-hidden">
                     {editingId === diagram.id ? (
                       <div onClick={(e) => e.stopPropagation()}>
                         <Input
