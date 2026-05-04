@@ -729,6 +729,185 @@ const azureServerless: DiagramTemplate = {
   ],
 };
 
+// ── Circuit Breaker Templates ─────────────────────────────────────────────────
+
+/** Helper for nodes that need mock (simulation) data pre-configured */
+function nm(
+  id: string,
+  label: string,
+  service: string,
+  type: string,
+  x: number,
+  y: number,
+  mock: Record<string, unknown>,
+  provider = "aws",
+): AppNode {
+  return {
+    id,
+    type: type as string,
+    position: { x, y },
+    data: { label, service, type, provider, mock },
+  } as AppNode;
+}
+
+const serverlessCircuitBreaker: DiagramTemplate = {
+  id: "aws-serverless-cb",
+  name: "Serverless Circuit Breaker",
+  description:
+    "Lambda-based circuit breaker: API Gateway routes requests through a CB wrapper that checks DynamoDB for breaker state. When the downstream service error rate spikes the breaker opens and requests short-circuit to an ElastiCache fallback. CloudWatch + SNS alert on trip events.",
+  category: "AWS",
+  stars: 3,
+  nodes: [
+    // Entry
+    nm("client", "Client App", "Client", "client", 340, 0, {
+      enabled: true,
+      requestsPerSecond: 8,
+    }),
+    n("apigw", "API Gateway", "API Gateway", "aws-network", 340, 130),
+    // Circuit Breaker Lambda — checks breaker state before forwarding
+    nm("cb", "Circuit Breaker\nLambda", "Lambda", "aws-compute", 340, 270, {
+      enabled: true,
+      failureRate: 0,
+      latency: 20,
+    }),
+    // State store — tracks open/closed/half-open
+    n(
+      "cbstate",
+      "Breaker State\n(DynamoDB)",
+      "DynamoDB",
+      "aws-database",
+      620,
+      270,
+    ),
+    // Primary downstream — intentionally degraded to trip the breaker
+    nm(
+      "primary",
+      "Orders Service\n(Lambda)",
+      "Lambda",
+      "aws-compute",
+      340,
+      420,
+      {
+        enabled: true,
+        failureRate: 65,
+        latency: 900,
+      },
+    ),
+    n("db", "Orders DB\n(DynamoDB)", "DynamoDB", "aws-database", 340, 570),
+    // Fallback path when circuit is open
+    n(
+      "fallback",
+      "Fallback Cache\n(ElastiCache)",
+      "ElastiCache",
+      "aws-database",
+      620,
+      420,
+    ),
+    // Observability
+    n("dlq", "Failed Requests\n(SQS DLQ)", "SQS", "aws-integration", 60, 420),
+    n("cw", "CloudWatch\nAlarms", "CloudWatch", "aws-management", 620, 570),
+    n("sns", "CB Trip Alert\n(SNS)", "SNS", "aws-integration", 620, 130),
+  ],
+  edges: [
+    e("e1", "client", "apigw"),
+    e("e2", "apigw", "cb"),
+    e("e3", "cb", "cbstate", "check state"),
+    e("e4", "cb", "primary", "CLOSED → forward"),
+    e("e5", "primary", "db", "read/write"),
+    e("e6", "cb", "fallback", "OPEN → fallback"),
+    e("e7", "primary", "dlq", "on failure"),
+    e("e8", "cw", "sns", "alarm"),
+    e("e9", "cb", "cw", "metrics"),
+    e("e10", "sns", "cb", "reset signal"),
+  ],
+};
+
+const ecsCircuitBreaker: DiagramTemplate = {
+  id: "aws-ecs-cb",
+  name: "ECS Microservices + Circuit Breaker",
+  description:
+    "App Mesh-powered circuit breaker between ECS microservices. The Orders service calls Payment through an Envoy proxy mesh. When Payment degrades, App Mesh opens the circuit and ECS retries through a fallback Payment replica. CloudWatch EMF captures breaker telemetry.",
+  category: "AWS",
+  stars: 3,
+  nodes: [
+    // Entry
+    nm("client", "Client", "Client", "client", 360, 0, {
+      enabled: true,
+      requestsPerSecond: 10,
+    }),
+    n("alb", "Application LB", "ALB", "aws-network", 360, 130),
+    // Orders service — healthy
+    nm("orders", "Orders Service\n(ECS)", "ECS", "aws-containers", 360, 270, {
+      enabled: true,
+      failureRate: 0,
+    }),
+    // App Mesh — the circuit breaker proxy layer
+    n("mesh", "App Mesh\n(Envoy Proxy)", "App Mesh", "aws-network", 360, 420),
+    // Payment service — degraded, trips the circuit
+    nm(
+      "payment",
+      "Payment Service\n(ECS — degraded)",
+      "ECS",
+      "aws-containers",
+      160,
+      570,
+      {
+        enabled: true,
+        failureRate: 70,
+        latency: 1200,
+        concurrencyLimit: 3,
+      },
+    ),
+    // Fallback replica
+    nm(
+      "payment_fb",
+      "Payment Fallback\n(ECS replica)",
+      "ECS",
+      "aws-containers",
+      560,
+      570,
+      {
+        enabled: true,
+        failureRate: 5,
+        latency: 80,
+      },
+    ),
+    // Shared backing stores
+    n("rds", "Aurora MySQL", "RDS", "aws-database", 160, 720),
+    n(
+      "cache",
+      "ElastiCache\n(session cache)",
+      "ElastiCache",
+      "aws-database",
+      560,
+      720,
+    ),
+    // Observability
+    n(
+      "cw",
+      "CloudWatch EMF\n(breaker metrics)",
+      "CloudWatch",
+      "aws-management",
+      760,
+      420,
+    ),
+    n("xray", "X-Ray Traces", "X-Ray", "aws-management", 760, 270),
+    n("sm", "Secrets Manager", "Secrets Manager", "aws-security", 760, 130),
+  ],
+  edges: [
+    e("e1", "client", "alb"),
+    e("e2", "alb", "orders"),
+    e("e3", "orders", "mesh", "egress"),
+    e("e4", "mesh", "payment", "CLOSED"),
+    e("e5", "mesh", "payment_fb", "OPEN → retry"),
+    e("e6", "payment", "rds", "write"),
+    e("e7", "payment_fb", "cache", "read-through"),
+    e("e8", "orders", "xray", "trace"),
+    e("e9", "mesh", "cw", "breaker metrics"),
+    e("e10", "alb", "sm", "TLS creds"),
+  ],
+};
+
 export const TEMPLATES: DiagramTemplate[] = [
   // AWS
   staticWebsite,
@@ -740,6 +919,8 @@ export const TEMPLATES: DiagramTemplate[] = [
   dataLake,
   mlPipeline,
   multiRegionDr,
+  serverlessCircuitBreaker,
+  ecsCircuitBreaker,
   // Azure
   azureWebApp,
   azureServerless,
