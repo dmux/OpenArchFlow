@@ -73,11 +73,40 @@ export interface NodeMockData {
   // For Database / Storage Nodes
   data?: Record<string, any>[]; // Mocked data items (rows, documents)
   queryLogic?: string; // Optional: "random", "first", "byId"
+
+  // Simulation config — all optional, backward-compatible
+  concurrencyLimit?: number; // Override default for Lambda/RDS/ECS
+  cacheHitRate?: number; // 0-100, for CloudFront/ElastiCache
+  queueMaxDepth?: number; // SQS/Kinesis visual cap
+  coldStartEnabled?: boolean; // Override service default
 }
 
 export interface NodeSimulationStatus {
   status: "idle" | "processing" | "success" | "error";
   lastRun?: number;
+  // Live metrics (ephemeral — not persisted)
+  requestCount?: number;
+  errorCount?: number;
+  latencies?: number[]; // circular buffer, last 100 samples (ms)
+  queueDepth?: number;
+  cacheHits?: number;
+  cacheMisses?: number;
+  throttleCount?: number;
+  activeConcurrency?: number;
+  cumulativeCostUsd?: number;
+}
+
+/** Input shape used by updateNodeMetrics store action */
+export interface NodeMetricsUpdate {
+  nodeId: string;
+  requests?: number;
+  errors?: number;
+  latencySample?: number;
+  queueDepthDelta?: number;
+  cacheHit?: boolean;
+  throttled?: boolean;
+  concurrencyDelta?: number;
+  costDelta?: number;
 }
 
 export interface NodePricing {
@@ -200,8 +229,27 @@ interface DiagramState {
     nodeId: string,
     status: NodeSimulationStatus,
   ) => void;
+  /** Batch-update live metrics for multiple nodes (ephemeral) */
+  updateNodeMetrics: (updates: NodeMetricsUpdate[]) => void;
   resetSimulation: () => void;
   stopSimulation: () => void;
+
+  // Fault injection (ephemeral, not persisted)
+  killedNodes: Set<string>;
+  trafficMultiplier: number;
+  toggleKillNode: (nodeId: string) => void;
+  setTrafficMultiplier: (m: number) => void;
+
+  // Live edge activity (ephemeral, per-tick)
+  activeSimulationEdges: Map<string, "active" | "error" | "throttled">;
+  setActiveSimulationEdges: (edges: Map<string, "active" | "error" | "throttled">) => void;
+
+  // Simulation traces (ephemeral, last 50)
+  simulationTraces: import("./simulation/SimulationEngine").RequestTrace[];
+  addSimulationTraces: (
+    traces: import("./simulation/SimulationEngine").RequestTrace[],
+  ) => void;
+  clearSimulationTraces: () => void;
 
   // Interaction Mode
   interactionMode: "default" | "laser"; // 'default' = selection/pan, 'laser' = laser pointer
@@ -234,6 +282,10 @@ export const useDiagramStore = create<DiagramState>()(
         interactionMode: "default",
         collaborationRoomId: null,
         customShapes: [],
+        killedNodes: new Set<string>(),
+        trafficMultiplier: 1,
+        simulationTraces: [],
+        activeSimulationEdges: new Map<string, "active" | "error" | "throttled">(),
 
         setCollaborationRoomId: (id) => {
           if (!id) {
@@ -329,6 +381,25 @@ export const useDiagramStore = create<DiagramState>()(
         setSimulationSpeed: (simulationSpeed) => set({ simulationSpeed }),
         setInteractionMode: (mode) => set({ interactionMode: mode }),
 
+        toggleKillNode: (nodeId) =>
+          set((state) => {
+            const next = new Set(state.killedNodes);
+            if (next.has(nodeId)) next.delete(nodeId);
+            else next.add(nodeId);
+            return { killedNodes: next };
+          }),
+
+        setTrafficMultiplier: (m) => set({ trafficMultiplier: Math.max(1, m) }),
+
+        setActiveSimulationEdges: (edges) => set({ activeSimulationEdges: edges }),
+
+        addSimulationTraces: (traces) =>
+          set((state) => ({
+            simulationTraces: [...state.simulationTraces, ...traces].slice(-50),
+          })),
+
+        clearSimulationTraces: () => set({ simulationTraces: [] }),
+
         addSimulationLog: (log) =>
           set((state) => ({
             simulationLogs: [
@@ -338,6 +409,60 @@ export const useDiagramStore = create<DiagramState>()(
           })),
 
         clearSimulationLogs: () => set({ simulationLogs: [] }),
+
+        updateNodeMetrics: (updates) => {
+          const { activeDiagramId } = get();
+          if (!activeDiagramId) return;
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const newNodes = activeDiagram.nodes.map((node) => {
+              const update = updates.find((u) => u.nodeId === node.id);
+              if (!update) return node;
+              const prev = (node.data.simulation ?? {
+                status: "processing" as const,
+              }) as NodeSimulationStatus;
+              const prevLatencies = prev.latencies ?? [];
+              const newLatencies =
+                update.latencySample !== undefined
+                  ? [...prevLatencies, update.latencySample].slice(-100)
+                  : prevLatencies;
+              const newQueueDepth =
+                update.queueDepthDelta !== undefined
+                  ? Math.max(0, (prev.queueDepth ?? 0) + update.queueDepthDelta)
+                  : prev.queueDepth;
+              const newCacheHits =
+                update.cacheHit === true
+                  ? (prev.cacheHits ?? 0) + 1
+                  : prev.cacheHits;
+              const newCacheMisses =
+                update.cacheHit === false
+                  ? (prev.cacheMisses ?? 0) + 1
+                  : prev.cacheMisses;
+              const newStatus: NodeSimulationStatus = {
+                ...prev,
+                status: "processing",
+                requestCount: (prev.requestCount ?? 0) + (update.requests ?? 0),
+                errorCount: (prev.errorCount ?? 0) + (update.errors ?? 0),
+                throttleCount: update.throttled
+                  ? (prev.throttleCount ?? 0) + 1
+                  : prev.throttleCount,
+                latencies: newLatencies,
+                queueDepth: newQueueDepth,
+                cacheHits: newCacheHits,
+                cacheMisses: newCacheMisses,
+                cumulativeCostUsd:
+                  (prev.cumulativeCostUsd ?? 0) + (update.costDelta ?? 0),
+              };
+              return { ...node, data: { ...node.data, simulation: newStatus } };
+            });
+            return {
+              diagrams: {
+                ...state.diagrams,
+                [activeDiagramId]: { ...activeDiagram, nodes: newNodes },
+              },
+            };
+          });
+        },
 
         updateNodeMock: (nodeId, mock) => {
           const { activeDiagramId } = get();
@@ -420,6 +545,7 @@ export const useDiagramStore = create<DiagramState>()(
 
             return {
               isPlaying: false,
+              activeSimulationEdges: new Map(),
               diagrams: {
                 ...state.diagrams,
                 [activeDiagramId]: { ...activeDiagram, nodes: newNodes },
@@ -442,6 +568,10 @@ export const useDiagramStore = create<DiagramState>()(
             return {
               isPlaying: false,
               simulationLogs: [],
+              simulationTraces: [],
+              killedNodes: new Set<string>(),
+              trafficMultiplier: 1,
+              activeSimulationEdges: new Map(),
               diagrams: {
                 ...state.diagrams,
                 [activeDiagramId]: { ...activeDiagram, nodes: newNodes },

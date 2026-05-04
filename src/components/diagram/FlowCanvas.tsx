@@ -95,6 +95,7 @@ const selector = (state: any) => {
     isPlaying: state.isPlaying,
     interactionMode: state.interactionMode,
     layout: state.layout,
+    activeSimulationEdges: state.activeSimulationEdges,
   };
 };
 
@@ -115,6 +116,7 @@ function FlowCanvas() {
     isPlaying,
     interactionMode,
     layout,
+    activeSimulationEdges,
   } = useDiagramStore(useShallow(selector));
 
   const [showMiniMap, setShowMiniMap] = useState(false);
@@ -212,14 +214,28 @@ function FlowCanvas() {
         edge.data?.edgeType;
       const type = hasStyle ? "styled" : (edge.type ?? "smoothstep");
       if (!isPlaying) return { ...edge, type };
+
+      const simStatus = activeSimulationEdges.get(edge.id);
+      const strokeColor =
+        simStatus === 'error' ? '#ef4444' :
+        simStatus === 'throttled' ? '#f97316' :
+        simStatus === 'active' ? '#22c55e' :
+        'hsl(var(--primary))';
+      const strokeWidth = simStatus ? 3 : 2;
+
       return {
         ...edge,
         type,
         animated: true,
-        style: { ...edge.style, stroke: "hsl(var(--primary))", strokeWidth: 2 },
+        style: {
+          ...edge.style,
+          stroke: strokeColor,
+          strokeWidth,
+          filter: simStatus ? `drop-shadow(0 0 4px ${strokeColor})` : undefined,
+        },
       };
     });
-  }, [edges, isPlaying]);
+  }, [edges, isPlaying, activeSimulationEdges]);
 
   // Initialize from store on mount if needed (Zustand persist handles hydration usually)
   // But ReactFlow internal state needs to be synced if controlled.
