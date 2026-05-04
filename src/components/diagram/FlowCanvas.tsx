@@ -174,7 +174,7 @@ function FlowCanvas() {
     // But ReactFlow internal state needs to be synced if controlled.
 
     return (
-        <div className="w-full h-full bg-background" style={{ width: '100vw', height: '100vh' }} onMouseMove={onMouseMove}>
+        <div className={`w-full h-full bg-background${isLaserMode ? ' laser-mode' : ''}`} style={{ width: '100vw', height: '100vh' }} onMouseMove={onMouseMove}>
             <TooltipProvider delayDuration={300}>
                 <ReactFlow
                     nodeTypes={nodeTypes}
