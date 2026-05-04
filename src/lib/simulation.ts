@@ -7,6 +7,7 @@ import { SimulationEngine as CoreEngine } from "@/lib/simulation/SimulationEngin
  */
 export class SimulationEngine {
   private static _facade: SimulationEngine;
+  private _unsubNodes: (() => void) | null = null;
 
   private constructor() {}
 
@@ -121,9 +122,23 @@ export class SimulationEngine {
       { speed: simulationSpeed },
       killedNodes,
     );
+
+    // Subscribe to node changes so live edits (failureRate, latency, rps…)
+    // take effect on the very next tick without restarting the simulation.
+    this._unsubNodes = useDiagramStore.subscribe((state, prev) => {
+      const aid = state.activeDiagramId;
+      if (!aid) return;
+      const nodes = state.diagrams[aid]?.nodes;
+      const prevNodes = prev.diagrams[aid]?.nodes;
+      if (nodes && nodes !== prevNodes) {
+        CoreEngine.getInstance().updateNodes(nodes);
+      }
+    });
   }
 
   stop() {
+    this._unsubNodes?.();
+    this._unsubNodes = null;
     CoreEngine.getInstance().stop();
     useDiagramStore.getState().stopSimulation();
     useDiagramStore

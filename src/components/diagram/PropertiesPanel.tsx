@@ -1240,6 +1240,12 @@ export default function PropertiesPanel() {
 
                       {/* Compute / Generic Config */}
                       <div className="space-y-3">
+                        {isPlaying && (
+                          <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Live — changes take effect instantly
+                          </p>
+                        )}
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <Label className="text-xs">Latency (ms)</Label>

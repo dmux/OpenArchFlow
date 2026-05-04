@@ -94,6 +94,8 @@ export class SimulationEngine {
   private activeRequests: ActiveRequest[] = [];
   private killedNodes: Set<string> = new Set();
   private trafficMultiplier = 1;
+  private _nodes: AppNode[] = [];
+  private _edges: AppEdge[] = [];
 
   private constructor() {}
 
@@ -108,6 +110,11 @@ export class SimulationEngine {
 
   public setKilledNodes(killed: Set<string>) {
     this.killedNodes = killed;
+  }
+
+  /** Hot-update nodes during a running simulation (e.g. mock changes). */
+  public updateNodes(nodes: AppNode[]) {
+    this._nodes = nodes;
   }
 
   public setTrafficMultiplier(m: number) {
@@ -133,6 +140,8 @@ export class SimulationEngine {
     this.activeRequests = [];
     this.killedNodes = killedNodes ?? new Set();
     this.trafficMultiplier = 1;
+    this._nodes = nodes;
+    this._edges = edges;
     activeConcurrency.clear();
     queueDepths.clear();
     rrCounters.clear();
@@ -170,15 +179,17 @@ export class SimulationEngine {
 
   // ── Scheduling ──────────────────────────────────────────────────────────
 
-  private scheduleTick(nodes: AppNode[], edges: AppEdge[]) {
+  private scheduleTick(_nodes?: AppNode[], _edges?: AppEdge[]) {
     if (!this.isRunning) return;
     const intervalMs = 1000 / (10 * this.speed);
-    setTimeout(() => this.tick(nodes, edges), intervalMs);
+    setTimeout(() => this.tick(), intervalMs);
   }
 
   // ── Core Tick ────────────────────────────────────────────────────────────
 
-  private tick(nodes: AppNode[], edges: AppEdge[]) {
+  private tick() {
+    const nodes = this._nodes;
+    const edges = this._edges;
     if (!this.isRunning || !this.cb) return;
 
     const now = Date.now();
@@ -622,7 +633,7 @@ export class SimulationEngine {
       metricDeltas,
       completedTraces,
     );
-    this.scheduleTick(nodes, edges);
+    this.scheduleTick();
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
