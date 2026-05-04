@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useDiagramStore } from '@/lib/store';
 import { toast } from 'sonner';
-import { getProvider } from '@/lib/collaboration';
+import { getProvider, getLocalName, setLocalName, getLocalColor } from '@/lib/collaboration';
+import { Input } from '@/components/ui/input';
 
 export function CollaborateButton() {
     const collaborationRoomId = useDiagramStore((state) => state.collaborationRoomId);
@@ -24,6 +25,9 @@ export function CollaborateButton() {
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [peerCount, setPeerCount] = useState(0);
+    const [displayName, setDisplayName] = useState(getLocalName);
+    const [editingName, setEditingName] = useState(false);
+    const localColor = React.useMemo(getLocalColor, []);
 
     // Update peer count from Yjs awareness
     useEffect(() => {
@@ -150,10 +154,48 @@ export function CollaborateButton() {
                         )}
                     </div>
 
+                    {/* Display name — always visible */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Your Name
+                        </label>
+                        {editingName ? (
+                            <Input
+                                autoFocus
+                                value={displayName}
+                                maxLength={32}
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                onBlur={() => {
+                                    const trimmed = displayName.trim();
+                                    if (trimmed) { setLocalName(trimmed); setDisplayName(trimmed); }
+                                    else setDisplayName(getLocalName());
+                                    setEditingName(false);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                    if (e.key === 'Escape') { setDisplayName(getLocalName()); setEditingName(false); }
+                                }}
+                                className="h-8 text-xs rounded-xl"
+                            />
+                        ) : (
+                            <button
+                                onClick={() => setEditingName(true)}
+                                className="flex items-center gap-2 px-3 h-8 bg-muted/50 rounded-xl border border-border text-xs text-left w-full hover:bg-muted transition-colors group"
+                            >
+                                <span
+                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: localColor }}
+                                />
+                                <span className="flex-1 truncate font-medium">{displayName}</span>
+                                <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                            </button>
+                        )}
+                    </div>
+
                     {!collaborationRoomId ? (
                         <div className="flex flex-col gap-3">
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Share this diagram with others to design together in real-time. 
+                                Share this diagram with others to design together in real-time.
                                 Everything is P2P and encrypted for your privacy.
                             </p>
                             <Button onClick={startCollaboration} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-10">

@@ -59,7 +59,26 @@ const PEER_COLORS = [
 ];
 
 let localColor = PEER_COLORS[Math.floor(Math.random() * PEER_COLORS.length)];
-let localName = `Guest ${Math.floor(Math.random() * 9000) + 1000}`;
+
+const STORAGE_KEY = 'openarchflow:username';
+let localName: string = (() => {
+    try {
+        return localStorage.getItem(STORAGE_KEY) || `Guest ${Math.floor(Math.random() * 9000) + 1000}`;
+    } catch {
+        return `Guest ${Math.floor(Math.random() * 9000) + 1000}`;
+    }
+})();
+
+export const getLocalName = () => localName;
+export const getLocalColor = () => localColor;
+
+export const setLocalName = (name: string) => {
+    localName = name.trim() || localName;
+    try { localStorage.setItem(STORAGE_KEY, localName); } catch { /* ignore */ }
+    // Broadcast the new name immediately via awareness
+    const awareness = provider?.awareness;
+    if (awareness) awareness.setLocalStateField('name', localName);
+};
 
 /**
  * Publishes this peer's cursor position to the awareness channel.
