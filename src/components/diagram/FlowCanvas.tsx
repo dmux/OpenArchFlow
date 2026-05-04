@@ -158,6 +158,25 @@ function FlowCanvas() {
     publishCursor((e.clientX - tx) / scale, (e.clientY - ty) / scale);
   }, []);
 
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!e.touches[0]) return;
+    const vpEl = document.querySelector(
+      ".react-flow__viewport",
+    ) as HTMLElement | null;
+    if (!vpEl) return;
+    const match = vpEl.style.transform.match(
+      /translate\(([^,]+)px,\s*([^)]+)px\)\s*scale\(([^)]+)\)/,
+    );
+    if (!match) return;
+    const tx = parseFloat(match[1]);
+    const ty = parseFloat(match[2]);
+    const scale = parseFloat(match[3]);
+    publishCursor(
+      (e.touches[0].clientX - tx) / scale,
+      (e.touches[0].clientY - ty) / scale,
+    );
+  }, []);
+
   const onNodeDragStart = useCallback(() => {
     useDiagramStore.temporal.getState().pause();
   }, []);
@@ -207,9 +226,10 @@ function FlowCanvas() {
 
   return (
     <div
-      className={`w-full h-full bg-background${isLaserMode ? " laser-mode" : ""}`}
-      style={{ width: "100vw", height: "100vh" }}
+      className={`w-full h-full bg-background [touch-action:none]${isLaserMode ? " laser-mode" : ""}`}
+      style={{ width: "100%", height: "100%" }}
       onMouseMove={onMouseMove}
+      onTouchMove={onTouchMove}
     >
       <TooltipProvider delayDuration={300}>
         <ReactFlow
@@ -226,6 +246,7 @@ function FlowCanvas() {
           onConnect={onConnect}
           fitView
           attributionPosition="bottom-left"
+          preventScrolling
           nodesDraggable={!isLaserMode}
           nodesConnectable={!isLaserMode}
           elementsSelectable={!isLaserMode}

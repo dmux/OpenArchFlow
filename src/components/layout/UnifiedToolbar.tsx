@@ -456,12 +456,12 @@ export function UnifiedToolbar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="fixed left-4 top-1/2 -translate-y-1/2 z-[60] flex flex-col items-center bg-background/80 backdrop-blur-xl border border-border rounded-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] max-h-[calc(100vh-2rem)]">
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[60] flex flex-row items-center bg-background/80 backdrop-blur-xl border border-border rounded-xl shadow-2xl transition-all duration-300 max-w-[calc(100vw-2rem)] md:left-4 md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:translate-x-0 md:flex-col md:max-w-none md:max-h-[calc(100vh-2rem)]">
         {/* Seta para cima */}
         {canScrollUp && (
           <button
             onClick={scrollUp}
-            className="w-full flex justify-center py-1 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-t-xl transition-colors shrink-0"
+            className="hidden md:flex w-full justify-center py-1 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-t-xl transition-colors shrink-0"
           >
             <ChevronUp className="h-3 w-3" />
           </button>
@@ -471,10 +471,10 @@ export function UnifiedToolbar({
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex flex-col items-center gap-2 p-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]"
+          className="flex flex-row md:flex-col items-center gap-1 md:gap-2 p-1 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]"
         >
           {/* Main Panels */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-row md:flex-col gap-1">
             {mainTools.map((tool) => (
               <Tooltip key={tool.id}>
                 <TooltipTrigger asChild>
@@ -483,7 +483,7 @@ export function UnifiedToolbar({
                     size="icon"
                     onClick={tool.onClick}
                     className={cn(
-                      "h-8 w-8 rounded-lg transition-all duration-200",
+                      "h-10 w-10 md:h-8 md:w-8 rounded-lg transition-all duration-200",
                       tool.active &&
                         "bg-primary text-primary-foreground shadow-lg scale-105",
                       !tool.active &&
@@ -492,7 +492,7 @@ export function UnifiedToolbar({
                   >
                     <tool.icon
                       className={cn(
-                        "h-4 w-4",
+                        "h-5 w-5 md:h-4 md:w-4",
                         (tool.id === "ai" || tool.id === "chat") &&
                           !tool.active &&
                           "text-indigo-500",
@@ -500,17 +500,17 @@ export function UnifiedToolbar({
                     />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={10}>
+                <TooltipContent side="top" sideOffset={10}>
                   <p className="font-medium">{tool.label}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
           </div>
 
-          <div className="w-4 h-px bg-border my-0.5" />
+          <div className="h-6 w-px md:h-px md:w-4 bg-border mx-1 md:mx-0 md:my-0.5 shrink-0" />
 
           {/* Quick Actions */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-row md:flex-col gap-1">
             {actionTools.map((tool) => (
               <Tooltip key={tool.id}>
                 <TooltipTrigger asChild>
@@ -520,7 +520,7 @@ export function UnifiedToolbar({
                     onClick={tool.onClick}
                     disabled={(tool as any).disabled}
                     className={cn(
-                      "h-8 w-8 rounded-lg transition-all duration-200",
+                      "h-10 w-10 md:h-8 md:w-8 rounded-lg transition-all duration-200",
                       tool.active &&
                         "bg-secondary text-secondary-foreground shadow-sm",
                       !tool.active &&
@@ -530,14 +530,14 @@ export function UnifiedToolbar({
                   >
                     <tool.icon
                       className={cn(
-                        "h-4 w-4",
+                        "h-5 w-5 md:h-4 md:w-4",
                         tool.id === "laser" && tool.active && "text-red-500",
                         (tool as any).className,
                       )}
                     />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={10}>
+                <TooltipContent side="top" sideOffset={10}>
                   <p className="font-medium">{tool.label}</p>
                 </TooltipContent>
               </Tooltip>
@@ -551,13 +551,13 @@ export function UnifiedToolbar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-lg hover:bg-accent hover:text-accent-foreground"
+                      className="h-10 w-10 md:h-8 md:w-8 rounded-lg hover:bg-accent hover:text-accent-foreground"
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="h-5 w-5 md:h-4 md:w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={10}>
+                <TooltipContent side="top" sideOffset={10}>
                   <p className="font-medium">Export</p>
                 </TooltipContent>
               </Tooltip>
@@ -593,10 +593,10 @@ export function UnifiedToolbar({
             </DropdownMenu>
           </div>
 
-          <div className="w-4 h-px bg-border my-0.5" />
+          <div className="h-6 w-px md:h-px md:w-4 bg-border mx-1 md:mx-0 md:my-0.5 shrink-0" />
 
           {/* Simulation */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-row md:flex-col gap-1">
             {simulationTools.map((tool) => (
               <Tooltip key={tool.id}>
                 <TooltipTrigger asChild>
@@ -607,7 +607,7 @@ export function UnifiedToolbar({
                     size="icon"
                     onClick={tool.onClick}
                     className={cn(
-                      "h-8 w-8 rounded-lg transition-all duration-200",
+                      "h-10 w-10 md:h-8 md:w-8 rounded-lg transition-all duration-200",
                       tool.active &&
                         !tool.variant &&
                         "bg-primary text-primary-foreground shadow-lg",
@@ -615,20 +615,20 @@ export function UnifiedToolbar({
                         "hover:bg-accent hover:text-accent-foreground",
                     )}
                   >
-                    <tool.icon className="h-4 w-4" />
+                    <tool.icon className="h-5 w-5 md:h-4 md:w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={10}>
+                <TooltipContent side="top" sideOffset={10}>
                   <p className="font-medium">{tool.label}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
           </div>
 
-          <div className="w-4 h-px bg-border my-0.5" />
+          <div className="h-6 w-px md:h-px md:w-4 bg-border mx-1 md:mx-0 md:my-0.5 shrink-0" />
 
           {/* Danger Zone / Settings / Collaboration */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-row md:flex-col gap-1">
             <CollaborateButton />
 
             <Tooltip>
@@ -637,12 +637,12 @@ export function UnifiedToolbar({
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowClearConfirm(true)}
-                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  className="h-10 w-10 md:h-8 md:w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={10}>
+              <TooltipContent side="top" sideOffset={10}>
                 <p className="font-medium">Clear Canvas</p>
               </TooltipContent>
             </Tooltip>
@@ -654,13 +654,13 @@ export function UnifiedToolbar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                      className="h-10 w-10 md:h-8 md:w-8 rounded-lg text-muted-foreground hover:text-foreground"
                     >
-                      <Settings2 className="h-4 w-4" />
+                      <Settings2 className="h-5 w-5 md:h-4 md:w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={10}>
+                <TooltipContent side="top" sideOffset={10}>
                   <p className="font-medium">Settings</p>
                 </TooltipContent>
               </Tooltip>
@@ -719,7 +719,7 @@ export function UnifiedToolbar({
         {canScrollDown && (
           <button
             onClick={scrollDown}
-            className="w-full flex justify-center py-1 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-b-xl transition-colors shrink-0"
+            className="hidden md:flex w-full justify-center py-1 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-b-xl transition-colors shrink-0"
           >
             <ChevronDown className="h-3 w-3" />
           </button>
