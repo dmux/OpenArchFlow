@@ -60,6 +60,7 @@ import { useDiagramStore } from "@/lib/store";
 import { useStore } from "zustand";
 import { exportSvg } from "@/lib/export/svg";
 import { exportPdf } from "@/lib/export/pdf";
+import { exportSqlDdl } from "@/lib/export/sql-ddl";
 import { SimulationEngine } from "@/lib/simulation";
 import { useReactFlow } from "reactflow";
 import { getLayoutedElements } from "@/lib/layout-utils";
@@ -259,6 +260,15 @@ export function UnifiedToolbar({
       toast.error("Failed to export PDF.");
     }
   }, [getNodes]);
+
+  const handleExportDdl = useCallback(() => {
+    try {
+      exportSqlDdl(nodes, edges, activeDiagramName);
+      toast.success("SQL DDL exported successfully!");
+    } catch {
+      toast.error("Failed to export SQL DDL.");
+    }
+  }, [nodes, edges, activeDiagramName]);
 
   const handleGenerateSpec = useCallback(async () => {
     if (nodes.length === 0) {
@@ -588,6 +598,12 @@ export function UnifiedToolbar({
                   className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium"
                 >
                   PDF Document
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleExportDdl}
+                  className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium"
+                >
+                  SQL DDL
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
