@@ -31,6 +31,13 @@ export const GENERIC_SERVICES: ServiceCategory[] = [
         ]
     },
     {
+        category: "UML Sequence",
+        items: [
+            { name: "Actor", service: "uml-actor", type: "sequence-actor", description: "UML sequence diagram actor or participant." },
+            { name: "System", service: "uml-system", type: "sequence-actor", subtype: "system", description: "External system or boundary in a sequence diagram." },
+        ]
+    },
+    {
         category: "Client & Devices",
         items: [
             { name: "User", service: "user", type: "client", description: "Represents an end user interacting with the system." },

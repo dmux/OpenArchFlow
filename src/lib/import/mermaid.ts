@@ -79,11 +79,23 @@ function parseFlowchart(lines: string[]): ParseResult {
     return { nodes: nodeArr, edges };
 }
 
+const LIFELINE_SLOT_HEIGHT = 50;
+
+function makeSequenceActor(id: string, label: string, x = 0): AppNode {
+    return {
+        id,
+        type: 'sequence-actor',
+        position: { x, y: 0 },
+        data: { label, service: 'Actor', type: 'sequence-actor' },
+    };
+}
+
 // ── Sequence Diagram ──────────────────────────────────────────────────────────
 
 function parseSequence(lines: string[]): ParseResult {
     const participants = new Map<string, AppNode>();
     const edges: AppEdge[] = [];
+    let msgIndex = 0;
 
     const participantRe = /^participant\s+(.+)/i;
     const actorRe = /^actor\s+(.+)/i;
@@ -98,7 +110,7 @@ function parseSequence(lines: string[]): ParseResult {
             const name = pm[1].split(' as ').pop()!.trim();
             const id = sanitizeId(name);
             if (!participants.has(id)) {
-                participants.set(id, makeNode(id, name, participants.size * 200, 0));
+                participants.set(id, makeSequenceActor(id, name, participants.size * 200));
             }
             continue;
         }
@@ -108,17 +120,24 @@ function parseSequence(lines: string[]): ParseResult {
             const src = sanitizeId(mm[1]);
             const tgt = sanitizeId(mm[3]);
             const label = mm[4]?.trim() ?? '';
-            if (!participants.has(src)) participants.set(src, makeNode(src, src, participants.size * 200, 0));
-            if (!participants.has(tgt)) participants.set(tgt, makeNode(tgt, tgt, participants.size * 200, 0));
-            edges.push(makeEdge(`seq-${edges.length}`, src, tgt, label));
+            if (!participants.has(src)) participants.set(src, makeSequenceActor(src, src, participants.size * 200));
+            if (!participants.has(tgt)) participants.set(tgt, makeSequenceActor(tgt, tgt, participants.size * 200));
+            const slotIdx = msgIndex % 16;
+            edges.push({
+                ...makeEdge(`seq-${msgIndex}`, src, tgt, label),
+                sourceHandle: `lifeline-src-${slotIdx}`,
+                targetHandle: `lifeline-tgt-${slotIdx}`,
+                data: { sequenceIndex: msgIndex },
+            } as AppEdge);
+            msgIndex++;
         }
     }
 
-    // Reposition participants in a horizontal row
+    // Reposition participants in a horizontal row, spaced wider for lifeline handles
     let x = 0;
     for (const n of participants.values()) {
         n.position = { x, y: 0 };
-        x += 220;
+        x += 240;
     }
 
     return { nodes: [...participants.values()], edges };
