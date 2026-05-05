@@ -129,8 +129,7 @@ export default function SimulationControls({
       {/* Main Controls */}
       <div
         className={cn(
-          "bg-background/80 backdrop-blur-md border p-2 rounded-full shadow-lg flex items-center gap-2",
-          isPlaying && isPaused ? "border-amber-500" : "border-border",
+          "bg-background/80 backdrop-blur-md border border-border p-2 rounded-full shadow-lg flex items-center gap-2",
         )}
       >
         {/* Play / Pause / Resume */}
@@ -183,12 +182,7 @@ export default function SimulationControls({
           </TooltipProvider>
         )}
 
-        {/* Paused badge */}
-        {isPlaying && isPaused && (
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 text-[10px] font-semibold">
-            <span>⏸ PAUSED</span>
-          </div>
-        )}
+        {/* Paused badge removed — icon change alone signals pause state */}
 
         <div className="h-6 w-px bg-border mx-1" />
 
