@@ -7,7 +7,7 @@ import {
   Pause,
   Square,
   RotateCcw,
-  Pointer,
+  Pen,
   Terminal,
   Trash2,
   BarChart2,
@@ -503,7 +503,7 @@ export default function SimulationControls({
                 className={`rounded-full h-8 w-8 ${laserPointerEnabled ? "bg-red-500 hover:bg-red-600 text-white" : "text-muted-foreground"}`}
                 onClick={() => setLaserPointerEnabled(!laserPointerEnabled)}
               >
-                <Pointer size={14} />
+                <Pen size={14} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>

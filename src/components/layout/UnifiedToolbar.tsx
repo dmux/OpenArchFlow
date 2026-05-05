@@ -14,7 +14,7 @@ import {
   Download,
   FileText,
   DollarSign,
-  Pointer,
+  Pen,
   MousePointer2,
   Loader2,
   Sun,
@@ -434,7 +434,7 @@ export function UnifiedToolbar({
     },
     {
       id: "laser",
-      icon: Pointer,
+      icon: Pen,
       label: "Laser Pointer",
       onClick: () =>
         setInteractionMode(interactionMode === "laser" ? "default" : "laser"),
