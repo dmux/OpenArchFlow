@@ -157,19 +157,19 @@ pnpm start
 
 ## 🛠️ Tech Stack
 
-| Category | Technologies |
-|----------|-------------|
-| **Framework** | Next.js 16+ (App Router) |
-| **Language** | TypeScript |
-| **Styling** | Tailwind CSS + shadcn/ui |
-| **Diagramming** | React Flow + dagre (Auto-layout) |
-| **State Management** | Zustand |
-| **AI - Cloud** | Google Gemini 2.5 Flash |
-| **AI - Local** | WebLLM (Phi-3-mini via WebGPU) |
-| **P2P Collaboration** | Yjs + WebRTC |
-| **Documentation** | react-markdown + remark-gfm |
-| **Export** | html2canvas |
-| **Icons** | Lucide React |
+| Category              | Technologies                     |
+| --------------------- | -------------------------------- |
+| **Framework**         | Next.js 16+ (App Router)         |
+| **Language**          | TypeScript                       |
+| **Styling**           | Tailwind CSS + shadcn/ui         |
+| **Diagramming**       | React Flow + dagre (Auto-layout) |
+| **State Management**  | Zustand                          |
+| **AI - Cloud**        | Google Gemini 2.5 Flash          |
+| **AI - Local**        | WebLLM (Phi-3-mini via WebGPU)   |
+| **P2P Collaboration** | Yjs + WebRTC                     |
+| **Documentation**     | react-markdown + remark-gfm      |
+| **Export**            | html2canvas                      |
+| **Icons**             | Lucide React                     |
 
 ---
 
@@ -222,11 +222,11 @@ pnpm start
 
 OpenArchFlow follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
 
-| Segment | When to bump | Example |
-|---------|-------------|---------|
-| **MAJOR** | Breaking changes to file format or public API | `1.0.0` |
+| Segment   | When to bump                                                            | Example |
+| --------- | ----------------------------------------------------------------------- | ------- |
+| **MAJOR** | Breaking changes to file format or public API                           | `1.0.0` |
 | **MINOR** | New features, new providers, new AI capabilities (backwards-compatible) | `0.3.0` |
-| **PATCH** | Bug fixes, dependency updates, UI tweaks | `0.2.1` |
+| **PATCH** | Bug fixes, dependency updates, UI tweaks                                | `0.2.1` |
 
 All notable changes are documented in **[CHANGELOG.md](CHANGELOG.md)**, following the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
@@ -323,6 +323,7 @@ If you find OpenArchFlow useful, please consider:
 Built with ❤️ by the developer and architect community, for the community.
 
 Special thanks to:
+
 - AWS for comprehensive documentation and service icons
 - Google Gemini for powerful AI capabilities
 - WebLLM team for enabling local AI inference

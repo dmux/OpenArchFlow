@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **Simulation Engine — Phase 2 (Live Traffic & Fault Injection)**
+
 - **Typed edge status in callbacks** — Engine now emits per-edge status (`active` / `error` / `throttled`) on every tick, enabling real-time traffic visualization directly on diagram edges.
 - **Per-edge HTTP traffic visualization** — Edges pulse with colors during simulation: green (active), red (error/killed), orange (throttled). All colored edges have a glow effect. Implemented in `FlowCanvas` via `activeSimulationEdges` map in the Zustand store.
 - **SimulationMetrics panel** — Popover accessible from the SimulationControls bar showing a table with Node | Requests | Err% | p95 Latency | Throttled | Cache Hit% | Est. Cost columns. Includes a summary bar (total requests, error rate, cumulative cost).
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AWS service behavior profiles** — `aws-behaviors.ts` defines realistic latency distributions, failure modes, throttle error codes, concurrency limits, and per-request cost estimates for Lambda, API Gateway, DynamoDB, S3, SQS, SNS, ElastiCache, RDS, ECS, and more.
 
 **Templates**
+
 - **Serverless Circuit Breaker** — Lambda-based CB wrapper reading breaker state from DynamoDB; downstream Orders Lambda pre-configured with 65% failure rate; fallback via ElastiCache; CloudWatch → SNS trip alert. Client pre-configured at 8 req/s.
 - **ECS Microservices + Circuit Breaker** — App Mesh (Envoy proxy) routing between Orders and Payment services. Payment pre-configured with 70% failure and 1.2 s latency; fallback replica at 5% failure. X-Ray traces + CloudWatch EMF observability. Client pre-configured at 10 req/s.
 - **Additional AWS templates** — Static Website (S3 + CloudFront + Route 53), ECS Fargate App, ML Training Pipeline (SageMaker), Multi-Region Disaster Recovery.
@@ -30,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Generic ER Diagram** — Users / Orders / Products / OrderItems schema ready for SQL DDL export.
 
 **Editor**
+
 - **Node Grouping / Ungrouping** — Select multiple nodes and group them under a `FrameNode` parent via the toolbar. Ungroup detaches children.
 - **SQL DDL Export** — Export ER diagrams as `CREATE TABLE` SQL from the export dropdown.
 - **Minimap + Layout controls** — Mini-map overlay and one-click auto-layout in the canvas toolbar.
@@ -58,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **Editor Foundations (draw.io feature parity — Phase 1)**
+
 - **Undo / Redo** — Full temporal history via `zundo` middleware. `Ctrl+Z` undoes, `Ctrl+Y` redoes. Node drag operations are batched as single undo steps.
 - **Global Keyboard Shortcuts** — `Ctrl+C/V` copy/paste (new UUIDs on paste), `Ctrl+D` duplicate, `Ctrl+A` select all, `Ctrl+L` auto-layout, `Delete` remove selected nodes, `Ctrl+?` open shortcuts help dialog.
 - **Keyboard Shortcuts Dialog** — Centralized shortcut definitions grouped by category, accessible via `Ctrl+?`.
@@ -68,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Collaboration Cursors** — Real-time remote cursors with peer name labels rendered as an overlay on the canvas.
 
 **Power User Productivity (Phase 2)**
+
 - **Layer System** — Diagrams now support named layers with show/hide, lock, and color options. Nodes can be assigned to layers. Locked layers prevent drag/connect/select. Hidden layers are filtered from the canvas.
 - **Template Library** — 7 ready-to-use architecture templates: AWS Three-Tier Web App, AWS Serverless API, AWS Event-Driven Architecture, AWS Microservices Platform, AWS Data Lake, Generic Flowchart, and CI/CD Pipeline.
 - **Mermaid Import** — Import `flowchart`, `sequenceDiagram`, and `classDiagram` Mermaid code directly from the Sidebar. Pure text parser — no heavy Mermaid runtime bundled.
@@ -76,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Custom Properties Editor** — Add, edit, and delete arbitrary key-value metadata on any node directly from the Properties Panel.
 
 **New Diagram Types (Phase 3)**
+
 - **ER / Database Diagrams** — `TableNode` displays entity name, columns with PK (amber) and FK (blue) key icons, type, and nullable markers. Per-row source/target handles for FK relationship edges. Inline column editor in the Properties Panel (add/edit/delete columns with PK/FK/NN flags). SQL DDL import modal in Sidebar parses `CREATE TABLE` statements and auto-links foreign keys.
 - **Sequence UML Diagrams** — `SequenceActorNode` renders an actor box, a dashed vertical lifeline with 16 message-slot handles, and a bottom box. Mermaid `sequenceDiagram` parser updated to wire edges to the correct lifeline slot handles. UML Sequence category added to the Component Palette (Actor, System).
 - **Swimlane Diagrams** — `SwimlaneNode` with configurable lanes (horizontal or vertical direction), per-lane color and title, add/delete lanes from the Properties Panel.
@@ -83,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Waypoints & Connector Styles** — `StyledEdge` custom edge type supports all routing modes, custom stroke color/width, and dashed lines via the Properties Panel.
 
 **Collaboration**
+
 - **Rename Guest User** — Users can now set a custom display name directly in the Collaboration popover. The name is persisted in `localStorage` and immediately broadcast to all peers via Yjs awareness.
 
 ### Fixed
@@ -105,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **Real-time P2P Collaboration** — Design architectures together in real-time with zero-knowledge privacy:
+
 - **Peer-to-Peer Architecture**: Direct browser-to-browser synchronization using **WebRTC** and **Yjs (CRDT)**.
 - **End-to-End Encryption (E2EE)**: All diagram data is encrypted before leaving the browser. The decryption key is stored in the URL fragment (`#hash`), which is **never sent** to the signaling server.
 - **Zero-Knowledge Privacy**: No central server stores or can read your diagrams. The signaling server only facilitates the initial P2P handshake.
@@ -144,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **AWS Pricing Integration** — Real-time cost estimation for AWS resources:
+
 - Integration with official **AWS Price List API** via MCP-inspired provider
 - Support for **Compute** (EC2, RDS) with hourly/monthly instance rates
 - Support for **Storage** (S3, EFS) with GB-Mo usage metrics
@@ -171,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **AWS Architecture Groups** — pre-styled container shapes for drawing real-world AWS solution diagrams:
+
 - `AWS Region` (orange border) — geographic region boundary
 - `AWS Account` (purple border) — account-level isolation boundary
 - `VPC` (blue border) — Virtual Private Cloud container
@@ -182,6 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Security Zone / DMZ` (red border) — perimeter security grouping
 
 **Networking services:**
+
 - AWS Network Firewall — stateful VPC-level firewall
 - AWS PrivateLink — private cross-VPC/service connectivity
 - Global Accelerator — anycast global traffic acceleration
@@ -193,37 +204,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NLB (Network Load Balancer) — Layer 4 load balancing
 
 **Compute services:**
+
 - AWS Amplify — full-stack web and mobile app platform
 
 **Application Integration:**
+
 - Amazon AppFlow — SaaS data integration
 - Amazon MWAA — Managed Workflows for Apache Airflow
 
 **Storage:**
+
 - AWS Snow Family — physical data transfer devices (Snowcone, Snowball, Snowmobile)
 - S3 Transfer Acceleration — fast long-distance S3 transfers
 
 **Analytics:**
+
 - Amazon Data Firehose — real-time streaming data delivery
 - AWS Lake Formation — data lake setup and governance
 
 **Management & Governance:**
+
 - AWS Compute Optimizer — ML-based resource rightsizing
 - AWS Health Dashboard — service health and personal health alerts
 - AWS Well-Architected Tool — workload review against best practices
 - AWS Resource Groups — tag-based resource organization
 
 **Security, Identity & Compliance:**
+
 - AWS Firewall Manager — centralized firewall rule management
 - Amazon Detective — security investigation and root-cause analysis
 - AWS IAM Identity Center — workforce SSO and multi-account access
 - AWS Verified Access — Zero Trust application access (no VPN)
 
 **AI & Machine Learning:**
+
 - Amazon Q — generative AI assistant for business and development
 - AWS HealthLake — FHIR-compliant health data store and analytics
 
 **Developer Tools:**
+
 - Amazon CodeGuru — AI-powered code quality and performance recommendations
 
 ### Changed
@@ -243,6 +262,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **Core Diagramming Engine**
+
 - ReactFlow-based canvas with drag-and-drop node placement
 - Auto-layout via dagre algorithm (hierarchical organization)
 - Node resize, selection, and inline label editing
@@ -254,6 +274,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Node styling controls (colors, borders) for generic nodes
 
 **AI Engine (Dual)**
+
 - **Cloud AI** — Google Gemini 2.5 Flash for fast architecture generation
 - **Local AI** — WebLLM (Phi-3-mini via WebGPU) for fully offline, private generation
 - Incremental generation — AI can modify and append to existing diagrams
@@ -262,6 +283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-built certification example prompts (AWS SAA, DEA) with pagination
 
 **Component Library (Providers)**
+
 - **AWS** — 100+ services: Compute, Containers, Database, Storage, Networking, AI/ML, Security, Developer Tools, Management, Analytics, Migration
 - **Azure** — Compute, Database, Network, Storage (azure-react-icons)
 - **Cloud Native** — Kubernetes, Docker, Prometheus, Grafana, Istio, and more
@@ -269,20 +291,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Generic** — Diagram shapes, flowchart elements, clients, and IoT devices
 
 **Architecture Simulation**
+
 - Playback engine to simulate data flows and traffic patterns across diagram nodes
 - Simulation log panel with real-time event streaming
 - Configurable mock latency and failure rates per node
 
 **Presentation Tools**
+
 - Laser pointer mode for live diagram presentations
 - MiniMap for navigation on large diagrams
 
 **Documentation Generation**
+
 - AI-generated technical specifications (Markdown)
 - Architecture overviews, component descriptions, and best-practice recommendations
 - Preview rendered Markdown or copy raw content
 
 **Multi-Diagram Management**
+
 - Create, rename, delete, and switch between multiple diagrams
 - Paginated sidebar with dynamic height calculation
 - Export individual diagram as JSON
@@ -291,6 +317,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backward-compatible import format
 
 **UI/UX**
+
 - Dark mode support with glassmorphism effects
 - Unified toolbar with main tools, action tools, and simulation controls
 - Component palette with per-provider tabs and search
