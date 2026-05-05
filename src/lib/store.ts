@@ -217,6 +217,9 @@ interface DiagramState {
   // Simulation State
   isPlaying: boolean;
   setIsPlaying: (isPlaying: boolean) => void;
+  isPaused: boolean;
+  pauseSimulation: () => void;
+  resumeSimulation: () => void;
   simulationSpeed: number;
   setSimulationSpeed: (speed: number) => void;
   simulationLogs: SimulationLog[];
@@ -278,6 +281,7 @@ export const useDiagramStore = create<DiagramState>()(
         geminiApiKey: null,
         isOfflineMode: false,
         isPlaying: false,
+        isPaused: false,
         simulationSpeed: 1,
         simulationLogs: [],
         generatedSpecification: null,
@@ -383,6 +387,8 @@ export const useDiagramStore = create<DiagramState>()(
           }),
 
         setIsPlaying: (isPlaying) => set({ isPlaying }),
+        pauseSimulation: () => set({ isPaused: true }),
+        resumeSimulation: () => set({ isPaused: false }),
         setSimulationSpeed: (simulationSpeed) => set({ simulationSpeed }),
         setInteractionMode: (mode) => set({ interactionMode: mode }),
 
@@ -551,6 +557,7 @@ export const useDiagramStore = create<DiagramState>()(
 
             return {
               isPlaying: false,
+              isPaused: false,
               activeSimulationEdges: new Map(),
               diagrams: {
                 ...state.diagrams,
@@ -573,6 +580,7 @@ export const useDiagramStore = create<DiagramState>()(
 
             return {
               isPlaying: false,
+              isPaused: false,
               simulationLogs: [],
               simulationTraces: [],
               killedNodes: new Set<string>(),

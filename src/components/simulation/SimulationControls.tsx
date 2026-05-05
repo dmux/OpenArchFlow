@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { useDiagramStore } from "@/lib/store";
 import { SimulationEngine } from "@/lib/simulation";
+import { useResizable } from "@/hooks/useResizable";
 import {
   Play,
+  Pause,
   Square,
   RotateCcw,
   Pointer,
@@ -38,6 +40,7 @@ export default function SimulationControls({
 }: SimulationControlsProps) {
   const {
     isPlaying,
+    isPaused,
     simulationSpeed,
     setSimulationSpeed,
     simulationLogs,
@@ -59,11 +62,34 @@ export default function SimulationControls({
   const [isTracesOpen, setIsTracesOpen] = React.useState(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
 
+  const { size: logsSize, handleMouseDown: handleLogsMouseDown } = useResizable(
+    { width: 500, height: 400 },
+    { minW: 300, maxW: 900, minH: 200, maxH: 700 },
+  );
+  const { size: metricsSize, handleMouseDown: handleMetricsMouseDown } =
+    useResizable(
+      { width: 600, height: 420 },
+      { minW: 300, maxW: 900, minH: 200, maxH: 700 },
+    );
+  const { size: tracesSize, handleMouseDown: handleTracesMouseDown } =
+    useResizable(
+      { width: 640, height: 440 },
+      { minW: 300, maxW: 900, minH: 200, maxH: 700 },
+    );
+
   const handleToggleSimulation = () => {
     if (isPlaying) {
       SimulationEngine.getInstance().stop();
     } else {
       SimulationEngine.getInstance().start();
+    }
+  };
+
+  const handlePauseResume = () => {
+    if (isPaused) {
+      SimulationEngine.getInstance().resume();
+    } else {
+      SimulationEngine.getInstance().pause();
     }
   };
 
@@ -101,28 +127,68 @@ export default function SimulationControls({
   return (
     <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
       {/* Main Controls */}
-      <div className="bg-background/80 backdrop-blur-md border border-border p-2 rounded-full shadow-lg flex items-center gap-2">
+      <div
+        className={cn(
+          "bg-background/80 backdrop-blur-md border p-2 rounded-full shadow-lg flex items-center gap-2",
+          isPlaying && isPaused ? "border-amber-500" : "border-border",
+        )}
+      >
+        {/* Play / Pause / Resume */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={isPlaying ? "destructive" : "default"}
+                variant={isPlaying && !isPaused ? "secondary" : "default"}
                 size="icon"
                 className="rounded-full h-10 w-10 shadow-sm"
-                onClick={handleToggleSimulation}
+                onClick={isPlaying ? handlePauseResume : handleToggleSimulation}
               >
-                {isPlaying ? (
-                  <Square className="fill-current" size={16} />
+                {isPlaying && !isPaused ? (
+                  <Pause className="fill-current" size={16} />
                 ) : (
                   <Play className="fill-current" size={16} />
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{isPlaying ? "Stop Simulation" : "Start Simulation"}</p>
+              <p>
+                {isPlaying
+                  ? isPaused
+                    ? "Resume Simulation"
+                    : "Pause Simulation"
+                  : "Start Simulation"}
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        {/* Stop — only when playing */}
+        {isPlaying && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="rounded-full h-10 w-10 shadow-sm"
+                  onClick={handleToggleSimulation}
+                >
+                  <Square className="fill-current" size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Stop Simulation</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {/* Paused badge */}
+        {isPlaying && isPaused && (
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 text-[10px] font-semibold">
+            <span>⏸ PAUSED</span>
+          </div>
+        )}
 
         <div className="h-6 w-px bg-border mx-1" />
 
@@ -234,8 +300,13 @@ export default function SimulationControls({
             </Tooltip>
           </TooltipProvider>
 
-          <PopoverContent className="w-[500px] p-0" side="top" align="center">
-            <div className="flex flex-col max-h-[400px]">
+          <PopoverContent
+            className="p-0 flex flex-col relative overflow-hidden"
+            style={{ width: logsSize.width, height: logsSize.height }}
+            side="top"
+            align="center"
+          >
+            <div className="flex flex-col flex-1 min-h-0">
               {/* Header */}
               <div className="flex items-center justify-between p-3 border-b bg-muted/50">
                 <div className="flex items-center gap-2">
@@ -264,7 +335,7 @@ export default function SimulationControls({
                   No simulation logs yet. Start a simulation to see logs here.
                 </div>
               ) : (
-                <ScrollArea className="h-[300px] w-full p-4 font-mono text-xs">
+                <ScrollArea className="flex-1 w-full p-4 font-mono text-xs overflow-y-auto">
                   <div className="space-y-1.5">
                     {simulationLogs.map((log) => (
                       <div key={log.id} className="flex gap-2">
@@ -302,6 +373,13 @@ export default function SimulationControls({
                 </ScrollArea>
               )}
             </div>
+            {/* Resize handle */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 z-10"
+              onMouseDown={handleLogsMouseDown}
+            >
+              <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-muted-foreground/40 hover:border-muted-foreground/70 rounded-sm transition-colors" />
+            </div>
           </PopoverContent>
         </Popover>
 
@@ -333,7 +411,8 @@ export default function SimulationControls({
             </Tooltip>
           </TooltipProvider>
           <PopoverContent
-            className="w-[600px] p-0 max-h-[420px] flex flex-col"
+            className="p-0 flex flex-col relative overflow-hidden"
+            style={{ width: metricsSize.width, height: metricsSize.height }}
             side="top"
             align="center"
           >
@@ -346,8 +425,15 @@ export default function SimulationControls({
                 <span className="text-sm font-semibold">Live Metrics</span>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <SimulationMetrics />
+            </div>
+            {/* Resize handle */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 z-10"
+              onMouseDown={handleMetricsMouseDown}
+            >
+              <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-muted-foreground/40 hover:border-muted-foreground/70 rounded-sm transition-colors" />
             </div>
           </PopoverContent>
         </Popover>
@@ -380,7 +466,8 @@ export default function SimulationControls({
             </Tooltip>
           </TooltipProvider>
           <PopoverContent
-            className="w-[640px] p-0 max-h-[440px] flex flex-col"
+            className="p-0 flex flex-col relative overflow-hidden"
+            style={{ width: tracesSize.width, height: tracesSize.height }}
             side="top"
             align="center"
           >
@@ -391,8 +478,15 @@ export default function SimulationControls({
               />
               <span className="text-sm font-semibold">Trace Viewer</span>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <TraceViewer />
+            </div>
+            {/* Resize handle */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 z-10"
+              onMouseDown={handleTracesMouseDown}
+            >
+              <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-muted-foreground/40 hover:border-muted-foreground/70 rounded-sm transition-colors" />
             </div>
           </PopoverContent>
         </Popover>

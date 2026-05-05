@@ -136,6 +136,16 @@ export class SimulationEngine {
     });
   }
 
+  pause() {
+    CoreEngine.getInstance().pause();
+    useDiagramStore.getState().pauseSimulation();
+  }
+
+  resume() {
+    CoreEngine.getInstance().resume();
+    useDiagramStore.getState().resumeSimulation();
+  }
+
   stop() {
     this._unsubNodes?.();
     this._unsubNodes = null;
