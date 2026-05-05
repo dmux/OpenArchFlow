@@ -1,467 +1,615 @@
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useDiagramStore } from '@/lib/store';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Layout, X, Pencil, Download, Upload, FileJson, ChevronLeft, ChevronRight, GitBranch, LayoutTemplate } from 'lucide-react';
-import { serializeDiagram, serializeAllDiagrams, downloadJson, validateAndParseImport } from '@/lib/persistence';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { APP_VERSION } from '@/lib/version';
-import { useState, useRef, useEffect } from 'react';
-import { parseMermaid } from '@/lib/import/mermaid';
-import { parseSqlDdl } from '@/lib/import/sql-ddl';
-import { toast } from 'sonner';
-import TemplatesDialog from '@/components/diagram/TemplatesDialog';
+import { useDiagramStore } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Plus,
+  Trash2,
+  Layout,
+  X,
+  Pencil,
+  Download,
+  Upload,
+  FileJson,
+  ChevronLeft,
+  ChevronRight,
+  GitBranch,
+  LayoutTemplate,
+} from "lucide-react";
+import {
+  serializeDiagram,
+  serializeAllDiagrams,
+  downloadJson,
+  validateAndParseImport,
+} from "@/lib/persistence";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { APP_VERSION } from "@/lib/version";
+import { useState, useRef, useEffect } from "react";
+import { parseMermaid } from "@/lib/import/mermaid";
+import { parseSqlDdl } from "@/lib/import/sql-ddl";
+import { toast } from "sonner";
+import TemplatesDialog from "@/components/diagram/TemplatesDialog";
 
 // Simple date formatter to avoid extra dependency for now
 const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString() + ' ' + new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return (
+    new Date(timestamp).toLocaleDateString() +
+    " " +
+    new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  );
 };
 
-export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-    const diagrams = useDiagramStore((state) => state.diagrams);
-    const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
-    const createDiagram = useDiagramStore((state) => state.createDiagram);
-    const setActiveDiagram = useDiagramStore((state) => state.setActiveDiagram);
-    const deleteDiagram = useDiagramStore((state) => state.deleteDiagram);
-    const renameDiagram = useDiagramStore((state) => state.renameDiagram);
-    const importDiagram = useDiagramStore((state) => state.importDiagram);
-    const importDiagrams = useDiagramStore((state) => state.importDiagrams);
+export function Sidebar({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const diagrams = useDiagramStore((state) => state.diagrams);
+  const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
+  const createDiagram = useDiagramStore((state) => state.createDiagram);
+  const setActiveDiagram = useDiagramStore((state) => state.setActiveDiagram);
+  const deleteDiagram = useDiagramStore((state) => state.deleteDiagram);
+  const renameDiagram = useDiagramStore((state) => state.renameDiagram);
+  const importDiagram = useDiagramStore((state) => state.importDiagram);
+  const importDiagrams = useDiagramStore((state) => state.importDiagrams);
 
-    const setNodes = useDiagramStore((state) => state.setNodes);
-    const setEdges = useDiagramStore((state) => state.setEdges);
+  const setNodes = useDiagramStore((state) => state.setNodes);
+  const setEdges = useDiagramStore((state) => state.setEdges);
 
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editName, setEditName] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(4); // Default, will be calculated
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(4); // Default, will be calculated
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const [mermaidOpen, setMermaidOpen] = useState(false);
-    const [mermaidCode, setMermaidCode] = useState('');
-    const [templatesOpen, setTemplatesOpen] = useState(false);
-    const [sqlOpen, setSqlOpen] = useState(false);
-    const [sqlCode, setSqlCode] = useState('');
+  const [mermaidOpen, setMermaidOpen] = useState(false);
+  const [mermaidCode, setMermaidCode] = useState("");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [sqlOpen, setSqlOpen] = useState(false);
+  const [sqlCode, setSqlCode] = useState("");
 
-    const handleImportSqlDdl = () => {
-        if (!sqlCode.trim()) return;
-        try {
-            const { nodes, edges } = parseSqlDdl(sqlCode);
-            if (nodes.length === 0) { toast.error('No tables found in SQL DDL'); return; }
-            createDiagram('SQL Import');
-            setTimeout(() => {
-                setNodes(nodes);
-                setEdges(edges);
-                toast.success(`Imported ${nodes.length} table${nodes.length !== 1 ? 's' : ''} from SQL DDL`);
-            }, 0);
-            setSqlOpen(false);
-            setSqlCode('');
-        } catch {
-            toast.error('Failed to parse SQL DDL');
-        }
-    };
-
-    const handleImportMermaid = () => {
-        if (!mermaidCode.trim()) return;
-        try {
-            const { nodes, edges } = parseMermaid(mermaidCode);
-            if (nodes.length === 0) { toast.error('No nodes found in Mermaid code'); return; }
-            createDiagram('Mermaid Import');
-            // createDiagram sets activeDiagramId; setNodes/setEdges act on activeDiagramId
-            setTimeout(() => {
-                setNodes(nodes);
-                setEdges(edges);
-                toast.success(`Imported ${nodes.length} nodes from Mermaid`);
-            }, 0);
-            setMermaidOpen(false);
-            setMermaidCode('');
-        } catch {
-            toast.error('Failed to parse Mermaid code');
-        }
-    };
-
-    // Calculate items per page based on available height
-    useEffect(() => {
-        const calculateItemsPerPage = () => {
-            if (scrollAreaRef.current) {
-                const height = scrollAreaRef.current.clientHeight;
-                // Estimate item height: 72px (item) + 8px (gap) = 80px
-                // Subtract some padding (32px for p-4)
-                const availableHeight = height - 32;
-                const calculated = Math.floor(availableHeight / 80);
-                setItemsPerPage(Math.max(2, calculated)); // Minimum 2 items
-            }
-        };
-
-        calculateItemsPerPage();
-
-        // Add resize listener
-        window.addEventListener('resize', calculateItemsPerPage);
-        return () => window.removeEventListener('resize', calculateItemsPerPage);
-    }, []);
-
-    // ...
-
-    // Sort diagrams by lastModified desc
-    const sortedDiagrams = Object.values(diagrams).sort((a, b) => b.lastModified - a.lastModified);
-    const totalPages = Math.ceil(sortedDiagrams.length / itemsPerPage);
-    const paginatedDiagrams = sortedDiagrams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    // Reset to first page if current page becomes empty (e.g. after deletion or resize)
-    if (currentPage > totalPages && totalPages > 0) {
-        setCurrentPage(totalPages);
+  const handleImportSqlDdl = () => {
+    if (!sqlCode.trim()) return;
+    try {
+      const { nodes, edges } = parseSqlDdl(sqlCode);
+      if (nodes.length === 0) {
+        toast.error("No tables found in SQL DDL");
+        return;
+      }
+      createDiagram("SQL Import");
+      setTimeout(() => {
+        setNodes(nodes);
+        setEdges(edges);
+        toast.success(
+          `Imported ${nodes.length} table${nodes.length !== 1 ? "s" : ""} from SQL DDL`,
+        );
+      }, 0);
+      setSqlOpen(false);
+      setSqlCode("");
+    } catch {
+      toast.error("Failed to parse SQL DDL");
     }
+  };
 
-    const handleCreate = () => {
-        createDiagram('New Architecture');
+  const handleImportMermaid = () => {
+    if (!mermaidCode.trim()) return;
+    try {
+      const { nodes, edges } = parseMermaid(mermaidCode);
+      if (nodes.length === 0) {
+        toast.error("No nodes found in Mermaid code");
+        return;
+      }
+      createDiagram("Mermaid Import");
+      // createDiagram sets activeDiagramId; setNodes/setEdges act on activeDiagramId
+      setTimeout(() => {
+        setNodes(nodes);
+        setEdges(edges);
+        toast.success(`Imported ${nodes.length} nodes from Mermaid`);
+      }, 0);
+      setMermaidOpen(false);
+      setMermaidCode("");
+    } catch {
+      toast.error("Failed to parse Mermaid code");
+    }
+  };
+
+  // Calculate items per page based on available height
+  useEffect(() => {
+    const calculateItemsPerPage = () => {
+      if (scrollAreaRef.current) {
+        const height = scrollAreaRef.current.clientHeight;
+        // Estimate item height: 72px (item) + 8px (gap) = 80px
+        // Subtract some padding (32px for p-4)
+        const availableHeight = height - 32;
+        const calculated = Math.floor(availableHeight / 80);
+        setItemsPerPage(Math.max(2, calculated)); // Minimum 2 items
+      }
     };
 
-    const startEditing = (e: React.MouseEvent, diagram: any) => {
-        e.stopPropagation();
-        setEditingId(diagram.id);
-        setEditName(diagram.name);
-    };
+    calculateItemsPerPage();
 
-    const saveEditing = (e?: React.FocusEvent | React.KeyboardEvent) => {
-        if (e) e.stopPropagation();
+    // Add resize listener
+    window.addEventListener("resize", calculateItemsPerPage);
+    return () => window.removeEventListener("resize", calculateItemsPerPage);
+  }, []);
 
-        if (editingId && editName.trim()) {
-            renameDiagram(editingId, editName.trim());
-        }
-        setEditingId(null);
-        setEditName('');
-    };
+  // ...
 
-    const handleExport = (e: React.MouseEvent, diagram: any) => {
-        e.stopPropagation();
-        const json = serializeDiagram(diagram);
-        downloadJson(`OpenArchFlow_${diagram.name.replace(/\s+/g, '_')}.json`, json);
-    };
+  // Sort diagrams by lastModified desc
+  const sortedDiagrams = Object.values(diagrams).sort(
+    (a, b) => b.lastModified - a.lastModified,
+  );
+  const totalPages = Math.ceil(sortedDiagrams.length / itemsPerPage);
+  const paginatedDiagrams = sortedDiagrams.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
-    const handleExportAll = () => {
-        const json = serializeAllDiagrams(diagrams);
-        const dateStr = new Date().toISOString().split('T')[0];
-        downloadJson(`OpenArchFlow_Backup_${dateStr}.json`, json);
-    };
+  // Reset to first page if current page becomes empty (e.g. after deletion or resize)
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  }
 
-    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+  const handleCreate = () => {
+    createDiagram("New Architecture");
+  };
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const content = event.target?.result as string;
-                const importData = validateAndParseImport(content);
+  const startEditing = (e: React.MouseEvent, diagram: any) => {
+    e.stopPropagation();
+    setEditingId(diagram.id);
+    setEditName(diagram.name);
+  };
 
-                if (importData.type === 'single') {
-                    importDiagram(importData.data as any);
-                } else if (importData.type === 'backup') {
-                    importDiagrams(importData.data as any); // Diagrams are stored as array or record? Validation returns export data format
-                    // IMPORTANT: store.importDiagrams expects Record<string, Diagram>. 
-                    // But serializeAllDiagrams exports array definition in DiagramData[].
-                    // Wait, serializeAllDiagrams implementation:
-                    // data: Object.values(diagrams) -> This is Diagram[]
-                    // So importData.data is Diagram[] (if backup).
+  const saveEditing = (e?: React.FocusEvent | React.KeyboardEvent) => {
+    if (e) e.stopPropagation();
 
-                    // Let's check store implementation of importDiagrams.
-                    // It expects Record<string, Diagram>.
-                    // I need to convert array back to record or update store.
+    if (editingId && editName.trim()) {
+      renameDiagram(editingId, editName.trim());
+    }
+    setEditingId(null);
+    setEditName("");
+  };
 
-                    // Let me check my store implementation again.
-                    // importDiagrams: (importedDiagrams) => set((state) => { ... Object.values(importedDiagrams) ...
-                    // If I pass an array to Object.values(), it works (values are items).
-                    // BUT keys would be "0", "1", etc.
-                    // The store implementation uses `diagram.id` inside the loop, so it effectively ignores the keys of the input record if it iterates values.
-                    // Object.values() on an array returns the array itself.
-                    // So `importDiagrams` in store SHOULD handle array input too if typed as Record or just casted.
-                    // Let's cast it to any for now to be safe or map it.
-
-                    // Actually, let's just make sure we pass what the store expects.
-                    // Store expects Record<string, Diagram>.
-                    // If importData.data is Diagram[], I can reduce it to Record.
-                    if (Array.isArray(importData.data)) {
-                        const record = importData.data.reduce((acc: any, d: any) => {
-                            acc[d.id] = d;
-                            return acc;
-                        }, {});
-                        importDiagrams(record);
-                    } else {
-                        // fallback if it was somehow a record
-                        importDiagrams(importData.data as any);
-                    }
-                }
-            } catch (error) {
-                console.error('Import failed:', error);
-                alert('Import failed: ' + (error as Error).message);
-            }
-        };
-        reader.readAsText(file);
-        // Reset input value to allow selecting same file again
-        e.target.value = '';
-    };
-
-    const cancelEditing = (e?: React.KeyboardEvent) => {
-        if (e) e.stopPropagation();
-        setEditingId(null);
-        setEditName('');
-    };
-
-    return (
-        <div
-            className={cn(
-                "h-full bg-background border-r transition-[width] duration-300 ease-in-out overflow-hidden flex-shrink-0",
-                isOpen ? "w-80" : "w-0 border-r-0"
-            )}
-        >
-            <div className="w-80 h-full flex flex-col">
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                        <Layout className="w-5 h-5" />
-                        My Diagrams
-                    </h2>
-                    <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
-                        <X className="w-4 h-4" />
-                    </Button>
-                </div>
-
-                <div className="p-4">
-                    <Button onClick={handleCreate} className="w-full flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        New Diagram
-                    </Button>
-                </div>
-
-                <Separator />
-
-                <div className="flex-1 min-h-0 relative" ref={scrollAreaRef}>
-                    <ScrollArea className="h-full">
-                        <div className="p-4 space-y-2">
-                            {paginatedDiagrams.map((diagram) => (
-                                <div
-                                    key={diagram.id}
-                                    onClick={() => setActiveDiagram(diagram.id)}
-                                    className={cn(
-                                        "group flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors",
-                                        activeDiagramId === diagram.id ? "bg-accent border-primary" : "bg-card"
-                                    )}
-                                >
-                                    <div className="flex-1 min-w-0 mr-2 overflow-hidden max-w-[180px]">
-                                        {editingId === diagram.id ? (
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                                <Input
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    onBlur={saveEditing}
-                                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                                                        if (e.key === 'Enter') saveEditing(e);
-                                                        if (e.key === 'Escape') cancelEditing(e);
-                                                    }}
-                                                    autoFocus
-                                                    className="h-7 text-sm py-1 px-2"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <h3 className="font-medium text-sm truncate" title={diagram.name}>{diagram.name}</h3>
-                                                <p className="text-xs text-muted-foreground truncate">
-                                                    {formatDate(diagram.lastModified)}
-                                                </p>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                            onClick={(e) => handleExport(e, diagram)}
-                                            title="Export JSON"
-                                        >
-                                            <Download className="w-3.5 h-3.5" />
-                                        </Button>
-
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                            onClick={(e) => startEditing(e, diagram)}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                        </Button>
-
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete Diagram?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Are you sure you want to delete "{diagram.name}"? This action cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteDiagram(diagram.id);
-                                                        }}
-                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                    >
-                                                        Delete
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                    <div className="px-4 py-2 border-t flex items-center justify-between bg-card/50">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <span className="text-xs text-muted-foreground">
-                            Page {currentPage} of {totalPages} ({sortedDiagrams.length} items)
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
-                    </div>
-                )}
-
-                <div className="p-4 border-t space-y-2">
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleExportAll}>
-                            <FileJson className="w-3.5 h-3.5 mr-2" />
-                            Backup All
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => document.getElementById('import-file')?.click()}>
-                            <Upload className="w-3.5 h-3.5 mr-2" />
-                            Import
-                        </Button>
-                        <input
-                            type="file"
-                            id="import-file"
-                            className="hidden"
-                            accept=".json"
-                            onChange={handleImport}
-                        />
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setTemplatesOpen(true)}>
-                            <LayoutTemplate className="w-3.5 h-3.5 mr-2" />
-                            Templates
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setMermaidOpen(true)}>
-                            <GitBranch className="w-3.5 h-3.5 mr-2" />
-                            Mermaid
-                        </Button>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setSqlOpen(true)}>
-                            <Download className="w-3.5 h-3.5 mr-2" />
-                            SQL DDL
-                        </Button>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{sortedDiagrams.length} diagram{sortedDiagrams.length !== 1 ? 's' : ''} stored locally</span>
-                        <span className="font-mono opacity-60">v{APP_VERSION}</span>
-                    </div>
-                </div>
-
-                {/* Mermaid Import Dialog */}
-                {mermaidOpen && (
-                    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setMermaidOpen(false)}>
-                        <div className="bg-background border border-border rounded-xl shadow-2xl p-5 w-[480px] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="font-semibold text-sm">Import Mermaid Diagram</span>
-                                <button onClick={() => setMermaidOpen(false)} className="text-muted-foreground hover:text-foreground">
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-2">Supports flowchart, sequenceDiagram, and classDiagram.</p>
-                            <textarea
-                                autoFocus
-                                value={mermaidCode}
-                                onChange={(e) => setMermaidCode(e.target.value)}
-                                placeholder={`flowchart TD\n    A[Start] --> B[Process]\n    B --> C[End]`}
-                                className="w-full h-44 text-xs font-mono bg-muted border border-border rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                            />
-                            <div className="flex gap-2 mt-3 justify-end">
-                                <Button variant="ghost" size="sm" onClick={() => setMermaidOpen(false)}>Cancel</Button>
-                                <Button size="sm" onClick={handleImportMermaid}>Import</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <TemplatesDialog isOpen={templatesOpen} onClose={() => setTemplatesOpen(false)} />
-
-                {/* SQL DDL Import Dialog */}
-                {sqlOpen && (
-                    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSqlOpen(false)}>
-                        <div className="bg-background border border-border rounded-xl shadow-2xl p-5 w-[520px] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="font-semibold text-sm">Import SQL DDL</span>
-                                <button onClick={() => setSqlOpen(false)} className="text-muted-foreground hover:text-foreground">
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-2">Paste <code className="font-mono bg-muted px-1 rounded">CREATE TABLE</code> statements. Foreign keys are auto-linked.</p>
-                            <textarea
-                                autoFocus
-                                value={sqlCode}
-                                onChange={(e) => setSqlCode(e.target.value)}
-                                placeholder={`CREATE TABLE users (\n  id INT PRIMARY KEY,\n  email VARCHAR(255) NOT NULL\n);\n\nCREATE TABLE posts (\n  id INT PRIMARY KEY,\n  user_id INT,\n  FOREIGN KEY (user_id) REFERENCES users(id)\n);`}
-                                className="w-full h-52 text-xs font-mono bg-muted border border-border rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                            />
-                            <div className="flex gap-2 mt-3 justify-end">
-                                <Button variant="ghost" size="sm" onClick={() => setSqlOpen(false)}>Cancel</Button>
-                                <Button size="sm" onClick={handleImportSqlDdl}>Import</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+  const handleExport = (e: React.MouseEvent, diagram: any) => {
+    e.stopPropagation();
+    const json = serializeDiagram(diagram);
+    downloadJson(
+      `OpenArchFlow_${diagram.name.replace(/\s+/g, "_")}.json`,
+      json,
     );
+  };
+
+  const handleExportAll = () => {
+    const json = serializeAllDiagrams(diagrams);
+    const dateStr = new Date().toISOString().split("T")[0];
+    downloadJson(`OpenArchFlow_Backup_${dateStr}.json`, json);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        const importData = validateAndParseImport(content);
+
+        if (importData.type === "single") {
+          importDiagram(importData.data as any);
+        } else if (importData.type === "backup") {
+          importDiagrams(importData.data as any); // Diagrams are stored as array or record? Validation returns export data format
+          // IMPORTANT: store.importDiagrams expects Record<string, Diagram>.
+          // But serializeAllDiagrams exports array definition in DiagramData[].
+          // Wait, serializeAllDiagrams implementation:
+          // data: Object.values(diagrams) -> This is Diagram[]
+          // So importData.data is Diagram[] (if backup).
+
+          // Let's check store implementation of importDiagrams.
+          // It expects Record<string, Diagram>.
+          // I need to convert array back to record or update store.
+
+          // Let me check my store implementation again.
+          // importDiagrams: (importedDiagrams) => set((state) => { ... Object.values(importedDiagrams) ...
+          // If I pass an array to Object.values(), it works (values are items).
+          // BUT keys would be "0", "1", etc.
+          // The store implementation uses `diagram.id` inside the loop, so it effectively ignores the keys of the input record if it iterates values.
+          // Object.values() on an array returns the array itself.
+          // So `importDiagrams` in store SHOULD handle array input too if typed as Record or just casted.
+          // Let's cast it to any for now to be safe or map it.
+
+          // Actually, let's just make sure we pass what the store expects.
+          // Store expects Record<string, Diagram>.
+          // If importData.data is Diagram[], I can reduce it to Record.
+          if (Array.isArray(importData.data)) {
+            const record = importData.data.reduce((acc: any, d: any) => {
+              acc[d.id] = d;
+              return acc;
+            }, {});
+            importDiagrams(record);
+          } else {
+            // fallback if it was somehow a record
+            importDiagrams(importData.data as any);
+          }
+        }
+      } catch (error) {
+        console.error("Import failed:", error);
+        alert("Import failed: " + (error as Error).message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input value to allow selecting same file again
+    e.target.value = "";
+  };
+
+  const cancelEditing = (e?: React.KeyboardEvent) => {
+    if (e) e.stopPropagation();
+    setEditingId(null);
+    setEditName("");
+  };
+
+  return (
+    <div
+      className={cn(
+        "h-full bg-background border-r overflow-hidden flex-shrink-0",
+        isOpen
+          ? "fixed inset-y-0 left-0 z-[70] w-72 shadow-2xl md:relative md:w-72 md:z-auto md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out"
+          : "hidden md:block md:w-0 md:border-r-0 md:transition-[width] md:duration-300 md:ease-in-out",
+      )}
+    >
+      <div className="w-72 h-full flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="font-semibold text-lg flex items-center gap-2">
+            <Layout className="w-5 h-5" />
+            My Diagrams
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="md:hidden"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="p-4">
+          <Button
+            onClick={handleCreate}
+            className="w-full flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Diagram
+          </Button>
+        </div>
+
+        <Separator />
+
+        <div className="flex-1 min-h-0 relative" ref={scrollAreaRef}>
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-2">
+              {paginatedDiagrams.map((diagram) => (
+                <div
+                  key={diagram.id}
+                  onClick={() => setActiveDiagram(diagram.id)}
+                  className={cn(
+                    "group flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors",
+                    activeDiagramId === diagram.id
+                      ? "bg-accent border-primary"
+                      : "bg-card",
+                  )}
+                >
+                  <div className="flex-1 min-w-0 mr-2 overflow-hidden">
+                    {editingId === diagram.id ? (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onBlur={saveEditing}
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLInputElement>,
+                          ) => {
+                            if (e.key === "Enter") saveEditing(e);
+                            if (e.key === "Escape") cancelEditing(e);
+                          }}
+                          autoFocus
+                          className="h-7 text-sm py-1 px-2"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <h3
+                          className="font-medium text-sm truncate"
+                          title={diagram.name}
+                        >
+                          {diagram.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {formatDate(diagram.lastModified)}
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => handleExport(e, diagram)}
+                      title="Export JSON"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => startEditing(e, diagram)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Diagram?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{diagram.name}"?
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteDiagram(diagram.id);
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="px-4 py-2 border-t flex items-center justify-between bg-card/50">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Page {currentPage} of {totalPages} ({sortedDiagrams.length} items)
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
+        <div className="p-4 border-t space-y-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={handleExportAll}
+            >
+              <FileJson className="w-3.5 h-3.5 mr-2" />
+              Backup All
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => document.getElementById("import-file")?.click()}
+            >
+              <Upload className="w-3.5 h-3.5 mr-2" />
+              Import
+            </Button>
+            <input
+              type="file"
+              id="import-file"
+              className="hidden"
+              accept=".json"
+              onChange={handleImport}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => setTemplatesOpen(true)}
+            >
+              <LayoutTemplate className="w-3.5 h-3.5 mr-2" />
+              Templates
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => setMermaidOpen(true)}
+            >
+              <GitBranch className="w-3.5 h-3.5 mr-2" />
+              Mermaid
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => setSqlOpen(true)}
+            >
+              <Download className="w-3.5 h-3.5 mr-2" />
+              SQL DDL
+            </Button>
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              {sortedDiagrams.length} diagram
+              {sortedDiagrams.length !== 1 ? "s" : ""} stored locally
+            </span>
+            <span className="font-mono opacity-60">v{APP_VERSION}</span>
+          </div>
+        </div>
+
+        {/* Mermaid Import Dialog */}
+        {mermaidOpen && (
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setMermaidOpen(false)}
+          >
+            <div
+              className="bg-background border border-border rounded-xl shadow-2xl p-5 w-[480px] max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm">
+                  Import Mermaid Diagram
+                </span>
+                <button
+                  onClick={() => setMermaidOpen(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                Supports flowchart, sequenceDiagram, and classDiagram.
+              </p>
+              <textarea
+                autoFocus
+                value={mermaidCode}
+                onChange={(e) => setMermaidCode(e.target.value)}
+                placeholder={`flowchart TD\n    A[Start] --> B[Process]\n    B --> C[End]`}
+                className="w-full h-44 text-xs font-mono bg-muted border border-border rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <div className="flex gap-2 mt-3 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMermaidOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleImportMermaid}>
+                  Import
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <TemplatesDialog
+          isOpen={templatesOpen}
+          onClose={() => setTemplatesOpen(false)}
+        />
+
+        {/* SQL DDL Import Dialog */}
+        {sqlOpen && (
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setSqlOpen(false)}
+          >
+            <div
+              className="bg-background border border-border rounded-xl shadow-2xl p-5 w-[520px] max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm">Import SQL DDL</span>
+                <button
+                  onClick={() => setSqlOpen(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                Paste{" "}
+                <code className="font-mono bg-muted px-1 rounded">
+                  CREATE TABLE
+                </code>{" "}
+                statements. Foreign keys are auto-linked.
+              </p>
+              <textarea
+                autoFocus
+                value={sqlCode}
+                onChange={(e) => setSqlCode(e.target.value)}
+                placeholder={`CREATE TABLE users (\n  id INT PRIMARY KEY,\n  email VARCHAR(255) NOT NULL\n);\n\nCREATE TABLE posts (\n  id INT PRIMARY KEY,\n  user_id INT,\n  FOREIGN KEY (user_id) REFERENCES users(id)\n);`}
+                className="w-full h-52 text-xs font-mono bg-muted border border-border rounded-lg p-3 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <div className="flex gap-2 mt-3 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSqlOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleImportSqlDdl}>
+                  Import
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
