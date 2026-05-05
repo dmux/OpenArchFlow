@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-05-04
+
+### Added
+
+**Simulation Engine — Phase 2 (Live Traffic & Fault Injection)**
+- **Typed edge status in callbacks** — Engine now emits per-edge status (`active` / `error` / `throttled`) on every tick, enabling real-time traffic visualization directly on diagram edges.
+- **Per-edge HTTP traffic visualization** — Edges pulse with colors during simulation: green (active), red (error/killed), orange (throttled). All colored edges have a glow effect. Implemented in `FlowCanvas` via `activeSimulationEdges` map in the Zustand store.
+- **SimulationMetrics panel** — Popover accessible from the SimulationControls bar showing a table with Node | Requests | Err% | p95 Latency | Throttled | Cache Hit% | Est. Cost columns. Includes a summary bar (total requests, error rate, cumulative cost).
+- **TraceViewer panel** — Popover showing completed request traces as expandable waterfall rows. Each hop displays node label, latency bar, and status icon. Clear button resets trace history.
+- **Fault Injection — Kill Service** — New "Kill / Restore" toggle in the Properties Panel (visible during simulation). Killed nodes immediately emit `ServiceUnavailableException`; inbound edges turn red. `killedNodes` count badge shown in the SimulationControls bar.
+- **Traffic Multiplier** — 1×, 2×, 5× traffic buttons in the SimulationControls bar multiply the request spawn rate without restarting the simulation.
+- **Live property updates during simulation** — Changing Latency (ms) or Failure Rate (%) sliders in the Properties Panel while the simulation is running takes effect on the very next tick. A green "Live" indicator appears on the mock config section when `isPlaying`. Implemented via `updateNodes()` on `SimulationEngine` and a `useDiagramStore.subscribe` watcher in the facade.
+- **Quick Start traffic banner** — When a Client or Gateway node is selected and no `requestsPerSecond` is configured, the Properties Panel shows a banner with "5 req/s" and "20 req/s buttons to instantly set up traffic and run the simulation.
+- **AWS service behavior profiles** — `aws-behaviors.ts` defines realistic latency distributions, failure modes, throttle error codes, concurrency limits, and per-request cost estimates for Lambda, API Gateway, DynamoDB, S3, SQS, SNS, ElastiCache, RDS, ECS, and more.
+
+**Templates**
+- **Serverless Circuit Breaker** — Lambda-based CB wrapper reading breaker state from DynamoDB; downstream Orders Lambda pre-configured with 65% failure rate; fallback via ElastiCache; CloudWatch → SNS trip alert. Client pre-configured at 8 req/s.
+- **ECS Microservices + Circuit Breaker** — App Mesh (Envoy proxy) routing between Orders and Payment services. Payment pre-configured with 70% failure and 1.2 s latency; fallback replica at 5% failure. X-Ray traces + CloudWatch EMF observability. Client pre-configured at 10 req/s.
+- **Additional AWS templates** — Static Website (S3 + CloudFront + Route 53), ECS Fargate App, ML Training Pipeline (SageMaker), Multi-Region Disaster Recovery.
+- **Additional Azure templates** — Three-Tier Web App (Front Door + App Service + SQL), Serverless Functions (Event Hub + Azure Functions + Cosmos DB).
+- **Generic ER Diagram** — Users / Orders / Products / OrderItems schema ready for SQL DDL export.
+
+**Editor**
+- **Node Grouping / Ungrouping** — Select multiple nodes and group them under a `FrameNode` parent via the toolbar. Ungroup detaches children.
+- **SQL DDL Export** — Export ER diagrams as `CREATE TABLE` SQL from the export dropdown.
+- **Minimap + Layout controls** — Mini-map overlay and one-click auto-layout in the canvas toolbar.
+- **Custom pen cursor for laser pointer** — Laser pointer mode now uses a custom SVG cursor for better visual clarity.
+
+### Fixed
+
+- Removed stale `require()` call in `CloudNode` that broke the metrics badge.
+- Fixed `getSnapshot` infinite loop in `SimulationMetrics` caused by returning a new object from the Zustand selector on every render — split into three separate primitive selectors.
+- Fixed `activeEdgeIds` being emitted by the engine but never reaching the canvas — wired via `setActiveSimulationEdges` in the store facade.
+- Unparent children nodes when a parent `FrameNode` is deleted to prevent ReactFlow orphan errors.
+
+### Technical
+
+- `SimulationEngine` fields `_nodes` / `_edges` are now instance-level; `updateNodes()` allows hot-swapping the node array mid-simulation.
+- New store fields: `killedNodes: Set<string>`, `trafficMultiplier: number`, `activeSimulationEdges: Map<string, "active"|"error"|"throttled">`, `simulationTraces: RequestTrace[]`.
+- New store actions: `toggleKillNode`, `setTrafficMultiplier`, `setActiveSimulationEdges`, `addSimulationTraces`, `clearSimulationTraces`, `updateNodeMetrics`.
+- New components: `SimulationMetrics`, `TraceViewer`.
+- New files: `src/lib/simulation/SimulationEngine.ts`, `src/lib/simulation/aws-behaviors.ts`.
+- `NodeSimulationStatus` extended with `requestCount`, `errorCount`, `latencies`, `queueDepth`, `cacheHits`, `cacheMisses`, `throttleCount`, `activeConcurrency`, `cumulativeCostUsd`.
+
+---
+
 ## [0.5.0] - 2026-05-03
 
 ### Added
