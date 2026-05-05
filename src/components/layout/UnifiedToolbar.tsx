@@ -15,6 +15,7 @@ import {
   FileText,
   DollarSign,
   Pen,
+  Hand,
   MousePointer2,
   Loader2,
   Sun,
@@ -431,6 +432,14 @@ export function UnifiedToolbar({
       label: "Select / Edit",
       onClick: () => setInteractionMode("default"),
       active: interactionMode === "default",
+    },
+    {
+      id: "pan",
+      icon: Hand,
+      label: "Pan / Move Canvas",
+      onClick: () =>
+        setInteractionMode(interactionMode === "pan" ? "default" : "pan"),
+      active: interactionMode === "pan",
     },
     {
       id: "laser",

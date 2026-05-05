@@ -257,8 +257,8 @@ interface DiagramState {
   clearSimulationTraces: () => void;
 
   // Interaction Mode
-  interactionMode: "default" | "laser"; // 'default' = selection/pan, 'laser' = laser pointer
-  setInteractionMode: (mode: "default" | "laser") => void;
+  interactionMode: "default" | "laser" | "pan"; // 'default' = selection/pan, 'laser' = laser pointer, 'pan' = hand/pan mode
+  setInteractionMode: (mode: "default" | "laser" | "pan") => void;
 
   // Collaboration
   collaborationRoomId: string | null;
