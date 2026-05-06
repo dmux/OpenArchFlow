@@ -24,6 +24,7 @@ import DiagramChat from "@/components/diagram/DiagramChat";
 import LayersPanel from "@/components/diagram/LayersPanel";
 import KeyboardShortcutsDialog from "@/components/layout/KeyboardShortcutsDialog";
 import TemplatesDialog from "@/components/diagram/TemplatesDialog";
+import TerraformPanel from "@/components/diagram/TerraformPanel";
 
 // Service
 import { WebLLMService } from "@/lib/ai/webllm";
@@ -326,6 +327,15 @@ function HomeContent() {
         <LayersPanel
           isOpen={activePanel === "layers"}
           onClose={() => setActivePanel(null)}
+        />
+
+        <TerraformPanel
+          isOpen={activePanel === "terraform"}
+          onClose={() => setActivePanel(null)}
+          nodes={currentNodes}
+          edges={currentEdges}
+          diagramName={activeDiagram?.name || "diagram"}
+          geminiApiKey={geminiApiKey}
         />
 
         <PropertiesPanel />
