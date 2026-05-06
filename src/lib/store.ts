@@ -121,6 +121,12 @@ export interface NodePricing {
   loading?: boolean;
 }
 
+export interface TerraformNodeConfig {
+  resourceType?: string;
+  resourceName?: string;
+  customArgs?: Record<string, unknown>;
+}
+
 export interface AppNodeData extends Record<string, unknown> {
   label: string;
   service: string;
@@ -130,6 +136,9 @@ export interface AppNodeData extends Record<string, unknown> {
   simulation?: NodeSimulationStatus;
   pricing?: NodePricing;
   layerId?: string;
+  iacConfig?: {
+    terraform?: TerraformNodeConfig;
+  };
 }
 
 export interface Layer {
