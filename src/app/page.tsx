@@ -227,8 +227,10 @@ function HomeContent() {
                   className={cn(
                     "absolute inset-0 rounded-2xl pointer-events-none",
                     aiProvider === "offline" && "animate-ping bg-foreground/10",
-                    aiProvider === "gemini" && "animate-pulse bg-sky-500/20 shadow-[0_0_12px_4px_rgb(14_165_233_/_0.35)]",
-                    aiProvider === "local" && "animate-pulse bg-emerald-500/20 shadow-[0_0_12px_4px_rgb(16_185_129_/_0.35)]",
+                    aiProvider === "gemini" &&
+                      "animate-pulse bg-sky-500/20 shadow-[0_0_12px_4px_rgb(14_165_233_/_0.35)]",
+                    aiProvider === "local" &&
+                      "animate-pulse bg-emerald-500/20 shadow-[0_0_12px_4px_rgb(16_185_129_/_0.35)]",
                   )}
                 />
                 <button
