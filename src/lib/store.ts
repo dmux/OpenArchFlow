@@ -165,6 +165,8 @@ interface DiagramState {
   selectedEdgeId: string | null;
   geminiApiKey: string | null;
   isOfflineMode: boolean;
+  aiProvider: "offline" | "gemini" | "local";
+  setAiProvider: (provider: "offline" | "gemini" | "local") => void;
   generatedSpecification: string | null;
 
   // Import Actions
@@ -280,6 +282,7 @@ export const useDiagramStore = create<DiagramState>()(
         selectedEdgeId: null,
         geminiApiKey: null,
         isOfflineMode: false,
+        aiProvider: "offline" as const,
         isPlaying: false,
         isPaused: false,
         simulationSpeed: 1,
@@ -667,6 +670,7 @@ export const useDiagramStore = create<DiagramState>()(
         setGeminiApiKey: (key) =>
           set({ geminiApiKey: key, isOfflineMode: false }),
         setOfflineMode: (isOffline) => set({ isOfflineMode: isOffline }),
+        setAiProvider: (provider) => set({ aiProvider: provider }),
         setGeneratedSpecification: (spec) =>
           set({ generatedSpecification: spec }),
 
@@ -1410,6 +1414,7 @@ export const useDiagramStore = create<DiagramState>()(
           activeDiagramId: state.activeDiagramId,
           geminiApiKey: state.geminiApiKey,
           isOfflineMode: state.isOfflineMode,
+          aiProvider: state.aiProvider,
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
         }),

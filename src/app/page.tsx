@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { Cloud, Laptop, Github, KeyRound, Loader2 } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Github, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ import SimulationControls from "@/components/simulation/SimulationControls";
 import { PrivacyInfo } from "@/components/layout/PrivacyInfo";
 import SpecificationDialog from "@/components/diagram/SpecificationDialog";
 import { UnifiedToolbar } from "@/components/layout/UnifiedToolbar";
-import { GeminiKeyDialog } from "@/components/layout/GeminiKeyDialog";
+import { AIProviderDialog } from "@/components/layout/AIProviderDialog";
 import DiagramChat from "@/components/diagram/DiagramChat";
 import LayersPanel from "@/components/diagram/LayersPanel";
 import KeyboardShortcutsDialog from "@/components/layout/KeyboardShortcutsDialog";
@@ -30,13 +30,6 @@ import { WebLLMService } from "@/lib/ai/webllm";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // UI Components
-import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export default function Home() {
   return (
@@ -59,7 +52,6 @@ function HomeContent() {
   const currentNodes = activeDiagram?.nodes || [];
   const currentEdges = activeDiagram?.edges || [];
 
-  const isOfflineMode = useDiagramStore((state) => state.isOfflineMode);
   const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
   const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
   const generatedSpecification = useDiagramStore(
@@ -70,7 +62,9 @@ function HomeContent() {
   );
 
   // AI States
-  const [useLocalAI, setUseLocalAI] = useState(false);
+  const aiProvider = useDiagramStore((s) => s.aiProvider);
+  const setAiProvider = useDiagramStore((s) => s.setAiProvider);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +72,6 @@ function HomeContent() {
   // UI Panel State
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [apiKeyInvalid, setApiKeyInvalid] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
 
@@ -90,7 +83,7 @@ function HomeContent() {
 
   // Initialize Local AI model if needed
   useEffect(() => {
-    if (useLocalAI) {
+    if (aiProvider === "local") {
       const initModel = async () => {
         setIsModelLoading(true);
         try {
@@ -109,22 +102,22 @@ function HomeContent() {
           }
         } catch (error) {
           console.error("Failed to initialize local model:", error);
-          toast.error("Failed to load local AI model. Falling back to Cloud.");
-          setUseLocalAI(false);
+          toast.error("Failed to load local AI model. Switching to Offline.");
+          setAiProvider("offline");
         } finally {
           setIsModelLoading(false);
         }
       };
       initModel();
     }
-  }, [useLocalAI]);
+  }, [aiProvider, setAiProvider]);
 
   const handlePromptSubmit = useCallback(
     async (prompt: string) => {
       setIsLoading(true);
       try {
         let result;
-        if (useLocalAI) {
+        if (aiProvider === "local") {
           const service = WebLLMService.getInstance();
           if (!service.isReady()) throw new Error("Local model not ready yet.");
 
@@ -142,12 +135,8 @@ function HomeContent() {
           }
         } else {
           if (!geminiApiKey || geminiApiKey === "offline") {
-            setGeminiApiKey(null); // Trigger setup dialog
-            throw new Error(
-              geminiApiKey === "offline"
-                ? "AI Features are disabled in Offline Mode. Please set an API Key."
-                : "Please set your Gemini API Key first.",
-            );
+            setIsAIDialogOpen(true);
+            throw new Error("Please configure an AI provider first.");
           }
           const response = await fetch("/api/generate", {
             method: "POST",
@@ -186,8 +175,7 @@ function HomeContent() {
         const isApiKeyError =
           /api key/i.test(message) || message.includes("API_KEY_INVALID");
         if (isApiKeyError) {
-          setApiKeyInvalid(true);
-          setGeminiApiKey(null);
+          setIsAIDialogOpen(true);
         } else {
           toast.error(message);
         }
@@ -200,9 +188,10 @@ function HomeContent() {
       setGeminiApiKey,
       setNodes,
       setEdges,
-      useLocalAI,
+      aiProvider,
       currentNodes,
       currentEdges,
+      setIsAIDialogOpen,
     ],
   );
 
@@ -217,7 +206,7 @@ function HomeContent() {
           setIsSidebarOpen={setIsSidebarOpen}
           isGenerating={isGenerating}
           setIsGenerating={setIsGenerating}
-          useLocalAI={useLocalAI}
+          useLocalAI={aiProvider === "local"}
         />
 
         {/* Main Content Area */}
@@ -231,69 +220,45 @@ function HomeContent() {
             </div>
 
             <div className="flex items-center space-x-3 pointer-events-auto">
-              {/* AI Mode Toggle */}
-              <TooltipProvider delayDuration={400}>
-                <div className="flex items-center space-x-3 bg-background/80 backdrop-blur-xl border border-border shadow-xl rounded-2xl px-4 py-2 hover:bg-background/100 transition-all">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "flex items-center space-x-1.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer group",
-                          !useLocalAI
-                            ? "text-sky-500"
-                            : "text-muted-foreground hover:text-sky-400",
-                        )}
-                        onClick={() => {
-                          if (!useLocalAI) setGeminiApiKey(null);
-                          else setUseLocalAI(false);
-                        }}
-                      >
-                        <Cloud className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Cloud (Gemini)</span>
-                        {!useLocalAI && (
-                          <KeyRound
-                            className="w-3 h-3 ml-0.5 text-foreground opacity-50 group-hover:opacity-100 transition-opacity"
-                            strokeWidth={3}
-                          />
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      {!useLocalAI
-                        ? "Change Gemini API Key"
-                        : "Switch to Gemini (Cloud)"}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Switch
-                    id="ai-mode"
-                    checked={useLocalAI}
-                    onCheckedChange={setUseLocalAI}
-                    disabled={isLoading || isModelLoading}
-                    className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-sky-500 scale-90"
-                  />
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "flex items-center space-x-1.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer",
-                          useLocalAI
-                            ? "text-emerald-500"
-                            : "text-muted-foreground hover:text-emerald-400",
-                        )}
-                        onClick={() => setUseLocalAI(true)}
-                      >
-                        <Laptop className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Local (Phi-3)</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      Switch to Local AI (Phi-3)
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </TooltipProvider>
+              {/* AI Provider selector */}
+              <div className="relative">
+                {/* Importance ring */}
+                <span
+                  className={cn(
+                    "absolute inset-0 rounded-2xl pointer-events-none",
+                    aiProvider === "offline" && "animate-ping bg-foreground/10",
+                    aiProvider === "gemini" && "animate-pulse bg-sky-500/20 shadow-[0_0_12px_4px_rgb(14_165_233_/_0.35)]",
+                    aiProvider === "local" && "animate-pulse bg-emerald-500/20 shadow-[0_0_12px_4px_rgb(16_185_129_/_0.35)]",
+                  )}
+                />
+                <button
+                  onClick={() => setIsAIDialogOpen(true)}
+                  disabled={isLoading || isModelLoading}
+                  title={
+                    aiProvider === "offline"
+                      ? "Nenhuma IA configurada — clique para configurar"
+                      : aiProvider === "gemini"
+                        ? "Gemini Cloud AI ativo — clique para alterar"
+                        : "Local AI (WebLLM) ativo — clique para alterar"
+                  }
+                  className={cn(
+                    "relative flex items-center justify-center w-10 h-10 rounded-2xl bg-background/80 backdrop-blur-xl border shadow-xl hover:bg-background/100 transition-all hover:scale-110 disabled:opacity-50 disabled:pointer-events-none",
+                    aiProvider === "offline" && "border-border",
+                    aiProvider === "gemini" && "border-sky-500/60",
+                    aiProvider === "local" && "border-emerald-500/60",
+                  )}
+                >
+                  {aiProvider === "offline" && (
+                    <WifiOff className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  {aiProvider === "gemini" && (
+                    <Cloud className="w-4 h-4 text-sky-500" />
+                  )}
+                  {aiProvider === "local" && (
+                    <Laptop className="w-4 h-4 text-emerald-500" />
+                  )}
+                </button>
+              </div>
 
               <PrivacyInfo />
 
@@ -331,7 +296,7 @@ function HomeContent() {
             isLoading={isLoading}
             disabled={isModelLoading}
             placeholder={
-              useLocalAI
+              aiProvider === "local"
                 ? "Describe using Local AI..."
                 : "Describe architecture (Gemini)..."
             }
@@ -382,9 +347,9 @@ function HomeContent() {
           onClose={() => setGeneratedSpecification(null)}
         />
 
-        <GeminiKeyDialog
-          invalidKey={apiKeyInvalid}
-          onDismiss={() => setApiKeyInvalid(false)}
+        <AIProviderDialog
+          open={isAIDialogOpen}
+          onClose={() => setIsAIDialogOpen(false)}
         />
         <KeyboardShortcutsDialog
           open={shortcutsOpen}
