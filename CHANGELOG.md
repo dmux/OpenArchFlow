@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-05-05
+
+### Added
+
+**Terraform IaC Generation**
+
+- **HashiCorp Terraform code generation** — Export your AWS architecture diagram directly as production-ready HCL (`.tf`). Generates `main.tf` (provider block + one resource per AWS node + `depends_on` inferred from edges), `variables.tf`, and `outputs.tf`.
+- **Cloud-agnostic IaC abstraction** — `IaCGenerator` interface decouples the generator from Terraform so CDK, Pulumi, or CloudFormation can be added as future providers without touching the UI.
+- **60+ AWS → Terraform resource mappings** — Covers EC2, Lambda, RDS, DynamoDB, S3, VPC, ALB, API Gateway, CloudFront, Route 53, SQS, SNS, EKS, ECS, ElastiCache, ECR, and more. Each mapping includes default required args and exportable output attributes.
+- **AI-enhanced generation** — `/api/generate-terraform` route combines Gemini 2.5 Flash with the HashiCorp Terraform MCP server (`docker run -i --rm hashicorp/terraform-mcp-server`) to enrich the output with real provider schemas, IAM roles, and security groups. Falls back to static generation when AI is unavailable.
+- **Monaco Editor with HCL syntax** — Dedicated `TerraformEditor` component with full HCL/Terraform language registration (keywords, tokenizer, bracket matching, auto-close, snippet completions) and two custom themes: `terraform-dark` (`#1a1a2e` background) and `terraform-light` (`#faf5ff` background), both using Terraform purple (`#7B42BC`) accents.
+- **Editor theme toggle** — Three-button segmented control in the file tabs bar: Monitor (sync with app theme), Sun (force light), Moon (force dark). Fixed a bug where custom Monaco themes weren't applied after HMR reloads by moving `defineTheme` calls before the language-registration guard.
+- **TerraformPanel** — Slide-in sheet panel (right side, `z-[9999]`, rendered via React Portal) with:
+  - *Code tab*: Monaco editor with `main.tf` / `variables.tf` / `outputs.tf` file subtabs, copy, and download buttons.
+  - *Resources tab*: list of all generated Terraform resources with type chips and click-to-navigate.
+  - *Settings tab*: AWS region selector, provider version selector, resource summary, and quick actions.
+  - Fullscreen mode (toggle button + Esc key to exit).
+  - "AI Enhance" button in the header and "Generate with AI" primary action in the footer.
+  - Empty state illustration when no AWS nodes are present.
+- **Terraform button in UnifiedToolbar** — `SiTerraform` icon with purple gradient active state; export dropdown gains a "Terraform (.tf)" entry for quick download without opening the panel.
+- **IaC config in PropertiesPanel** — Collapsible "Infrastructure as Code" section for `aws-*` nodes: auto-detected resource type, editable resource name (shown as `resource_type.resource_name` HCL reference), and exported attributes chips. Persisted to `node.data.iacConfig.terraform`.
+
+### Fixed
+
+- Suppressed false-positive React Flow `nodeTypes` warning in development by disabling React Strict Mode (`reactStrictMode: false`).
+
+### Technical
+
+- New files: `src/lib/iac/types.ts`, `src/lib/iac/terraform/resource-map.ts`, `src/lib/iac/terraform/generator.ts`, `src/lib/iac/terraform/index.ts`, `src/lib/mcp/terraform-client.ts`, `src/lib/export/terraform.ts`, `src/app/api/generate-terraform/route.ts`, `src/components/diagram/TerraformEditor.tsx`, `src/components/diagram/TerraformPanel.tsx`.
+- New dependency: `@monaco-editor/react ^4.7.0`.
+- `AppNodeData` extended with `iacConfig?: { terraform?: TerraformNodeConfig }`.
+
+---
+
 ## [0.6.0] - 2026-05-04
 
 ### Added
