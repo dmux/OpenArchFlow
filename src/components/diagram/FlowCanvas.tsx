@@ -122,6 +122,7 @@ function FlowCanvas() {
   const [showMiniMap, setShowMiniMap] = useState(false);
 
   const isLaserMode = interactionMode === "laser";
+  const isPanMode = interactionMode === "pan";
 
   // Apply layer visibility / lock constraints in a stable memoized derivation
   const visibleNodes = useMemo(() => {
@@ -266,11 +267,11 @@ function FlowCanvas() {
           fitView
           attributionPosition="bottom-left"
           preventScrolling
-          nodesDraggable={!isLaserMode}
-          nodesConnectable={!isLaserMode}
-          elementsSelectable={!isLaserMode}
-          selectionOnDrag={!isLaserMode}
-          panOnDrag={isLaserMode ? true : [1, 2]}
+          nodesDraggable={!isLaserMode && !isPanMode}
+          nodesConnectable={!isLaserMode && !isPanMode}
+          elementsSelectable={!isLaserMode && !isPanMode}
+          selectionOnDrag={!isLaserMode && !isPanMode}
+          panOnDrag={isLaserMode || isPanMode ? true : [1, 2]}
           snapToGrid
           snapGrid={[16, 16]}
           defaultEdgeOptions={{
