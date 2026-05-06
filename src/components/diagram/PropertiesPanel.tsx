@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import JsonEditor from "./JsonEditor";
 import PricingSection from "./PricingSection";
+import { SiTerraform } from "react-icons/si";
+import { getResourceDef } from "@/lib/iac/terraform/resource-map";
 
 const LANE_COLORS = [
   "#6366f1",
@@ -379,6 +381,119 @@ function CustomPropertiesEditor({
           <Plus size={12} />
         </Button>
       </div>
+    </div>
+  );
+}
+
+function IaCConfigSection({
+  nodeId,
+  node,
+}: {
+  nodeId: string;
+  node: any;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const updateNode = useDiagramStore.getState().updateNode;
+
+  const service = node.data.service ?? "";
+  const detectedDef = getResourceDef(service);
+  const terraformConfig = node.data.iacConfig?.terraform ?? {};
+  const currentResourceType = terraformConfig.resourceType ?? detectedDef?.resource ?? "";
+  const currentResourceName = terraformConfig.resourceName ?? (node.data.label ?? service).toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "");
+
+  const updateTerraform = (patch: Record<string, unknown>) => {
+    updateNode(nodeId, {
+      iacConfig: {
+        ...(node.data.iacConfig ?? {}),
+        terraform: { ...terraformConfig, ...patch },
+      },
+    });
+  };
+
+  if (!detectedDef && !currentResourceType) {
+    return (
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+          <SiTerraform size={14} style={{ color: "#7B42BC" }} /> Infrastructure as Code
+        </h3>
+        <p className="text-xs text-muted-foreground p-2 rounded border border-dashed border-border">
+          No Terraform resource mapping found for <strong>{service}</strong>. You can set a custom resource type below.
+        </p>
+        <div>
+          <Label className="text-xs">Custom Resource Type</Label>
+          <Input
+            value={currentResourceType}
+            onChange={(e) => updateTerraform({ resourceType: e.target.value })}
+            placeholder="e.g. aws_instance"
+            className="h-8 text-xs font-mono mt-1"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <button
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <SiTerraform size={14} style={{ color: "#7B42BC" }} />
+          Infrastructure as Code
+        </span>
+        <span className="text-xs text-muted-foreground">{isOpen ? "▲" : "▼"}</span>
+      </button>
+
+      {isOpen && (
+        <div className="space-y-3 pl-1">
+          <div className="flex items-center gap-2 p-2 rounded-lg border border-[#7B42BC33] bg-[#7B42BC08]">
+            <SiTerraform size={12} style={{ color: "#7B42BC" }} />
+            <span className="text-xs font-mono text-muted-foreground">hashicorp/aws ~5.0</span>
+          </div>
+
+          <div>
+            <Label className="text-xs">Resource Type</Label>
+            <div className="flex gap-1 mt-1">
+              <Input
+                value={currentResourceType}
+                onChange={(e) => updateTerraform({ resourceType: e.target.value })}
+                placeholder="aws_instance"
+                className="h-8 text-xs font-mono flex-1"
+              />
+            </div>
+            {detectedDef && currentResourceType === detectedDef.resource && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">Auto-detected from {service}</p>
+            )}
+          </div>
+
+          <div>
+            <Label className="text-xs">Resource Name</Label>
+            <Input
+              value={currentResourceName}
+              onChange={(e) => updateTerraform({ resourceName: e.target.value.toLowerCase().replace(/\s+/g, "_").replace(/[^\w]/g, "") })}
+              placeholder="my_resource"
+              className="h-8 text-xs font-mono mt-1"
+            />
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Used in HCL: <code className="bg-muted px-1 rounded">{currentResourceType}.{currentResourceName}</code>
+            </p>
+          </div>
+
+          {detectedDef?.outputs && detectedDef.outputs.length > 0 && (
+            <div>
+              <Label className="text-xs">Exported Attributes</Label>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {detectedDef.outputs.map((attr) => (
+                  <span key={attr} className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: "#7B42BC15", color: "#7B42BC" }}>
+                    .{attr}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1593,6 +1708,11 @@ export default function PropertiesPanel() {
               selectedNode.data.service ? (
                 <PricingSection node={selectedNode} />
               ) : null}
+
+              {/* Infrastructure as Code Config — shown for all AWS nodes */}
+              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
+                <IaCConfigSection nodeId={selectedNodeId} node={selectedNode} />
+              )}
 
               {/* Custom Properties */}
               <CustomPropertiesEditor

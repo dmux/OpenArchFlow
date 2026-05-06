@@ -1,6 +1,6 @@
 {
   "name": "open-arch-flow",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "author": "Rafael Sales <rafael.sales@gmail.com>",
   "pnpm": {
@@ -23,6 +23,7 @@
     "@google/generative-ai": "^0.24.1",
     "@mlc-ai/web-llm": "^0.2.82",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

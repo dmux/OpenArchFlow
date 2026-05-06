@@ -14,7 +14,8 @@ import {
   Download,
   FileText,
   DollarSign,
-  Pointer,
+  Pen,
+  Hand,
   MousePointer2,
   Loader2,
   Sun,
@@ -61,6 +62,8 @@ import { useStore } from "zustand";
 import { exportSvg } from "@/lib/export/svg";
 import { exportPdf } from "@/lib/export/pdf";
 import { exportSqlDdl } from "@/lib/export/sql-ddl";
+import { exportTerraform } from "@/lib/export/terraform";
+import { SiTerraform } from "react-icons/si";
 import { SimulationEngine } from "@/lib/simulation";
 import { useReactFlow } from "reactflow";
 import { getLayoutedElements } from "@/lib/layout-utils";
@@ -270,6 +273,15 @@ export function UnifiedToolbar({
     }
   }, [nodes, edges, activeDiagramName]);
 
+  const handleExportTerraform = useCallback(() => {
+    try {
+      exportTerraform(nodes, edges, activeDiagramName);
+      toast.success("Terraform .tf exported successfully!");
+    } catch {
+      toast.error("Failed to export Terraform.");
+    }
+  }, [nodes, edges, activeDiagramName]);
+
   const handleGenerateSpec = useCallback(async () => {
     if (nodes.length === 0) {
       toast.error("No diagram to generate specification for");
@@ -384,6 +396,14 @@ export function UnifiedToolbar({
         setActivePanel(activePanel === "templates" ? null : "templates"),
       active: activePanel === "templates",
     },
+    {
+      id: "terraform",
+      icon: LayoutTemplate, // placeholder — overridden in render by SiTerraform
+      label: "Terraform IaC",
+      onClick: () =>
+        setActivePanel(activePanel === "terraform" ? null : "terraform"),
+      active: activePanel === "terraform",
+    },
   ];
 
   const actionTools = [
@@ -433,8 +453,16 @@ export function UnifiedToolbar({
       active: interactionMode === "default",
     },
     {
+      id: "pan",
+      icon: Hand,
+      label: "Pan / Move Canvas",
+      onClick: () =>
+        setInteractionMode(interactionMode === "pan" ? "default" : "pan"),
+      active: interactionMode === "pan",
+    },
+    {
       id: "laser",
-      icon: Pointer,
+      icon: Pen,
       label: "Laser Pointer",
       onClick: () =>
         setInteractionMode(interactionMode === "laser" ? "default" : "laser"),
@@ -494,20 +522,34 @@ export function UnifiedToolbar({
                     onClick={tool.onClick}
                     className={cn(
                       "h-10 w-10 md:h-8 md:w-8 rounded-lg transition-all duration-200",
-                      tool.active &&
+                      tool.id === "terraform" && tool.active &&
+                        "shadow-lg scale-105",
+                      tool.id !== "terraform" && tool.active &&
                         "bg-primary text-primary-foreground shadow-lg scale-105",
                       !tool.active &&
                         "hover:bg-accent hover:text-accent-foreground",
                     )}
+                    style={
+                      tool.id === "terraform" && tool.active
+                        ? { background: "linear-gradient(135deg, #7B42BC, #5C2D8A)", color: "white" }
+                        : undefined
+                    }
                   >
-                    <tool.icon
-                      className={cn(
-                        "h-5 w-5 md:h-4 md:w-4",
-                        (tool.id === "ai" || tool.id === "chat") &&
-                          !tool.active &&
-                          "text-indigo-500",
-                      )}
-                    />
+                    {tool.id === "terraform" ? (
+                      <SiTerraform
+                        className="h-5 w-5 md:h-4 md:w-4"
+                        style={{ color: tool.active ? "white" : "#7B42BC" }}
+                      />
+                    ) : (
+                      <tool.icon
+                        className={cn(
+                          "h-5 w-5 md:h-4 md:w-4",
+                          (tool.id === "ai" || tool.id === "chat") &&
+                            !tool.active &&
+                            "text-indigo-500",
+                        )}
+                      />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={10}>
@@ -604,6 +646,14 @@ export function UnifiedToolbar({
                   className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium"
                 >
                   SQL DDL
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem
+                  onClick={handleExportTerraform}
+                  className="rounded-lg px-2 py-2 cursor-pointer hover:bg-accent focus:bg-accent text-sm font-medium gap-2"
+                >
+                  <SiTerraform size={13} style={{ color: "#7B42BC" }} />
+                  Terraform (.tf)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

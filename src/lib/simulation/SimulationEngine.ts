@@ -89,6 +89,7 @@ const rrCounters: Map<string, number> = new Map();
 export class SimulationEngine {
   private static _instance: SimulationEngine;
   private isRunning = false;
+  private isPaused = false;
   private speed = 1.0;
   private cb: SimulationCallback | null = null;
   private activeRequests: ActiveRequest[] = [];
@@ -174,13 +175,24 @@ export class SimulationEngine {
 
   public stop() {
     this.isRunning = false;
+    this.isPaused = false;
     this.activeRequests = [];
+  }
+
+  public pause() {
+    this.isPaused = true;
+  }
+
+  public resume() {
+    if (!this.isRunning) return;
+    this.isPaused = false;
+    this.scheduleTick();
   }
 
   // ── Scheduling ──────────────────────────────────────────────────────────
 
   private scheduleTick(_nodes?: AppNode[], _edges?: AppEdge[]) {
-    if (!this.isRunning) return;
+    if (!this.isRunning || this.isPaused) return;
     const intervalMs = 1000 / (10 * this.speed);
     setTimeout(() => this.tick(), intervalMs);
   }

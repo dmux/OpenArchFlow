@@ -121,6 +121,12 @@ export interface NodePricing {
   loading?: boolean;
 }
 
+export interface TerraformNodeConfig {
+  resourceType?: string;
+  resourceName?: string;
+  customArgs?: Record<string, unknown>;
+}
+
 export interface AppNodeData extends Record<string, unknown> {
   label: string;
   service: string;
@@ -130,6 +136,9 @@ export interface AppNodeData extends Record<string, unknown> {
   simulation?: NodeSimulationStatus;
   pricing?: NodePricing;
   layerId?: string;
+  iacConfig?: {
+    terraform?: TerraformNodeConfig;
+  };
 }
 
 export interface Layer {
@@ -165,6 +174,8 @@ interface DiagramState {
   selectedEdgeId: string | null;
   geminiApiKey: string | null;
   isOfflineMode: boolean;
+  aiProvider: "offline" | "gemini" | "local";
+  setAiProvider: (provider: "offline" | "gemini" | "local") => void;
   generatedSpecification: string | null;
 
   // Import Actions
@@ -217,6 +228,9 @@ interface DiagramState {
   // Simulation State
   isPlaying: boolean;
   setIsPlaying: (isPlaying: boolean) => void;
+  isPaused: boolean;
+  pauseSimulation: () => void;
+  resumeSimulation: () => void;
   simulationSpeed: number;
   setSimulationSpeed: (speed: number) => void;
   simulationLogs: SimulationLog[];
@@ -254,8 +268,8 @@ interface DiagramState {
   clearSimulationTraces: () => void;
 
   // Interaction Mode
-  interactionMode: "default" | "laser"; // 'default' = selection/pan, 'laser' = laser pointer
-  setInteractionMode: (mode: "default" | "laser") => void;
+  interactionMode: "default" | "laser" | "pan"; // 'default' = selection/pan, 'laser' = laser pointer, 'pan' = hand/pan mode
+  setInteractionMode: (mode: "default" | "laser" | "pan") => void;
 
   // Collaboration
   collaborationRoomId: string | null;
@@ -277,7 +291,9 @@ export const useDiagramStore = create<DiagramState>()(
         selectedEdgeId: null,
         geminiApiKey: null,
         isOfflineMode: false,
+        aiProvider: "offline" as const,
         isPlaying: false,
+        isPaused: false,
         simulationSpeed: 1,
         simulationLogs: [],
         generatedSpecification: null,
@@ -383,6 +399,8 @@ export const useDiagramStore = create<DiagramState>()(
           }),
 
         setIsPlaying: (isPlaying) => set({ isPlaying }),
+        pauseSimulation: () => set({ isPaused: true }),
+        resumeSimulation: () => set({ isPaused: false }),
         setSimulationSpeed: (simulationSpeed) => set({ simulationSpeed }),
         setInteractionMode: (mode) => set({ interactionMode: mode }),
 
@@ -551,6 +569,7 @@ export const useDiagramStore = create<DiagramState>()(
 
             return {
               isPlaying: false,
+              isPaused: false,
               activeSimulationEdges: new Map(),
               diagrams: {
                 ...state.diagrams,
@@ -573,6 +592,7 @@ export const useDiagramStore = create<DiagramState>()(
 
             return {
               isPlaying: false,
+              isPaused: false,
               simulationLogs: [],
               simulationTraces: [],
               killedNodes: new Set<string>(),
@@ -659,6 +679,7 @@ export const useDiagramStore = create<DiagramState>()(
         setGeminiApiKey: (key) =>
           set({ geminiApiKey: key, isOfflineMode: false }),
         setOfflineMode: (isOffline) => set({ isOfflineMode: isOffline }),
+        setAiProvider: (provider) => set({ aiProvider: provider }),
         setGeneratedSpecification: (spec) =>
           set({ generatedSpecification: spec }),
 
@@ -1402,6 +1423,7 @@ export const useDiagramStore = create<DiagramState>()(
           activeDiagramId: state.activeDiagramId,
           geminiApiKey: state.geminiApiKey,
           isOfflineMode: state.isOfflineMode,
+          aiProvider: state.aiProvider,
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
         }),

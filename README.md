@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.6.0-blue?style=flat-square" alt="Version 0.6.0" />
+  <img src="https://img.shields.io/badge/version-0.7.0-blue?style=flat-square" alt="Version 0.7.0" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange?style=flat-square" alt="Gemini 2.5 Flash" />
@@ -65,6 +65,15 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **Usage Configuration**: Customize regions, instance types, and usage quantities (storage GBs, requests) for precise estimates
 - **Bill of Materials (BOM)**: View a consolidated cost breakdown for your entire architecture in a dedicated panel
 - **Export to CSV**: Download your cost estimate for architectural proposals or budgeting
+
+### 🏗️ Terraform IaC Generation (NEW)
+
+- **HCL Code Generation**: Export your AWS architecture diagram directly as production-ready HashiCorp Terraform — `main.tf`, `variables.tf`, and `outputs.tf` generated from your nodes and edges.
+- **60+ AWS Resource Mappings**: EC2, Lambda, RDS, DynamoDB, S3, VPC, ALB, API Gateway, CloudFront, EKS, ECS, SQS, SNS, ElastiCache, and more — with dependency inference from diagram edges (`depends_on`).
+- **AI-Enhanced Generation**: Combines Gemini 2.5 Flash with the HashiCorp Terraform MCP server to produce schema-accurate HCL with IAM roles and security groups.
+- **Monaco HCL Editor**: Full HCL syntax highlighting, bracket matching, and snippet completions. Switch between dark/light/auto themes from the editor toolbar.
+- **Per-Node IaC Config**: Override resource type and name directly from the Properties Panel for any AWS node.
+- **Cloud-Agnostic Architecture**: Pluggable `IaCGenerator` interface designed to support CDK, Pulumi, or CloudFormation in the future.
 
 ### 🎮 Diagram Simulation & Interactivity
 
@@ -168,6 +177,7 @@ pnpm start
 | **AI - Local**        | WebLLM (Phi-3-mini via WebGPU)   |
 | **P2P Collaboration** | Yjs + WebRTC                     |
 | **Documentation**     | react-markdown + remark-gfm      |
+| **IaC Editor**        | Monaco Editor + HCL              |
 | **Export**            | html2canvas                      |
 | **Icons**             | Lucide React                     |
 
