@@ -44,8 +44,9 @@ import {
 // API Gateway
 import {
   GetRestApisCommand, CreateRestApiCommand, GetResourcesCommand, CreateResourceCommand,
-  PutMethodCommand, PutIntegrationCommand, CreateDeploymentCommand,
-  GetStagesCommand, DeleteRestApiCommand,
+  PutMethodCommand, PutIntegrationCommand, PutMethodResponseCommand, PutIntegrationResponseCommand,
+  CreateDeploymentCommand, GetStagesCommand, DeleteRestApiCommand,
+  GetIntegrationCommand, type GetIntegrationCommandOutput,
 } from "@aws-sdk/client-api-gateway";
 // Kinesis
 import {
@@ -133,6 +134,43 @@ async function ensureLambdaRole(config: MiniStackConfig): Promise<string> {
     }),
   }));
   return arn;
+}
+
+// ── API Gateway CORS helper ───────────────────────────────────────────────────
+
+async function addCorsToResource(
+  gw: ReturnType<typeof getAPIGatewayClient>,
+  restApiId: string,
+  resourceId: string,
+): Promise<void> {
+  try { await gw.send(new PutMethodCommand({ restApiId, resourceId, httpMethod: "OPTIONS", authorizationType: "NONE" })); } catch { /* exists */ }
+  try {
+    await gw.send(new PutIntegrationCommand({
+      restApiId, resourceId, httpMethod: "OPTIONS", type: "MOCK",
+      requestTemplates: { "application/json": '{"statusCode": 200}' },
+    }));
+  } catch { /* exists */ }
+  try {
+    await gw.send(new PutMethodResponseCommand({
+      restApiId, resourceId, httpMethod: "OPTIONS", statusCode: "200",
+      responseParameters: {
+        "method.response.header.Access-Control-Allow-Origin": true,
+        "method.response.header.Access-Control-Allow-Headers": true,
+        "method.response.header.Access-Control-Allow-Methods": true,
+      },
+    }));
+  } catch { /* exists */ }
+  try {
+    await gw.send(new PutIntegrationResponseCommand({
+      restApiId, resourceId, httpMethod: "OPTIONS", statusCode: "200",
+      responseParameters: {
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,POST,PUT,PATCH,DELETE'",
+      },
+      responseTemplates: { "application/json": "" },
+    }));
+  } catch { /* exists */ }
 }
 
 async function deployOne(
@@ -281,6 +319,14 @@ async function deployOne(
         const resourcesRes = await gw.send(new GetResourcesCommand({ restApiId: apiId }));
         const rootResource = (resourcesRes.items ?? []).find((r) => r.path === "/");
         const rootId = rootResource?.id ?? "";
+        if (rootId) {
+          await addCorsToResource(gw, apiId, rootId);
+          // When no mock endpoints are configured, add a default GET MOCK so there is always one invocable route
+          if ((node.mockEndpoints ?? []).length === 0) {
+            try { await gw.send(new PutMethodCommand({ restApiId: apiId, resourceId: rootId, httpMethod: "GET", authorizationType: "NONE" })); } catch { /* exists */ }
+            try { await gw.send(new PutIntegrationCommand({ restApiId: apiId, resourceId: rootId, httpMethod: "GET", type: "MOCK", requestTemplates: { "application/json": '{"statusCode": 200}' } })); } catch { /* exists */ }
+          }
+        }
         for (const ep of node.mockEndpoints ?? []) {
           const epPath = ep.path.startsWith("/") ? ep.path.slice(1) : ep.path;
           let resourceId: string;
@@ -307,6 +353,7 @@ async function deployOne(
           } else {
             try { await gw.send(new PutIntegrationCommand({ restApiId: apiId, resourceId, httpMethod: ep.method.toUpperCase(), type: "MOCK", requestTemplates: { "application/json": `{"statusCode": ${ep.status ?? 200}}` } })); } catch { /* already exists */ }
           }
+          await addCorsToResource(gw, apiId, resourceId);
         }
         try { await gw.send(new CreateDeploymentCommand({ restApiId: apiId, stageName: "test" })); } catch { /* already deployed */ }
         return { nodeId, status: "deployed", resourceId: apiId, resourceArn: `arn:aws:apigateway:${config.region}::/restapis/${apiId}`, endpoint: `${config.endpoint}/restapis/${apiId}` };
@@ -671,23 +718,56 @@ export async function apiGatewayAddRoute(config: MiniStackConfig, restApiId: str
   } else {
     await gw.send(new PutIntegrationCommand({ restApiId, resourceId, httpMethod: method.toUpperCase(), type: "MOCK", requestTemplates: { "application/json": '{"statusCode": 200}' } }));
   }
+  await addCorsToResource(gw, restApiId, resourceId);
   await gw.send(new CreateDeploymentCommand({ restApiId, stageName: "test" }));
   return { resourceId };
 }
 
 export async function apiGatewayInvoke(config: MiniStackConfig, restApiId: string, method: string, path: string, body?: unknown): Promise<{ status: number; body: unknown }> {
+  const gw = getAPIGatewayClient(config);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const gwUrl = `${config.endpoint}/restapis/${restApiId}/test/_user_request_${normalizedPath}`;
   const httpMethod = (method ?? "GET").toUpperCase();
-  const gwRes = await fetch(gwUrl, {
-    method: httpMethod,
-    headers: { "Content-Type": "application/json" },
-    body: httpMethod !== "GET" && httpMethod !== "HEAD" && body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const text = await gwRes.text();
-  let parsed: unknown;
-  try { parsed = JSON.parse(text); } catch { parsed = { body: text }; }
-  return { status: gwRes.status, body: parsed };
+
+  // Find the resource matching the path (fall back to root)
+  const resources = await gw.send(new GetResourcesCommand({ restApiId }));
+  const resource =
+    (resources.items ?? []).find((r) => r.path === normalizedPath) ??
+    (resources.items ?? []).find((r) => r.path === "/");
+  if (!resource?.id) throw new Error(`No resource found for path ${normalizedPath}`);
+
+  // Get the integration (MOCK vs Lambda) — all SDK calls, no direct HTTP fetch needed
+  let integration: GetIntegrationCommandOutput | null = null;
+  try {
+    integration = await gw.send(new GetIntegrationCommand({ restApiId, resourceId: resource.id, httpMethod }));
+  } catch { /* no integration — return empty 200 */ }
+
+  if (!integration) return { status: 200, body: { message: "No integration configured" } };
+
+  if (integration.type === "AWS_PROXY" || integration.type === "AWS") {
+    // Lambda proxy — extract function name and invoke directly via SDK
+    const uri = integration.uri ?? "";
+    const fnMatch = uri.match(/function:([^/]+)\/invocations/);
+    const functionName = fnMatch?.[1];
+    if (functionName) {
+      const event = { httpMethod, path: normalizedPath, body: body !== undefined ? JSON.stringify(body) : null, headers: {}, queryStringParameters: null };
+      const lambdaRes = await getLambdaClient(config).send(new InvokeCommand({
+        FunctionName: functionName,
+        Payload: new TextEncoder().encode(JSON.stringify(event)),
+      }));
+      const raw = payloadToString(lambdaRes.Payload);
+      if (!raw) return { status: 200, body: {} };
+      try {
+        const parsed = JSON.parse(raw) as { statusCode?: number; body?: string };
+        const innerBody = typeof parsed.body === "string" ? (() => { try { return JSON.parse(parsed.body!); } catch { return parsed.body; } })() : (parsed.body ?? parsed);
+        return { status: parsed.statusCode ?? 200, body: innerBody };
+      } catch { return { status: 200, body: raw }; }
+    }
+  }
+
+  // MOCK integration — parse configured statusCode from requestTemplates
+  const tpl = integration.requestTemplates?.["application/json"] ?? '{"statusCode":200}';
+  const statusCode = (() => { try { return (JSON.parse(tpl) as { statusCode?: number }).statusCode ?? 200; } catch { return 200; } })();
+  return { status: statusCode, body: { message: "MOCK response", path: normalizedPath, method: httpMethod } };
 }
 
 // ── CloudWatch Logs ───────────────────────────────────────────────────────────

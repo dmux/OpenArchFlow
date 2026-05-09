@@ -1,8 +1,8 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
-import { Users, Zap } from "lucide-react";
+import { Users, Zap, CheckCircle2, XCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDiagramStore, type AppNodeData } from "@/lib/store";
 import { prettyPayload } from "@/lib/format-payload";
@@ -10,10 +10,11 @@ import { prettyPayload } from "@/lib/format-payload";
 const TrafficSourceNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
   const isPlaying = useDiagramStore((s) => s.isPlaying);
   const mock = data.mock as { requestsPerSecond?: number; httpMethod?: string; httpPath?: string; _lastFireResult?: { ok: boolean; response: unknown } } | undefined;
-  const rps    = mock?.requestsPerSecond ?? 0;
-  const method = mock?.httpMethod ?? "POST";
-  const path   = mock?.httpPath ?? "/";
+  const rps      = mock?.requestsPerSecond ?? 0;
+  const method   = mock?.httpMethod ?? "POST";
+  const path     = mock?.httpPath ?? "/";
   const lastFire = mock?._lastFireResult;
+  const [open, setOpen] = useState(false);
 
   return (
     <div
@@ -28,6 +29,51 @@ const TrafficSourceNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
       {/* Pulsing glow when simulation is running */}
       {isPlaying && rps > 0 && (
         <span className="absolute inset-0 rounded-2xl bg-violet-500/10 animate-pulse pointer-events-none" />
+      )}
+
+      {/* Last-fire status icon — top-right corner */}
+      {lastFire && (
+        <button
+          className={cn(
+            "nodrag absolute -top-2 -right-2 rounded-full p-0.5 border shadow-sm transition-transform hover:scale-110",
+            lastFire.ok
+              ? "bg-green-950 border-green-600/50 text-green-400"
+              : "bg-red-950 border-red-600/50 text-red-400",
+          )}
+          onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+          title={lastFire.ok ? "Ver resposta" : "Ver erro"}
+        >
+          {lastFire.ok
+            ? <CheckCircle2 className="w-3.5 h-3.5" />
+            : <XCircle className="w-3.5 h-3.5" />}
+        </button>
+      )}
+
+      {/* Response popover — floats above the node */}
+      {open && lastFire && (
+        <div
+          className={cn(
+            "nodrag nowheel absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-50",
+            "w-64 rounded-xl border shadow-xl p-2",
+            lastFire.ok
+              ? "bg-green-950/95 border-green-600/40"
+              : "bg-red-950/95 border-red-600/40",
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className={cn("text-[9px] font-semibold uppercase tracking-wider", lastFire.ok ? "text-green-400" : "text-red-400")}>
+              {lastFire.ok ? "Response" : "Error"}
+            </span>
+            <button
+              className="text-muted-foreground hover:text-foreground"
+              onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+          <ScrollableResponse text={prettyPayload(lastFire.response)} ok={lastFire.ok} />
+        </div>
       )}
 
       {/* Icon */}
@@ -60,20 +106,6 @@ const TrafficSourceNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
         {method} {path}
       </span>
 
-      {/* Last fire result */}
-      {lastFire && (
-        <div className={cn(
-          "w-full rounded-lg border px-1.5 py-1 text-[9px] font-mono max-h-20 overflow-auto",
-          lastFire.ok
-            ? "border-green-500/30 bg-green-500/10 text-green-300"
-            : "border-red-500/30 bg-red-500/10 text-red-300",
-        )}>
-          <pre className="whitespace-pre-wrap break-all leading-tight">
-            {prettyPayload(lastFire.response)}
-          </pre>
-        </div>
-      )}
-
       {/* Source handle only — traffic source generates, doesn't receive */}
       <Handle
         type="source"
@@ -88,5 +120,18 @@ const TrafficSourceNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
     </div>
   );
 };
+
+function ScrollableResponse({ text, ok }: { text: string; ok: boolean }) {
+  return (
+    <pre
+      className={cn(
+        "text-[9px] font-mono leading-tight whitespace-pre-wrap break-all max-h-48 overflow-auto rounded-lg p-1.5",
+        ok ? "text-green-200" : "text-red-200",
+      )}
+    >
+      {text}
+    </pre>
+  );
+}
 
 export default memo(TrafficSourceNode);
