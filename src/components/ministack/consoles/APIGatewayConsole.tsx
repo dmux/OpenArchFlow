@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Play, Loader2, Globe, Plus, Trash2 } from "lucide-react";
+import { RefreshCw, Play, Loader2, Globe, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import {
+  apiGatewayGetResources, apiGatewayAddRoute, apiGatewayInvoke,
+  type APIResource, type APIStage,
+} from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface APIResource { id: string; path: string; methods: string[] }
-interface APIStage { name: string; deploymentId?: string }
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
@@ -28,13 +29,11 @@ export function APIGatewayConsole({
   const [stages, setStages] = useState<APIStage[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // New route form
   const [newMethod, setNewMethod] = useState("GET");
   const [newPath, setNewPath] = useState("/");
   const [newLambda, setNewLambda] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Test panel
   const [testMethod, setTestMethod] = useState("GET");
   const [testPath, setTestPath] = useState("/");
   const [testBody, setTestBody] = useState("");
@@ -44,13 +43,9 @@ export function APIGatewayConsole({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/apigateway?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setResources(data.resources ?? []);
-      setStages(data.stages ?? []);
+      const data = await apiGatewayGetResources(config, resourceId);
+      setResources(data.resources);
+      setStages(data.stages);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load API");
     } finally {
@@ -68,19 +63,7 @@ export function APIGatewayConsole({
     }
     setCreating(true);
     try {
-      const res = await fetch("/api/ministack/resource/apigateway-route", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          config,
-          restApiId: resourceId,
-          method: newMethod,
-          path,
-          lambdaFunctionName: newLambda.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      await apiGatewayAddRoute(config, resourceId, newMethod, path, newLambda.trim() || undefined);
       toast.success(`Route ${newMethod} ${path} created`);
       setNewPath("/");
       setNewLambda("");
@@ -98,15 +81,8 @@ export function APIGatewayConsole({
     try {
       let invokeBody: unknown;
       try { invokeBody = testBody ? JSON.parse(testBody) : undefined; } catch { invokeBody = testBody || undefined; }
-      const res = await fetch("/api/ministack/resource/apigateway-invoke", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, restApiId: resourceId, method: testMethod, path: testPath, body: invokeBody }),
-      });
-      const data = await res.json().catch(() => ({}));
-      const gwStatus = (data as any).status ?? res.status;
-      const gwBody = (data as any).body;
-      setTestResult({ status: gwStatus, body: typeof gwBody === "string" ? gwBody : JSON.stringify(gwBody, null, 2) });
+      const data = await apiGatewayInvoke(config, resourceId, testMethod, testPath, invokeBody);
+      setTestResult({ status: data.status, body: typeof data.body === "string" ? data.body : JSON.stringify(data.body, null, 2) });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Request failed";
       setTestResult({ status: 0, body: message });
@@ -117,7 +93,6 @@ export function APIGatewayConsole({
 
   return (
     <div className="flex flex-col h-full gap-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 min-w-0">
           <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -128,7 +103,6 @@ export function APIGatewayConsole({
         </Button>
       </div>
 
-      {/* Existing routes + stages */}
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Routes</p>
@@ -163,7 +137,6 @@ export function APIGatewayConsole({
         </div>
       </div>
 
-      {/* Create route */}
       <div className="border border-border rounded-lg p-3 space-y-2">
         <p className="text-xs font-medium">Add route</p>
         <div className="flex gap-2">
@@ -193,7 +166,6 @@ export function APIGatewayConsole({
         </Button>
       </div>
 
-      {/* Test */}
       <div className="border-t border-border pt-3 space-y-2">
         <p className="text-xs font-medium">Test endpoint</p>
         <div className="flex gap-2">

@@ -5,6 +5,7 @@ import { RefreshCw, Send, Trash2, Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import { sqsGetQueue, sqsSendMessage, sqsDeleteMessage } from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -30,13 +31,9 @@ export function SQSConsole({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/sqs?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}&endpoint=${encodeURIComponent(queueUrl)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setAttrs(data.attributes ?? {});
-      setMessages(data.messages ?? []);
+      const data = await sqsGetQueue(config, resourceId, queueUrl);
+      setAttrs(data.attributes as QueueAttrs);
+      setMessages(data.messages);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to read queue");
     } finally {
@@ -49,14 +46,8 @@ export function SQSConsole({
   const handleSend = async () => {
     setSending(true);
     try {
-      const res = await fetch("/api/ministack/resource/sqs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, queueUrl, messageBody }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      toast.success(`Message sent: ${data.messageId}`);
+      const messageId = await sqsSendMessage(config, queueUrl, messageBody);
+      toast.success(`Message sent: ${messageId}`);
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Send failed");
@@ -67,11 +58,7 @@ export function SQSConsole({
 
   const handleDelete = async (receiptHandle: string) => {
     try {
-      await fetch("/api/ministack/resource/sqs-delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, queueUrl, receiptHandle }),
-      });
+      await sqsDeleteMessage(config, queueUrl, receiptHandle);
       toast.success("Message deleted");
       load();
     } catch {

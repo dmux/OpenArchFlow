@@ -1,17 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Plus, Trash2, Loader2, Database } from "lucide-react";
+import { RefreshCw, Plus, Loader2, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import { dynamoScan, dynamoPutItem, type DynamoTableInfo } from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-interface TableInfo { itemCount: number; keySchema: { AttributeName: string; KeyType: string }[]; status?: string }
-
 export function DynamoDBConsole({ config, resourceId }: { config: MiniStackConfig; resourceId: string }) {
-  const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
+  const [tableInfo, setTableInfo] = useState<DynamoTableInfo | null>(null);
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [newItem, setNewItem] = useState('{"id": {"S": "item-1"}, "data": {"S": "hello"}}');
@@ -20,13 +19,9 @@ export function DynamoDBConsole({ config, resourceId }: { config: MiniStackConfi
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/dynamodb?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const data = await dynamoScan(config, resourceId);
       setTableInfo(data.table);
-      setItems(data.items ?? []);
+      setItems(data.items);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to scan table");
     } finally {
@@ -41,13 +36,7 @@ export function DynamoDBConsole({ config, resourceId }: { config: MiniStackConfi
     try { parsed = JSON.parse(newItem); } catch { toast.error("Invalid JSON"); return; }
     setAdding(true);
     try {
-      const res = await fetch("/api/ministack/resource/dynamodb", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, tableName: resourceId, item: parsed }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      await dynamoPutItem(config, resourceId, parsed as Record<string, unknown>);
       toast.success("Item added");
       load();
     } catch (e) {

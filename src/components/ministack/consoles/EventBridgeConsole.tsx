@@ -7,10 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import { eventBridgeGetBus, eventBridgePutEvents, type EBRule } from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface Rule { name?: string; state?: string; pattern?: string; scheduleExpression?: string }
 
 export function EventBridgeConsole({
   config,
@@ -19,7 +18,7 @@ export function EventBridgeConsole({
   config: MiniStackConfig;
   resourceId: string;
 }) {
-  const [rules, setRules] = useState<Rule[]>([]);
+  const [rules, setRules] = useState<EBRule[]>([]);
   const [loading, setLoading] = useState(false);
   const [source, setSource] = useState("com.openarchflow");
   const [detailType, setDetailType] = useState("TestEvent");
@@ -29,12 +28,8 @@ export function EventBridgeConsole({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/eventbridge?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setRules(data.rules ?? []);
+      const data = await eventBridgeGetBus(config, resourceId);
+      setRules(data.rules);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load event bus");
     } finally {
@@ -48,14 +43,8 @@ export function EventBridgeConsole({
     try { JSON.parse(detail); } catch { toast.error("Detail must be valid JSON"); return; }
     setPublishing(true);
     try {
-      const res = await fetch("/api/ministack/resource/eventbridge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, busName: resourceId, source, detailType, detail }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      toast.success(`Event sent (${data.failedCount === 0 ? "success" : `${data.failedCount} failed`})`);
+      const result = await eventBridgePutEvents(config, resourceId, source, detailType, detail);
+      toast.success(`Event sent (${result.failedCount === 0 ? "success" : `${result.failedCount} failed`})`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Put event failed");
     } finally {

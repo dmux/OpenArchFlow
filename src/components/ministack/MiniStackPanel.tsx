@@ -21,8 +21,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useDiagramStore } from "@/lib/store";
 import type { AppNode } from "@/lib/store";
-import type { DeployStatus, MiniStackDeployResult } from "@/lib/ministack/types";
+import type { DeployStatus } from "@/lib/ministack/types";
 import { getDeployDef } from "@/lib/ministack/service-map";
+import { deployNodes, teardownNodes } from "@/lib/ministack/browser-actions";
 import { MiniStackConfigDialog } from "./MiniStackConfigDialog";
 import { toast } from "sonner";
 
@@ -106,65 +107,32 @@ export default function MiniStackPanel({ isOpen, onClose, nodes }: MiniStackPane
     }
 
     setIsDeploying(true);
-
-    deployableNodes.forEach((n) =>
-      setNodeMinistackState(n.id, { status: "pending" }),
-    );
+    deployableNodes.forEach((n) => setNodeMinistackState(n.id, { status: "pending" }));
 
     let successCount = 0;
     let errorCount = 0;
 
     try {
-      const res = await fetch("/api/ministack/deploy?stream=true", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nodes: deployableNodes.map((n) => {
-            // Resolve targetResourceId for API Gateway endpoints
-            const mockEndpoints = n.data.mock?.endpoints?.map((ep) => ({
-              ...ep,
-              targetResourceId: ep.targetNodeId
-                ? nodes.find((t) => t.id === ep.targetNodeId)?.data.ministack?.resourceId
-                : undefined,
-            }));
-            return {
-              nodeId: n.id,
-              service: n.data.service,
-              label: n.data.label,
-              nodeConfig: n.data.ministack?.resourceNameOverride
-                ? { resourceNameOverride: n.data.ministack.resourceNameOverride }
-                : undefined,
-              mockEndpoints: mockEndpoints?.length ? mockEndpoints : undefined,
-            };
-          }),
-          config: ministackConfig,
+      await deployNodes(
+        deployableNodes.map((n) => {
+          const mockEndpoints = n.data.mock?.endpoints?.map((ep) => ({
+            ...ep,
+            targetResourceId: ep.targetNodeId
+              ? nodes.find((t) => t.id === ep.targetNodeId)?.data.ministack?.resourceId
+              : undefined,
+          }));
+          return {
+            nodeId: n.id,
+            service: n.data.service,
+            label: n.data.label,
+            nodeConfig: n.data.ministack?.resourceNameOverride
+              ? { resourceNameOverride: n.data.ministack.resourceNameOverride }
+              : undefined,
+            mockEndpoints: mockEndpoints?.length ? mockEndpoints : undefined,
+          };
         }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Deploy API returned ${res.status}`);
-      }
-
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (payload === "[DONE]") break;
-
-          const result: MiniStackDeployResult = JSON.parse(payload);
-
+        ministackConfig,
+        (result) => {
           if (result.status === "deployed") {
             successCount++;
             setNodeMinistackState(result.nodeId, {
@@ -176,19 +144,14 @@ export default function MiniStackPanel({ isOpen, onClose, nodes }: MiniStackPane
             });
           } else if (result.status === "error") {
             errorCount++;
-            setNodeMinistackState(result.nodeId, {
-              status: "error",
-              errorMessage: result.errorMessage,
-            });
+            setNodeMinistackState(result.nodeId, { status: "error", errorMessage: result.errorMessage });
           } else {
             setNodeMinistackState(result.nodeId, { status: result.status });
           }
-        }
-      }
+        },
+      );
 
-      if (!ministackConfig.enabled) {
-        setMinistackConfig({ enabled: true });
-      }
+      if (!ministackConfig.enabled) setMinistackConfig({ enabled: true });
 
       if (errorCount === 0) {
         toast.success(`Deployed ${successCount} service${successCount !== 1 ? "s" : ""} to MiniStack`);
@@ -198,13 +161,11 @@ export default function MiniStackPanel({ isOpen, onClose, nodes }: MiniStackPane
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Deploy failed";
       toast.error(msg);
-      deployableNodes.forEach((n) =>
-        setNodeMinistackState(n.id, { status: "error", errorMessage: msg }),
-      );
+      deployableNodes.forEach((n) => setNodeMinistackState(n.id, { status: "error", errorMessage: msg }));
     } finally {
       setIsDeploying(false);
     }
-  }, [deployableNodes, ministackConfig, setNodeMinistackState, setMinistackConfig]);
+  }, [deployableNodes, nodes, ministackConfig, setNodeMinistackState, setMinistackConfig]);
 
   const handleReset = useCallback(() => {
     resetAllMinistackStates();
@@ -221,25 +182,14 @@ export default function MiniStackPanel({ isOpen, onClose, nodes }: MiniStackPane
 
     setIsTearingDown(true);
     try {
-      const res = await fetch("/api/ministack/teardown", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nodes: deployedNodes.map((n) => ({
-            nodeId: n.id,
-            service: n.data.service,
-            ministack: n.data.ministack,
-          })),
-          config: ministackConfig,
-        }),
-      });
-
-      if (!res.ok) throw new Error(`Teardown API returned ${res.status}`);
-      const data: { results: { nodeId: string; ok: boolean; error?: string }[] } = await res.json();
+      const results = await teardownNodes(
+        deployedNodes.map((n) => ({ nodeId: n.id, service: n.data.service, ministack: n.data.ministack! })),
+        ministackConfig,
+      );
 
       let ok = 0;
       let failed = 0;
-      data.results.forEach((r) => {
+      results.forEach((r) => {
         if (r.ok) {
           ok++;
           setNodeMinistackState(r.nodeId, { status: "idle" as const });

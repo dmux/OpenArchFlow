@@ -7,6 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Editor from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import {
+  lambdaGetConfig, lambdaInvoke, lambdaUpdateConfig, lambdaUploadCode,
+  cwlStreamEvents, type CwlLogEvent,
+} from "@/lib/ministack/browser-actions";
+import { prettyPayload } from "@/lib/format-payload";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -114,15 +119,11 @@ def lambda_handler(event, context):
 const RUNTIME_KEYS = Object.keys(RUNTIMES);
 const DEFAULT_RUNTIME = "nodejs20.x";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function detectRuntime(raw?: string): string {
   if (!raw) return DEFAULT_RUNTIME;
   const normalized = raw.toLowerCase();
   return RUNTIME_KEYS.find((k) => k === normalized) ?? DEFAULT_RUNTIME;
 }
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 type Tab = "overview" | "code" | "logs";
 
@@ -142,47 +143,38 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
 
-  // — Overview state —
   const [fnConfig, setFnConfig] = useState<FnConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState('{"key": "value"}');
   const [invoking, setInvoking] = useState(false);
-  const [response, setResponse] = useState<{ statusCode?: number; error?: string; payload?: string } | null>(null);
+  const [invokeResult, setInvokeResult] = useState<unknown>(null);
 
-  // — Config edit state —
   const [editMemory, setEditMemory] = useState<number>(128);
   const [editTimeout, setEditTimeout] = useState<number>(3);
   const [editEnv, setEditEnv] = useState<{ key: string; value: string }[]>([]);
   const [savingConfig, setSavingConfig] = useState(false);
 
-  // — Code editor state —
   const [runtime, setRuntime] = useState(DEFAULT_RUNTIME);
   const [code, setCode] = useState(RUNTIMES[DEFAULT_RUNTIME].defaultCode);
   const [deploying, setDeploying] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Track whether the code has been user-edited (so we can replace default on runtime switch)
   const codeIsDefault = useRef(true);
 
-  // — Logs state —
-  const [logs, setLogs] = useState<{ timestamp?: number; message?: string }[]>([]);
+  const [logs, setLogs] = useState<CwlLogEvent[]>([]);
   const [streamLogs, setStreamLogs] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/lambda?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setFnConfig(data.config);
-      const detected = detectRuntime(data.config?.runtime);
+      const data = await lambdaGetConfig(config, resourceId);
+      setFnConfig(data);
+      const detected = detectRuntime(data.runtime);
       setRuntime(detected);
-      if (data.config?.memorySize) setEditMemory(data.config.memorySize);
-      if (data.config?.timeout)    setEditTimeout(data.config.timeout);
-      setEditEnv(Object.entries(data.config?.environment ?? {}).map(([key, value]) => ({ key, value: String(value) })));
+      if (data.memorySize) setEditMemory(data.memorySize);
+      if (data.timeout)    setEditTimeout(data.timeout);
+      setEditEnv(Object.entries(data.environment ?? {}).map(([key, value]) => ({ key, value })));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load function");
     } finally {
@@ -192,28 +184,18 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
 
   useEffect(() => { load(); }, [load]);
 
-  // SSE log streaming
+  // Browser-side polling for CloudWatch logs
   useEffect(() => {
     if (!streamLogs) return;
-    const params = new URLSearchParams({
-      config: JSON.stringify(config),
-      action: "events",
-      stream: "true",
-      logGroupName: `/aws/lambda/${resourceId}`,
+    setLogs([]);
+    const stop = cwlStreamEvents(config, `/aws/lambda/${resourceId}`, undefined, (batch) => {
+      setLogs((prev) => [...prev, ...batch].slice(-200));
     });
-    const es = new EventSource(`/api/ministack/logs?${params}`);
-    es.onmessage = (e) => {
-      try {
-        const events = JSON.parse(e.data);
-        setLogs((prev) => [...prev, ...events].slice(-200));
-      } catch { /* ignore */ }
-    };
-    return () => es.close();
+    return stop;
   }, [streamLogs, config, resourceId]);
 
   const handleRuntimeChange = (newRuntime: string) => {
     setRuntime(newRuntime);
-    // Replace code with the new default only if user hasn't edited it
     if (codeIsDefault.current) {
       setCode(RUNTIMES[newRuntime]?.defaultCode ?? "");
     }
@@ -229,13 +211,7 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
     setSavingConfig(true);
     try {
       const environment = Object.fromEntries(editEnv.filter((e) => e.key.trim()).map((e) => [e.key.trim(), e.value]));
-      const res = await fetch("/api/ministack/resource/lambda-config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, functionName: resourceId, memorySize: editMemory, timeout: editTimeout, environment }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      await lambdaUpdateConfig(config, resourceId, { memorySize: editMemory, timeout: editTimeout, environment });
       toast.success("Configuration saved");
       await load();
     } catch (e) {
@@ -248,22 +224,18 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
   const handleInvoke = async () => {
     try { JSON.parse(payload); } catch { toast.error("Invalid JSON payload"); return; }
     setInvoking(true);
-    setResponse(null);
+    setInvokeResult(null);
     try {
-      const res = await fetch("/api/ministack/resource/lambda", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, functionName: resourceId, payload }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setResponse(data);
-      toast.success(`Invoked — status ${data.statusCode}`);
+      const result = await lambdaInvoke(config, resourceId, payload);
+      setInvokeResult(result);
+      toast.success("Invoked");
       setActiveTab("logs");
       setLogs([]);
       setStreamLogs(true);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Invoke failed");
+      const msg = e instanceof Error ? e.message : "Invoke failed";
+      setInvokeResult({ error: msg });
+      toast.error(msg);
     } finally {
       setInvoking(false);
     }
@@ -273,30 +245,15 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
     setDeploying(true);
     const def = RUNTIMES[runtime];
     try {
-      // 1. Update runtime + handler config in LocalStack
-      const cfgRes = await fetch("/api/ministack/resource/lambda-config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, functionName: resourceId, runtime, handler: def.handler }),
-      });
-      const cfgData = await cfgRes.json();
-      if (cfgData.error) throw new Error(cfgData.error);
+      await lambdaUpdateConfig(config, resourceId, { runtime, handler: def.handler });
 
-      // 2. Package code with the correct filename and upload
       const { zipSync, strToU8 } = await import("fflate");
       const zipped = zipSync({ [def.fileName]: [strToU8(code), { level: 6 }] });
       let binary = "";
       for (let i = 0; i < zipped.length; i++) binary += String.fromCharCode(zipped[i]);
       const zipBase64 = btoa(binary);
 
-      const codeRes = await fetch("/api/ministack/resource/lambda-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, functionName: resourceId, zipBase64 }),
-      });
-      const codeData = await codeRes.json();
-      if (codeData.error) throw new Error(codeData.error);
-
+      await lambdaUploadCode(config, resourceId, zipBase64);
       toast.success(`Deployed as ${runtime} (${def.fileName})`);
       await load();
     } catch (e) {
@@ -316,13 +273,7 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
       for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
       const zipBase64 = btoa(binary);
 
-      const res = await fetch("/api/ministack/resource/lambda-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, functionName: resourceId, zipBase64 }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      await lambdaUploadCode(config, resourceId, zipBase64);
       toast.success("Code uploaded — function updated");
       setUploadFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -393,7 +344,7 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
             </div>
           )}
 
-          {/* ── Editable config ── */}
+          {/* Editable config */}
           <div className="border border-border rounded-lg p-3 space-y-3 shrink-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium">Configuration</p>
@@ -429,7 +380,6 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
               </div>
             </div>
 
-            {/* Environment variables */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Environment Variables</label>
@@ -482,13 +432,14 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
             </Button>
           </div>
 
-          {response && (
-            <div className={cn("rounded-lg border p-3 text-xs font-mono shrink-0",
-              response.error ? "border-destructive/40 bg-destructive/5" : "border-green-500/40 bg-green-500/5",
+          {invokeResult !== null && (
+            <div className={cn(
+              "rounded-lg border p-3 text-xs font-mono shrink-0",
+              (invokeResult as any)?.error
+                ? "border-destructive/40 bg-destructive/5"
+                : "border-green-500/40 bg-green-500/5",
             )}>
-              <p className="text-muted-foreground mb-1">Status: {response.statusCode}</p>
-              {response.error && <p className="text-destructive mb-1">Error: {response.error}</p>}
-              <pre className="whitespace-pre-wrap break-all text-[10px] line-clamp-6">{response.payload}</pre>
+              <pre className="whitespace-pre-wrap break-all text-[10px] line-clamp-6">{prettyPayload(invokeResult)}</pre>
             </div>
           )}
         </div>
@@ -497,7 +448,6 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
       {/* ── Code Editor ── */}
       {activeTab === "code" && (
         <div className="flex flex-col gap-2 flex-1 min-h-0">
-          {/* Runtime selector + deploy button */}
           <div className="flex items-center gap-2 shrink-0">
             <Settings2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <select
@@ -520,7 +470,6 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
             </Button>
           </div>
 
-          {/* Runtime info pill */}
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[10px] text-muted-foreground">
               File: <code className="font-mono">{def.fileName}</code>
@@ -528,7 +477,6 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
             </span>
           </div>
 
-          {/* Monaco editor */}
           <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border">
             <Editor
               height="100%"
@@ -550,7 +498,6 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
             />
           </div>
 
-          {/* Upload zip fallback */}
           <div className="flex items-center gap-2 shrink-0">
             <p className="text-[10px] text-muted-foreground shrink-0">Or upload a .zip:</p>
             <input

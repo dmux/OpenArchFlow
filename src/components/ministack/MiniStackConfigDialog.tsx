@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useDiagramStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { checkHealth } from "@/lib/ministack/browser-actions";
 
 interface MiniStackConfigDialogProps {
   open: boolean;
@@ -43,21 +44,13 @@ export function MiniStackConfigDialog({ open, onClose }: MiniStackConfigDialogPr
   const handleTestConnection = async () => {
     setConnStatus("checking");
     setConnMessage("");
-    try {
-      const res = await fetch(
-        `/api/ministack/health?endpoint=${encodeURIComponent(form.endpoint)}`,
-      );
-      const data = await res.json();
-      if (data.connected) {
-        setConnStatus("connected");
-        setConnMessage("MiniStack is running and reachable.");
-      } else {
-        setConnStatus("failed");
-        setConnMessage(data.error ?? "Could not connect.");
-      }
-    } catch {
+    const result = await checkHealth(form.endpoint);
+    if (result.connected) {
+      setConnStatus("connected");
+      setConnMessage("MiniStack is running and reachable.");
+    } else {
       setConnStatus("failed");
-      setConnMessage("Network error. Is the dev server running?");
+      setConnMessage(result.error ?? "Could not connect.");
     }
   };
 

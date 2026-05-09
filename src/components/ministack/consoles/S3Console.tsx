@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import { s3ListObjects, s3PutObject, s3DeleteObject, type S3Object } from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface S3Object { key: string; size: number; lastModified: string }
 
 export function S3Console({ config, resourceId }: { config: MiniStackConfig; resourceId: string }) {
   const [objects, setObjects] = useState<S3Object[]>([]);
@@ -21,12 +20,8 @@ export function S3Console({ config, resourceId }: { config: MiniStackConfig; res
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/s3?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setObjects(data.objects ?? []);
+      const data = await s3ListObjects(config, resourceId);
+      setObjects(data.objects);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to list objects");
     } finally {
@@ -40,13 +35,7 @@ export function S3Console({ config, resourceId }: { config: MiniStackConfig; res
     if (!uploadKey.trim()) { toast.error("Key is required"); return; }
     setUploading(true);
     try {
-      const res = await fetch("/api/ministack/resource/s3", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, bucket: resourceId, key: uploadKey, content: uploadContent }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      await s3PutObject(config, resourceId, uploadKey, uploadContent);
       toast.success(`Uploaded ${uploadKey}`);
       setUploadKey("");
       setUploadContent("");
@@ -60,11 +49,7 @@ export function S3Console({ config, resourceId }: { config: MiniStackConfig; res
 
   const handleDelete = async (key: string) => {
     try {
-      await fetch("/api/ministack/resource/s3-delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, bucket: resourceId, key }),
-      });
+      await s3DeleteObject(config, resourceId, key);
       toast.success(`Deleted ${key}`);
       load();
     } catch {

@@ -1,23 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { RefreshCw, Terminal, ChevronRight } from "lucide-react";
+import { RefreshCw, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import { cwlListGroups, cwlListStreams, cwlStreamEvents, type CwlLogGroup, type CwlLogStream, type CwlLogEvent } from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-interface LogGroup { name: string; storedBytes: number; retentionDays?: number }
-interface LogStream { name: string; lastEventTime?: number }
-interface LogEvent { timestamp?: number; message?: string }
-
 export function CloudWatchConsole({ config }: { config: MiniStackConfig }) {
-  const [groups, setGroups] = useState<LogGroup[]>([]);
+  const [groups, setGroups] = useState<CwlLogGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [streams, setStreams] = useState<LogStream[]>([]);
+  const [streams, setStreams] = useState<CwlLogStream[]>([]);
   const [selectedStream, setSelectedStream] = useState<string | null>(null);
-  const [events, setEvents] = useState<LogEvent[]>([]);
+  const [events, setEvents] = useState<CwlLogEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -25,12 +22,8 @@ export function CloudWatchConsole({ config }: { config: MiniStackConfig }) {
   const loadGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/logs?config=${encodeURIComponent(JSON.stringify(config))}&action=groups`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setGroups(data.groups ?? []);
+      const data = await cwlListGroups(config);
+      setGroups(data.groups);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load log groups");
     } finally {
@@ -42,12 +35,9 @@ export function CloudWatchConsole({ config }: { config: MiniStackConfig }) {
 
   const loadStreams = useCallback(async (groupName: string) => {
     try {
-      const res = await fetch(
-        `/api/ministack/logs?config=${encodeURIComponent(JSON.stringify(config))}&action=streams&logGroupName=${encodeURIComponent(groupName)}`,
-      );
-      const data = await res.json();
-      setStreams(data.streams ?? []);
-      setSelectedStream(data.streams?.[0]?.name ?? null);
+      const data = await cwlListStreams(config, groupName);
+      setStreams(data.streams);
+      setSelectedStream(data.streams[0]?.name ?? null);
     } catch { /* no-op */ }
   }, [config]);
 
@@ -55,26 +45,15 @@ export function CloudWatchConsole({ config }: { config: MiniStackConfig }) {
     if (selectedGroup) loadStreams(selectedGroup);
   }, [selectedGroup, loadStreams]);
 
-  // SSE streaming
+  // Browser-side polling instead of SSE
   useEffect(() => {
     if (!streaming || !selectedGroup) return;
     setEvents([]);
-    const params = new URLSearchParams({
-      config: JSON.stringify(config),
-      action: "events",
-      stream: "true",
-      logGroupName: selectedGroup,
-      ...(selectedStream ? { logStreamName: selectedStream } : {}),
+    const stop = cwlStreamEvents(config, selectedGroup, selectedStream ?? undefined, (batch) => {
+      setEvents((prev) => [...prev, ...batch].slice(-500));
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     });
-    const es = new EventSource(`/api/ministack/logs?${params}`);
-    es.onmessage = (e) => {
-      try {
-        const newEvents: LogEvent[] = JSON.parse(e.data);
-        setEvents((prev) => [...prev, ...newEvents].slice(-500));
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-      } catch { /* ignore */ }
-    };
-    return () => es.close();
+    return stop;
   }, [streaming, config, selectedGroup, selectedStream]);
 
   return (
@@ -90,7 +69,6 @@ export function CloudWatchConsole({ config }: { config: MiniStackConfig }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {/* Log Groups */}
         <div className="space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Log Groups</p>
           <ScrollArea className="h-28 rounded-lg border border-border">
@@ -114,7 +92,6 @@ export function CloudWatchConsole({ config }: { config: MiniStackConfig }) {
           </ScrollArea>
         </div>
 
-        {/* Log Streams */}
         <div className="space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Log Streams</p>
           <ScrollArea className="h-28 rounded-lg border border-border">

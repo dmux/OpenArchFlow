@@ -7,10 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MiniStackConfig } from "@/lib/ministack/types";
+import { snsGetTopic, snsPublish, snsSubscribe, type SNSSubscription } from "@/lib/ministack/browser-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface Subscription { protocol: string; endpoint: string; arn: string }
 
 export function SNSConsole({
   config,
@@ -22,7 +21,7 @@ export function SNSConsole({
   resourceArn?: string;
 }) {
   const topicArn = resourceArn ?? `arn:aws:sns:${config.region}:${config.accountId}:${resourceId}`;
-  const [subs, setSubs] = useState<Subscription[]>([]);
+  const [subs, setSubs] = useState<SNSSubscription[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("Hello from OpenArchFlow MiniStack!");
   const [subject, setSubject] = useState("");
@@ -34,12 +33,8 @@ export function SNSConsole({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/ministack/resource/sns?config=${encodeURIComponent(JSON.stringify(config))}&resourceId=${encodeURIComponent(resourceId)}&resourceArn=${encodeURIComponent(topicArn)}`,
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setSubs(data.subscriptions ?? []);
+      const data = await snsGetTopic(config, resourceId, topicArn);
+      setSubs(data.subscriptions);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load topic");
     } finally {
@@ -52,14 +47,8 @@ export function SNSConsole({
   const handlePublish = async () => {
     setPublishing(true);
     try {
-      const res = await fetch("/api/ministack/resource/sns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, topicArn, message, subject: subject || undefined }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      toast.success(`Published: ${data.messageId}`);
+      const messageId = await snsPublish(config, topicArn, message, subject || undefined);
+      toast.success(`Published: ${messageId}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Publish failed");
     } finally {
@@ -71,14 +60,8 @@ export function SNSConsole({
     if (!subEndpoint.trim()) { toast.error("Endpoint is required"); return; }
     setSubscribing(true);
     try {
-      const res = await fetch("/api/ministack/resource/sns-subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config, topicArn, protocol: subProtocol, endpoint: subEndpoint }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      toast.success("Subscribed");
+      const arn = await snsSubscribe(config, topicArn, subProtocol, subEndpoint);
+      toast.success(`Subscribed: ${arn}`);
       setSubEndpoint("");
       load();
     } catch (e) {
