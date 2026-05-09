@@ -148,11 +148,11 @@ export function CollaborateButton() {
               size="icon"
               className={React.useMemo(() => {
                 if (!collaborationRoomId)
-                  return "h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground";
-                return "h-9 w-9 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white relative shadow-lg";
+                  return "h-9 w-9 md:h-7 md:w-7 rounded-lg text-muted-foreground hover:text-foreground";
+                return "h-9 w-9 md:h-7 md:w-7 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white relative shadow-lg";
               }, [collaborationRoomId])}
             >
-              <Users className="h-4.5 w-4.5" />
+              <Users className="h-4 w-4 md:h-3.5 md:w-3.5" />
               {collaborationRoomId && peers.length > 1 && (
                 <span className="absolute -top-1 -right-1 bg-green-500 text-[10px] font-bold px-1 rounded-full border-2 border-background">
                   {peers.length}

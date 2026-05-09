@@ -24,7 +24,8 @@ export class SimulationEngine {
     store.resetSimulation();
     store.setIsPlaying(true);
 
-    const { diagrams, activeDiagramId, killedNodes, simulationSpeed } = store;
+    const { diagrams, activeDiagramId, killedNodes, simulationSpeed, ministackConfig } = store;
+    CoreEngine.getInstance().setMinistackConfig(ministackConfig.enabled ? ministackConfig : null);
     if (!activeDiagramId) {
       store.addSimulationLog({
         level: "warning",

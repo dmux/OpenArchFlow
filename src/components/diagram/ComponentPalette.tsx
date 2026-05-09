@@ -115,13 +115,24 @@ export default function ComponentPalette({
     const newNode = {
       id,
       type: item.type,
-      position: { x: 100 + Math.random() * 50, y: 100 + Math.random() * 50 }, // Random offset to avoid perfect overlap
+      position: { x: 100 + Math.random() * 50, y: 100 + Math.random() * 50 },
       data: {
         label: item.name,
         service: item.service,
         type: item.type,
         subtype: (item as any).subtype,
         provider: activeProviderId,
+        // Traffic Source nodes start with a sensible RPS default so they
+        // are immediately recognised as entry points by the simulation engine
+        ...(item.type === "traffic-source" && {
+          mock: {
+            enabled: true,
+            requestsPerSecond: 10,
+            httpMethod: "POST",
+            httpPath: "/",
+            payloadTemplate: '{\n  "key": "value"\n}',
+          },
+        }),
       },
     };
     addNode(newNode);

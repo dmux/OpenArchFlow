@@ -27,7 +27,7 @@ export default function KeyboardShortcutsDialog({ open, onClose }: KeyboardShort
 
     return (
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-            <DialogContent className="max-w-md">
+            <DialogContent aria-describedby={undefined} className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>Keyboard Shortcuts</DialogTitle>
                 </DialogHeader>

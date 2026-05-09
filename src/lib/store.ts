@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { temporal } from "zundo";
+import type { MiniStackNodeState, MiniStackConfig } from "./ministack/types";
+import { DEFAULT_MINISTACK_CONFIG } from "./ministack/types";
 import {
   Connection,
   Edge,
@@ -79,6 +81,11 @@ export interface NodeMockData {
   cacheHitRate?: number; // 0-100, for CloudFront/ElastiCache
   queueMaxDepth?: number; // SQS/Kinesis visual cap
   coldStartEnabled?: boolean; // Override service default
+
+  // Traffic Source request config (used when type === "traffic-source")
+  httpMethod?: string;       // HTTP verb forwarded to API Gateway
+  httpPath?: string;         // Path forwarded to API Gateway (e.g. /users)
+  payloadTemplate?: string;  // JSON string — becomes the request body / Lambda event
 }
 
 export interface NodeSimulationStatus {
@@ -139,7 +146,10 @@ export interface AppNodeData extends Record<string, unknown> {
   iacConfig?: {
     terraform?: TerraformNodeConfig;
   };
+  ministack?: MiniStackNodeState;
 }
+
+export type { MiniStackNodeState, MiniStackConfig };
 
 export interface Layer {
   id: string;
@@ -175,6 +185,8 @@ interface DiagramState {
   geminiApiKey: string | null;
   isOfflineMode: boolean;
   aiProvider: "offline" | "gemini" | "local";
+  nodeDisplayMode: "card" | "icon";
+  setNodeDisplayMode: (mode: "card" | "icon") => void;
   setAiProvider: (provider: "offline" | "gemini" | "local") => void;
   generatedSpecification: string | null;
 
@@ -279,6 +291,13 @@ interface DiagramState {
   customShapes: { id: string; name: string; svgContent: string }[];
   addCustomShape: (name: string, svgContent: string) => void;
   removeCustomShape: (id: string) => void;
+
+  // MiniStack
+  ministackConfig: MiniStackConfig;
+  setMinistackConfig: (config: Partial<MiniStackConfig>) => void;
+  setNodeMinistackState: (nodeId: string, state: Partial<MiniStackNodeState>) => void;
+  resetNodeMinistackState: (nodeId: string) => void;
+  resetAllMinistackStates: () => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -292,6 +311,7 @@ export const useDiagramStore = create<DiagramState>()(
         geminiApiKey: null,
         isOfflineMode: false,
         aiProvider: "offline" as const,
+        nodeDisplayMode: "icon" as const,
         isPlaying: false,
         isPaused: false,
         simulationSpeed: 1,
@@ -307,6 +327,7 @@ export const useDiagramStore = create<DiagramState>()(
           string,
           "active" | "error" | "throttled"
         >(),
+        ministackConfig: { ...DEFAULT_MINISTACK_CONFIG },
 
         setCollaborationRoomId: (id) => {
           if (!id) {
@@ -679,6 +700,7 @@ export const useDiagramStore = create<DiagramState>()(
         setGeminiApiKey: (key) =>
           set({ geminiApiKey: key, isOfflineMode: false }),
         setOfflineMode: (isOffline) => set({ isOfflineMode: isOffline }),
+        setNodeDisplayMode: (mode) => set({ nodeDisplayMode: mode }),
         setAiProvider: (provider) => set({ aiProvider: provider }),
         setGeneratedSpecification: (spec) =>
           set({ generatedSpecification: spec }),
@@ -1415,6 +1437,85 @@ export const useDiagramStore = create<DiagramState>()(
             },
           }));
         },
+
+        setMinistackConfig: (config) => {
+          set((state) => ({
+            ministackConfig: { ...state.ministackConfig, ...config },
+          }));
+        },
+
+        setNodeMinistackState: (nodeId, ministackState) => {
+          const { activeDiagramId } = get();
+          if (!activeDiagramId) return;
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const newNodes = activeDiagram.nodes.map((node) => {
+              if (node.id === nodeId) {
+                const merged = { ...(node.data.ministack ?? {}), ...ministackState } as MiniStackNodeState;
+                return {
+                  ...node,
+                  data: { ...node.data, ministack: merged },
+                };
+              }
+              return node;
+            });
+            return {
+              diagrams: {
+                ...state.diagrams,
+                [activeDiagramId]: {
+                  ...activeDiagram,
+                  nodes: newNodes as AppNode[],
+                  lastModified: Date.now(),
+                },
+              },
+            };
+          });
+        },
+
+        resetNodeMinistackState: (nodeId) => {
+          const { activeDiagramId } = get();
+          if (!activeDiagramId) return;
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const newNodes = activeDiagram.nodes.map((node) => {
+              if (node.id !== nodeId) return node;
+              const { ministack: _removed, ...rest } = node.data;
+              return { ...node, data: rest as AppNodeData };
+            });
+            return {
+              diagrams: {
+                ...state.diagrams,
+                [activeDiagramId]: {
+                  ...activeDiagram,
+                  nodes: newNodes,
+                  lastModified: Date.now(),
+                },
+              },
+            };
+          });
+        },
+
+        resetAllMinistackStates: () => {
+          const { activeDiagramId } = get();
+          if (!activeDiagramId) return;
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const newNodes = activeDiagram.nodes.map((node) => {
+              const { ministack: _removed, ...rest } = node.data;
+              return { ...node, data: rest as AppNodeData };
+            });
+            return {
+              diagrams: {
+                ...state.diagrams,
+                [activeDiagramId]: {
+                  ...activeDiagram,
+                  nodes: newNodes,
+                  lastModified: Date.now(),
+                },
+              },
+            };
+          });
+        },
       }),
       {
         name: "open-arch-flow-storage-v2", // Changed version to reset/separate storage
@@ -1426,6 +1527,8 @@ export const useDiagramStore = create<DiagramState>()(
           aiProvider: state.aiProvider,
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
+          ministackConfig: state.ministackConfig,
+          nodeDisplayMode: state.nodeDisplayMode,
         }),
         onRehydrateStorage: () => (state) => {
           // Ensure there is at least one diagram if none exist after hydration

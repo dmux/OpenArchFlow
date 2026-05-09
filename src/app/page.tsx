@@ -25,6 +25,7 @@ import LayersPanel from "@/components/diagram/LayersPanel";
 import KeyboardShortcutsDialog from "@/components/layout/KeyboardShortcutsDialog";
 import TemplatesDialog from "@/components/diagram/TemplatesDialog";
 import TerraformPanel from "@/components/diagram/TerraformPanel";
+import MiniStackPanel from "@/components/ministack/MiniStackPanel";
 
 // Service
 import { WebLLMService } from "@/lib/ai/webllm";
@@ -336,6 +337,12 @@ function HomeContent() {
           edges={currentEdges}
           diagramName={activeDiagram?.name || "diagram"}
           geminiApiKey={geminiApiKey}
+        />
+
+        <MiniStackPanel
+          isOpen={activePanel === "ministack"}
+          onClose={() => setActivePanel(null)}
+          nodes={currentNodes}
         />
 
         <PropertiesPanel />

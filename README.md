@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.7.0-blue?style=flat-square" alt="Version 0.7.0" />
+  <img src="https://img.shields.io/badge/version-0.8.0-blue?style=flat-square" alt="Version 0.8.0" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange?style=flat-square" alt="Gemini 2.5 Flash" />
@@ -29,7 +29,7 @@
 
 ## 🌟 Overview
 
-OpenArchFlow is an **open-source Progressive Web App** designed for cloud architects, DevOps engineers, and developers. Generate interactive AWS architecture diagrams from natural language descriptions using **AI, Large Language Models (LLMs), AI Agents, and AWS MCP (Model Context Protocol)**.
+OpenArchFlow is an **open-source Progressive Web App** designed for cloud architects, DevOps engineers, and developers. Go from natural language description to a running local AWS environment in seconds — generate interactive architecture diagrams with AI, export production-ready Terraform, and **deploy directly to a local AWS emulator** for immediate hands-on testing, all without an AWS account.
 
 ### Why OpenArchFlow?
 
@@ -40,6 +40,7 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - 🔧 **Fully Editable**: AI generates the initial design, you refine it with drag-and-drop.
 - 📚 **AWS Standards**: Uses AWS Documentation MCP for up-to-date service recommendations.
 - 🌐 **Offline Capable**: Local AI option (WebLLM) works without internet connection.
+- 🚀 **Local Deploy**: Deploy your diagram to a local AWS emulator (MiniStack) with one click — no cloud account needed.
 
 ---
 
@@ -65,6 +66,45 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **Usage Configuration**: Customize regions, instance types, and usage quantities (storage GBs, requests) for precise estimates
 - **Bill of Materials (BOM)**: View a consolidated cost breakdown for your entire architecture in a dedicated panel
 - **Export to CSV**: Download your cost estimate for architectural proposals or budgeting
+
+### 🚀 MiniStack Local Deploy (NEW)
+
+Deploy your architecture diagram to a local AWS emulator ([MiniStack](https://ministack.dev)) running on `localhost:4566` — turning OpenArchFlow into a full **design → deploy → operate** platform with no cloud costs and no AWS account required.
+
+**Getting started:**
+
+```bash
+docker run -p 4566:4566 ministackorg/ministack
+```
+
+Then click the **Rocket** icon in the toolbar, configure the endpoint, and hit **Deploy All**.
+
+**Supported AWS services:**
+
+| Service | What gets created | Interactive Console |
+|---|---|---|
+| **S3** | S3 bucket | List, upload, delete objects |
+| **Lambda** | Function (stub handler) | Invoke, edit config, upload `.zip`, live logs |
+| **DynamoDB** | Table (`id` hash key) | Scan items, put item |
+| **SQS** | Queue | Send/receive/delete messages |
+| **SNS** | Topic | Publish, subscribe |
+| **EventBridge** | Event bus | View rules, put events |
+| **Kinesis** | Stream (1 shard) | — |
+| **API Gateway** | REST API + routes + stage | Add routes, test endpoints |
+| **IAM** | Role | — |
+| **KMS** | Key | — |
+| **Secrets Manager** | Secret | — |
+| **SSM Parameter Store** | Parameter | — |
+| **CloudWatch Logs** | Read-only | Browse groups/streams, live polling |
+
+**Key capabilities:**
+
+- **One-click Deploy All** from the MiniStack panel — per-node status badges update in real time.
+- **Per-node console** — click any deployed node to open its interactive console (S3 browser, Lambda invoker, SQS message reader, etc.).
+- **Simulation hybrid mode** — when a node is deployed, simulation traffic is routed to the real MiniStack resource and uses wall-clock latency instead of synthetic values.
+- **Traffic Source node** — generate configurable req/s traffic from the diagram canvas; live response icon shows last result.
+- **Browser-direct** — all AWS SDK v3 calls go from your browser directly to `localhost:4566`. Works even when OpenArchFlow is hosted on Vercel.
+- **Teardown** — delete all deployed resources in one action.
 
 ### 🏗️ Terraform IaC Generation (NEW)
 
@@ -177,6 +217,7 @@ pnpm start
 | **AI - Local**        | WebLLM (Phi-3-mini via WebGPU)   |
 | **P2P Collaboration** | Yjs + WebRTC                     |
 | **Documentation**     | react-markdown + remark-gfm      |
+| **Local Deploy**      | MiniStack + AWS SDK v3 (browser) |
 | **IaC Editor**        | Monaco Editor + HCL              |
 | **Export**            | html2canvas                      |
 | **Icons**             | Lucide React                     |
@@ -213,12 +254,21 @@ pnpm start
 3. Share the generated link (E2EE) with your team
 4. Watch updates happen instantly across all screens!
 
-### 5. Export Diagram
+### 5. Deploy to Local AWS (MiniStack)
+
+1. Start MiniStack: `docker run -p 4566:4566 ministackorg/ministack`
+2. Click the **🚀 Rocket** icon in the toolbar
+3. Click **Test Connection** — you should see "Connected"
+4. Click **Deploy All** — nodes deploy in sequence with live status badges
+5. Click any deployed node → **Open Console** to interact with the resource
+6. Run a simulation — deployed nodes receive real traffic from the simulation engine
+
+### 6. Export Diagram
 
 - Click **Actions** → **Export as PNG**
 - Download professional diagrams for presentations
 
-### 6. Manage Diagrams (Import/Export)
+### 7. Manage Diagrams (Import/Export)
 
 - **Export Single**: Click the download icon (⬇️) next to a diagram in the sidebar to save it as a JSON file.
 - **Backup All**: Click **Backup All** in the sidebar footer to export all your diagrams at once.
