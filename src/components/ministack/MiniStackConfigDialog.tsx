@@ -63,7 +63,7 @@ export function MiniStackConfigDialog({ open, onClose }: MiniStackConfigDialogPr
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent aria-describedby={undefined} className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-lg">⚡</span>

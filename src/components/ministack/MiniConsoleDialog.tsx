@@ -99,7 +99,7 @@ export function MiniConsoleDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <DialogContent className={cn("h-[80vh] flex flex-col p-0 gap-0", svc === "lambda" ? "max-w-3xl" : "max-w-2xl")}>
+      <DialogContent aria-describedby={undefined} className={cn("h-[80vh] flex flex-col p-0 gap-0", svc === "lambda" ? "max-w-3xl" : "max-w-2xl")}>
         <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-2 text-sm">
             <span>{icon}</span>

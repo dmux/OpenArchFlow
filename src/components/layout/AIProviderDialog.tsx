@@ -57,7 +57,7 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>AI Provider</DialogTitle>
         </DialogHeader>

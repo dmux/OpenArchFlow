@@ -790,10 +790,10 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
       : "text-muted-foreground";
 
   return (
-    <div className="space-y-3">
+    <div className="w-full">
       <button
         onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors py-0.5"
       >
         <span className="flex items-center gap-2">
           <Rocket size={14} className={statusColor} />
@@ -803,136 +803,81 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
       </button>
 
       {isOpen && (
-        <div className="space-y-3 pl-1">
-          {/* Status */}
-          <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-muted/20">
+        <div className="mt-2 space-y-2">
+          {/* Status row */}
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-border bg-muted/20">
             {isDeployed && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
-            {isError && <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />}
+            {isError    && <XCircle    className="w-3.5 h-3.5 text-destructive shrink-0" />}
             {!isDeployed && !isError && <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-            <span className={cn("text-xs font-medium capitalize", statusColor)}>
-              {status ?? "idle"}
-            </span>
+            <span className={cn("text-xs font-medium capitalize", statusColor)}>{status ?? "idle"}</span>
           </div>
 
-          {/* Resource ID */}
-          {ms?.resourceId && (
-            <div>
-              <Label className="text-xs text-muted-foreground">Resource ID</Label>
-              <div className="flex items-center gap-1 mt-0.5">
-                <code className="text-[10px] font-mono bg-muted px-2 py-1 rounded flex-1 truncate">
-                  {ms.resourceId}
-                </code>
-                <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-1 rounded border border-border"
-                  onClick={() => { navigator.clipboard.writeText(ms.resourceId!); }}
-                >
-                  Copy
-                </button>
-              </div>
+          {/* Resource details — block layout with break-all, no flex truncation */}
+          {(ms?.resourceId || ms?.resourceArn || ms?.endpoint) && (
+            <div className="rounded-lg border border-border bg-muted/10 p-2 space-y-1.5 text-[10px] font-mono">
+              {ms?.resourceId && (
+                <div className="flex gap-1.5 items-start">
+                  <span className="text-muted-foreground shrink-0 pt-px">ID</span>
+                  <span className="break-all flex-1 leading-tight">{ms.resourceId}</span>
+                  <button className="shrink-0 px-1 py-px rounded border border-border text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(ms.resourceId!)}>Copy</button>
+                </div>
+              )}
+              {ms?.resourceArn && (
+                <div className="flex gap-1.5 items-start">
+                  <span className="text-muted-foreground shrink-0 pt-px">ARN</span>
+                  <span className="break-all flex-1 leading-tight">{ms.resourceArn}</span>
+                  <button className="shrink-0 px-1 py-px rounded border border-border text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(ms.resourceArn!)}>Copy</button>
+                </div>
+              )}
+              {ms?.endpoint && (
+                <div className="flex gap-1.5 items-start">
+                  <span className="text-muted-foreground shrink-0 pt-px">URL</span>
+                  <span className="break-all flex-1 leading-tight">{ms.endpoint}</span>
+                  <button className="shrink-0 px-1 py-px rounded border border-border text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(ms.endpoint!)}>Copy</button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ARN */}
-          {ms?.resourceArn && (
-            <div>
-              <Label className="text-xs text-muted-foreground">ARN</Label>
-              <div className="flex items-center gap-1 mt-0.5">
-                <code className="text-[10px] font-mono bg-muted px-2 py-1 rounded flex-1 truncate">
-                  {ms.resourceArn}
-                </code>
-                <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-1 rounded border border-border"
-                  onClick={() => { navigator.clipboard.writeText(ms.resourceArn!); }}
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Endpoint */}
-          {ms?.endpoint && (
-            <div>
-              <Label className="text-xs text-muted-foreground">Endpoint</Label>
-              <div className="flex items-center gap-1 mt-0.5">
-                <code className="text-[10px] font-mono bg-muted px-2 py-1 rounded flex-1 truncate">
-                  {ms.endpoint}
-                </code>
-                <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-1 rounded border border-border"
-                  onClick={() => { navigator.clipboard.writeText(ms.endpoint!); }}
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Error message */}
+          {/* Error */}
           {isError && ms?.errorMessage && (
-            <p className="text-xs text-destructive bg-destructive/10 px-2 py-1.5 rounded">
+            <p className="text-xs text-destructive bg-destructive/10 px-2 py-1.5 rounded break-all">
               {ms.errorMessage}
             </p>
           )}
 
           {/* Resource name override */}
           {!isDeployed && (
-            <div>
-              <Label className="text-xs text-muted-foreground">Resource name override</Label>
-              <div className="flex items-center gap-1 mt-0.5">
-                <input
-                  type="text"
-                  value={nameOverride}
-                  onChange={(e) => setNameOverride(e.target.value)}
-                  onBlur={handleSaveNameOverride}
-                  placeholder="auto (from label)"
-                  className="flex-1 text-xs px-2 py-1 rounded border border-border bg-background font-mono placeholder:text-muted-foreground/50"
-                />
-              </div>
-            </div>
+            <input
+              type="text"
+              value={nameOverride}
+              onChange={(e) => setNameOverride(e.target.value)}
+              onBlur={handleSaveNameOverride}
+              placeholder="Resource name (auto from label)"
+              className="w-full text-xs px-2 py-1.5 rounded border border-border bg-background font-mono placeholder:text-muted-foreground/50"
+            />
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDeployThis}
-              disabled={deploying}
-              className="h-7 text-xs gap-1.5"
-            >
-              <Rocket className="w-3 h-3" />
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" variant="outline" onClick={handleDeployThis} disabled={deploying} className="h-7 text-xs gap-1">
+              <Rocket className="w-3 h-3 shrink-0" />
               {deploying ? "Deploying…" : isDeployed ? "Re-deploy" : "Deploy"}
             </Button>
             {isDeployed && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setInvokeOpen((v) => !v)}
-                  className="h-7 text-xs gap-1.5"
-                >
-                  <Play className="w-3 h-3" />
-                  {INVOKE_LABEL[service] ?? "Invoke"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setConsoleOpen(true)}
-                  className="h-7 text-xs gap-1.5"
-                >
-                  <Settings size={12} />
-                  Console
-                </Button>
-              </>
+              <Button size="sm" variant="outline" onClick={() => setInvokeOpen((v) => !v)} className={cn("h-7 text-xs gap-1", invokeOpen && "bg-muted")}>
+                <Play className="w-3 h-3 shrink-0" />
+                {INVOKE_LABEL[service] ?? "Invoke"}
+              </Button>
+            )}
+            {isDeployed && (
+              <Button size="sm" variant="outline" onClick={() => setConsoleOpen(true)} className="h-7 text-xs gap-1">
+                <Settings size={12} className="shrink-0" />
+                Console
+              </Button>
             )}
             {status && status !== "idle" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => resetNodeMinistackState(nodeId)}
-                className="h-7 text-xs text-muted-foreground gap-1.5"
-              >
+              <Button size="sm" variant="ghost" onClick={() => resetNodeMinistackState(nodeId)} className="h-7 text-xs text-muted-foreground gap-1">
                 Reset
               </Button>
             )}
@@ -940,29 +885,23 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
 
           {/* Quick Invoke panel */}
           {isDeployed && invokeOpen && (
-            <div className="space-y-2 pt-1 border-t border-border">
+            <div className="space-y-2 border-t border-border pt-2">
               {(service === "apigateway" || service === "api-gateway") && (
                 <p className="text-[10px] text-muted-foreground">
-                  Use <code className="font-mono">_method</code>, <code className="font-mono">_path</code>, <code className="font-mono">_body</code> keys to configure the request.
+                  Use <code className="font-mono">_method</code>, <code className="font-mono">_path</code>, <code className="font-mono">_body</code> to configure the request.
                 </p>
               )}
               <textarea
                 value={invokePayload}
                 onChange={(e) => setInvokePayload(e.target.value)}
-                rows={4}
+                rows={3}
                 className="w-full text-xs p-2 rounded border border-border bg-background font-mono resize-none"
                 placeholder='{"key": "value"}'
               />
-              <Button
-                size="sm"
-                onClick={handleQuickInvoke}
-                disabled={invoking}
-                className="h-7 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white w-full"
-              >
+              <Button size="sm" onClick={handleQuickInvoke} disabled={invoking} className="h-7 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white w-full">
                 {invoking
                   ? <><Loader2 className="w-3 h-3 animate-spin" /> Running…</>
-                  : <><Play className="w-3 h-3" /> {INVOKE_LABEL[service] ?? "Invoke"}</>
-                }
+                  : <><Play className="w-3 h-3" /> {INVOKE_LABEL[service] ?? "Invoke"}</>}
               </Button>
               {invokeResult && (
                 <div className={cn(
