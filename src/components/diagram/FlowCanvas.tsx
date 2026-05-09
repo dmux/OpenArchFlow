@@ -270,6 +270,8 @@ function FlowCanvas() {
           fitView
           attributionPosition="bottom-left"
           preventScrolling
+          panOnScroll
+          panOnScrollSpeed={0.8}
           nodesDraggable={!isLaserMode && !isPanMode}
           nodesConnectable={!isLaserMode && !isPanMode}
           elementsSelectable={!isLaserMode && !isPanMode}
