@@ -29,6 +29,7 @@ import {
   Redo2,
   Layers,
   LayoutTemplate,
+  Rocket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useDiagramStore } from "@/lib/store";
+import { useMemo } from "react";
 import { useStore } from "zustand";
 import { exportSvg } from "@/lib/export/svg";
 import { exportPdf } from "@/lib/export/pdf";
@@ -94,6 +96,8 @@ export function UnifiedToolbar({
 }: UnifiedToolbarProps) {
   const { getNodes, fitView } = useReactFlow();
   const isPlaying = useDiagramStore((state) => state.isPlaying);
+  const ministackConfig = useDiagramStore((s) => s.ministackConfig);
+  const ministackEnabled = ministackConfig?.enabled ?? false;
   const interactionMode = useDiagramStore((state) => state.interactionMode);
   const setInteractionMode = useDiagramStore(
     (state) => state.setInteractionMode,
@@ -404,6 +408,14 @@ export function UnifiedToolbar({
         setActivePanel(activePanel === "terraform" ? null : "terraform"),
       active: activePanel === "terraform",
     },
+    {
+      id: "ministack",
+      icon: Rocket,
+      label: "MiniStack Deploy",
+      onClick: () =>
+        setActivePanel(activePanel === "ministack" ? null : "ministack"),
+      active: activePanel === "ministack",
+    },
   ];
 
   const actionTools = [
@@ -522,9 +534,9 @@ export function UnifiedToolbar({
                     onClick={tool.onClick}
                     className={cn(
                       "h-10 w-10 md:h-8 md:w-8 rounded-lg transition-all duration-200",
-                      tool.id === "terraform" && tool.active &&
+                      (tool.id === "terraform" || tool.id === "ministack") && tool.active &&
                         "shadow-lg scale-105",
-                      tool.id !== "terraform" && tool.active &&
+                      tool.id !== "terraform" && tool.id !== "ministack" && tool.active &&
                         "bg-primary text-primary-foreground shadow-lg scale-105",
                       !tool.active &&
                         "hover:bg-accent hover:text-accent-foreground",
@@ -532,7 +544,9 @@ export function UnifiedToolbar({
                     style={
                       tool.id === "terraform" && tool.active
                         ? { background: "linear-gradient(135deg, #7B42BC, #5C2D8A)", color: "white" }
-                        : undefined
+                        : tool.id === "ministack" && tool.active
+                          ? { background: "linear-gradient(135deg, #f97316, #ea580c)", color: "white" }
+                          : undefined
                     }
                   >
                     {tool.id === "terraform" ? (
@@ -540,6 +554,18 @@ export function UnifiedToolbar({
                         className="h-5 w-5 md:h-4 md:w-4"
                         style={{ color: tool.active ? "white" : "#7B42BC" }}
                       />
+                    ) : tool.id === "ministack" ? (
+                      <span className="relative">
+                        <tool.icon
+                          className={cn(
+                            "h-5 w-5 md:h-4 md:w-4",
+                            tool.active ? "text-white" : "text-orange-500",
+                          )}
+                        />
+                        {ministackEnabled && !tool.active && (
+                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-background" />
+                        )}
+                      </span>
                     ) : (
                       <tool.icon
                         className={cn(

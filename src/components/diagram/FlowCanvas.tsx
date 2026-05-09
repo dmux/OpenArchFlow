@@ -27,7 +27,10 @@ import TableNode from "./TableNode";
 import SequenceActorNode from "./SequenceActorNode";
 import { publishCursor } from "@/lib/collaboration";
 
+import TrafficSourceNode from "./nodes/TrafficSourceNode";
+
 const nodeTypes = {
+  "traffic-source": TrafficSourceNode,
   "aws-compute": CloudNode,
   "aws-database": CloudNode,
   "aws-network": CloudNode,

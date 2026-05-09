@@ -8,7 +8,7 @@ import {
   NodeSimulationStatus,
   useDiagramStore,
 } from "@/lib/store";
-import { Loader2, CheckCircle, XCircle, Zap } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Zap, Rocket } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -58,10 +58,16 @@ function getMetricBadgeProps(
 }
 
 const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-  const { label, service, simulation, provider, metadata } = data as any;
+  const { label, service, simulation, provider, metadata, ministack } = data as any;
   const isProcessing = simulation?.status === "processing";
   const isSuccess = simulation?.status === "success";
   const isError = simulation?.status === "error";
+
+  const msStatus = ministack?.status;
+  const msDeployed = msStatus === "deployed";
+  const msDeploying = msStatus === "deploying";
+  const msPending = msStatus === "pending";
+  const msDeployError = msStatus === "error";
 
   const isPlaying = useDiagramStore((s) => s.isPlaying);
   const metricBadge = getMetricBadgeProps(
@@ -146,6 +152,35 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
                 {metricBadge.tooltip}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* MiniStack Deploy Badge */}
+          {msStatus && msStatus !== "idle" && msStatus !== "not_supported" && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    "absolute -bottom-2 -left-2 z-10 w-5 h-5 rounded-full flex items-center justify-center shadow border border-background cursor-default",
+                    msDeployed && "bg-orange-500",
+                    msDeploying && "bg-blue-500",
+                    msPending && "bg-yellow-500",
+                    msDeployError && "bg-destructive",
+                  )}
+                >
+                  {(msDeploying || msPending) && (
+                    <Loader2 className="w-2.5 h-2.5 text-white animate-spin" />
+                  )}
+                  {msDeployed && <Rocket className="w-2.5 h-2.5 text-white" />}
+                  {msDeployError && <XCircle className="w-2.5 h-2.5 text-white" />}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                {msDeployed && `MiniStack: ${ministack?.resourceId ?? "deployed"}`}
+                {msDeploying && "Deploying to MiniStack…"}
+                {msPending && "Pending deploy"}
+                {msDeployError && `Deploy error: ${ministack?.errorMessage ?? "unknown"}`}
               </TooltipContent>
             </Tooltip>
           )}
