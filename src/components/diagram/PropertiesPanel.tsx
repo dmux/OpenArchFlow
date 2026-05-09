@@ -35,6 +35,16 @@ import { MiniConsoleDialog } from "@/components/ministack/MiniConsoleDialog";
 import { Rocket, CheckCircle, XCircle, Clock, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { prettyPayload } from "@/lib/format-payload";
+import {
+  lambdaInvoke,
+  sqsSendMessage,
+  dynamoPutItem,
+  snsPublish,
+  eventBridgePutEvents,
+  s3PutObject,
+  apiGatewayInvoke,
+  deployNodes,
+} from "@/lib/ministack/browser-actions";
 
 const LANE_COLORS = [
   "#6366f1",
@@ -693,48 +703,41 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
     setInvokeResult(null);
     const t0 = performance.now();
     try {
-      let res: Response;
       const cfg = ministackConfig;
+      let result: unknown;
 
       if (service === "lambda") {
-        res = await fetch("/api/ministack/resource/lambda", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config: cfg, functionName: resourceId, payload: invokePayload }) });
+        result = await lambdaInvoke(cfg, resourceId, invokePayload);
       } else if (service === "sqs") {
         const queueUrl = ms?.endpoint ?? `${cfg.endpoint}/000000000000/${resourceId}`;
-        res = await fetch("/api/ministack/resource/sqs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config: cfg, queueUrl, messageBody: invokePayload }) });
+        const messageId = await sqsSendMessage(cfg, queueUrl, invokePayload);
+        result = { messageId };
       } else if (service === "dynamodb") {
-        res = await fetch("/api/ministack/resource/dynamodb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config: cfg, tableName: resourceId, item: body }) });
+        await dynamoPutItem(cfg, resourceId, body as Record<string, unknown>);
+        result = { ok: true };
       } else if (service === "sns") {
         const topicArn = ms?.resourceArn ?? `arn:aws:sns:${cfg.region}:${cfg.accountId}:${resourceId}`;
-        res = await fetch("/api/ministack/resource/sns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config: cfg, topicArn, message: invokePayload }) });
+        const messageId = await snsPublish(cfg, topicArn, invokePayload);
+        result = { messageId };
       } else if (service === "eventbridge") {
-        res = await fetch("/api/ministack/resource/eventbridge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config: cfg, busName: resourceId, source: "openarchflow.invoke", detailType: "ManualInvoke", detail: invokePayload }) });
+        result = await eventBridgePutEvents(cfg, resourceId, "openarchflow.invoke", "ManualInvoke", invokePayload);
       } else if (service === "s3") {
-        res = await fetch("/api/ministack/resource/s3", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config: cfg, bucket: resourceId, key: `invoke/${Date.now()}.json`, content: invokePayload }) });
+        await s3PutObject(cfg, resourceId, `invoke/${Date.now()}.json`, invokePayload);
+        result = { ok: true };
       } else if (service === "apigateway" || service === "api-gateway") {
         const p = body as Record<string, unknown>;
         const method = String(p._method ?? "POST").toUpperCase();
         const path = String(p._path ?? "/");
         const gwBody = p._body ?? body;
-        // Route through Next.js proxy — browser can't call localhost:4566 directly (CORS)
-        res = await fetch("/api/ministack/resource/apigateway-invoke", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ config: cfg, restApiId: resourceId, method, path, body: gwBody }),
-        });
+        result = await apiGatewayInvoke(cfg, resourceId, method, path, gwBody);
       } else {
         toast.error("Quick invoke not supported for this service");
         return;
       }
 
       const latencyMs = Math.round(performance.now() - t0);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || (data as any).error) {
-        setInvokeResult({ ok: false, latencyMs, summary: String((data as any).error ?? `HTTP ${res.status}`) });
-      } else {
-        const summary = prettyPayload(data);
-        setInvokeResult({ ok: true, latencyMs, summary });
-        toast.success(`${INVOKE_LABEL[service] ?? "Invoke"} — ${latencyMs}ms`);
-      }
+      setInvokeResult({ ok: true, latencyMs, summary: prettyPayload(result) });
+      toast.success(`${INVOKE_LABEL[service] ?? "Invoke"} — ${latencyMs}ms`);
     } catch (e) {
       const latencyMs = Math.round(performance.now() - t0);
       setInvokeResult({ ok: false, latencyMs, summary: e instanceof Error ? e.message : "Error" });
@@ -752,33 +755,29 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
     setNodeMinistackState(nodeId, { status: "deploying" });
     const override = nameOverride.trim() || undefined;
     try {
-      const res = await fetch("/api/ministack/deploy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nodes: [{
-            nodeId,
-            service: node.data.service,
-            label: node.data.label,
-            nodeConfig: override ? { resourceNameOverride: override } : undefined,
-          }],
-          config: ministackConfig,
-        }),
-      });
-      const data = await res.json();
-      const result = data.results?.[0];
-      if (result?.status === "deployed") {
-        setNodeMinistackState(nodeId, {
-          status: "deployed",
-          resourceId: result.resourceId,
-          resourceArn: result.resourceArn,
-          endpoint: result.endpoint,
-          deployedAt: Date.now(),
-          resourceNameOverride: override,
-        });
-      } else {
-        setNodeMinistackState(nodeId, { status: result?.status ?? "error", errorMessage: result?.errorMessage });
-      }
+      await deployNodes(
+        [{
+          nodeId,
+          service: node.data.service,
+          label: node.data.label,
+          nodeConfig: override ? { resourceNameOverride: override } : undefined,
+        }],
+        ministackConfig,
+        (result) => {
+          if (result.status === "deployed") {
+            setNodeMinistackState(nodeId, {
+              status: "deployed",
+              resourceId: result.resourceId,
+              resourceArn: result.resourceArn,
+              endpoint: result.endpoint,
+              deployedAt: Date.now(),
+              resourceNameOverride: override,
+            });
+          } else {
+            setNodeMinistackState(nodeId, { status: result.status ?? "error", errorMessage: result.errorMessage });
+          }
+        },
+      );
     } catch (e) {
       setNodeMinistackState(nodeId, { status: "error", errorMessage: e instanceof Error ? e.message : "Deploy failed" });
     } finally {
