@@ -185,6 +185,8 @@ interface DiagramState {
   geminiApiKey: string | null;
   isOfflineMode: boolean;
   aiProvider: "offline" | "gemini" | "local";
+  nodeDisplayMode: "card" | "icon";
+  setNodeDisplayMode: (mode: "card" | "icon") => void;
   setAiProvider: (provider: "offline" | "gemini" | "local") => void;
   generatedSpecification: string | null;
 
@@ -309,6 +311,7 @@ export const useDiagramStore = create<DiagramState>()(
         geminiApiKey: null,
         isOfflineMode: false,
         aiProvider: "offline" as const,
+        nodeDisplayMode: "icon" as const,
         isPlaying: false,
         isPaused: false,
         simulationSpeed: 1,
@@ -697,6 +700,7 @@ export const useDiagramStore = create<DiagramState>()(
         setGeminiApiKey: (key) =>
           set({ geminiApiKey: key, isOfflineMode: false }),
         setOfflineMode: (isOffline) => set({ isOfflineMode: isOffline }),
+        setNodeDisplayMode: (mode) => set({ nodeDisplayMode: mode }),
         setAiProvider: (provider) => set({ aiProvider: provider }),
         setGeneratedSpecification: (spec) =>
           set({ generatedSpecification: spec }),
@@ -1524,6 +1528,7 @@ export const useDiagramStore = create<DiagramState>()(
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
           ministackConfig: state.ministackConfig,
+          nodeDisplayMode: state.nodeDisplayMode,
         }),
         onRehydrateStorage: () => (state) => {
           // Ensure there is at least one diagram if none exist after hydration

@@ -30,6 +30,8 @@ import {
   Layers,
   LayoutTemplate,
   Rocket,
+  BoxSelect,
+  Shapes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +99,8 @@ export function UnifiedToolbar({
   const { getNodes, fitView } = useReactFlow();
   const isPlaying = useDiagramStore((state) => state.isPlaying);
   const ministackConfig = useDiagramStore((s) => s.ministackConfig);
+  const nodeDisplayMode = useDiagramStore((s) => s.nodeDisplayMode);
+  const setNodeDisplayMode = useDiagramStore((s) => s.setNodeDisplayMode);
   const ministackEnabled = ministackConfig?.enabled ?? false;
   const interactionMode = useDiagramStore((state) => state.interactionMode);
   const setInteractionMode = useDiagramStore(
@@ -441,6 +445,13 @@ export function UnifiedToolbar({
       label: "Auto Layout",
       onClick: handleAutoLayout,
       active: false,
+    },
+    {
+      id: "node-display",
+      icon: nodeDisplayMode === "icon" ? BoxSelect : Shapes,
+      label: nodeDisplayMode === "icon" ? "Card view" : "Icon view",
+      onClick: () => setNodeDisplayMode(nodeDisplayMode === "card" ? "icon" : "card"),
+      active: nodeDisplayMode === "icon",
     },
     {
       id: "bom",
