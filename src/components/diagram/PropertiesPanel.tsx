@@ -34,6 +34,7 @@ import { getResourceDef } from "@/lib/iac/terraform/resource-map";
 import { MiniConsoleDialog } from "@/components/ministack/MiniConsoleDialog";
 import { Rocket, CheckCircle, XCircle, Clock, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { prettyPayload } from "@/lib/format-payload";
 
 const LANE_COLORS = [
   "#6366f1",
@@ -511,6 +512,7 @@ interface FireHop {
 
 function TrafficSourceFireSection({ node, nodes, edges }: { node: any; nodes: any[]; edges: any[] }) {
   const ministackConfig = useDiagramStore((s) => s.ministackConfig);
+  const updateNodeMock = useDiagramStore((s) => s.updateNodeMock);
   const mock = node.data.mock as any;
   const [firing, setFiring] = React.useState(false);
   const [hops, setHops] = React.useState<FireHop[]>([]);
@@ -581,11 +583,14 @@ function TrafficSourceFireSection({ node, nodes, edges }: { node: any; nodes: an
       await traverse(node.id, { _method: method, _path: path, _body: body }, 0);
       if (collectedHops.length === 0) {
         setHops([{ label: "—", latencyMs: 0, ok: false, response: "No deployed node reachable. Deploy downstream nodes first." }]);
+      } else {
+        const last = collectedHops[collectedHops.length - 1];
+        updateNodeMock(node.id, { _lastFireResult: { ok: last.ok, response: last.response } } as any);
       }
     } finally {
       setFiring(false);
     }
-  }, [mock, node.id, nodes, edges, ministackConfig]);
+  }, [mock, node.id, nodes, edges, ministackConfig, updateNodeMock]);
 
   const totalMs = hops.reduce((s, h) => s + h.latencyMs, 0);
   const allOk = hops.length > 0 && hops.every((h) => h.ok);
@@ -629,9 +634,7 @@ function TrafficSourceFireSection({ node, nodes, edges }: { node: any; nodes: an
                   Response {hops.length > 1 ? `(${totalMs}ms total)` : ""}
                 </p>
                 <pre className="text-[10px] break-all whitespace-pre-wrap max-h-28 overflow-auto">
-                  {typeof lastHop.response === "string"
-                    ? lastHop.response
-                    : JSON.stringify(lastHop.response, null, 2)}
+                  {prettyPayload(lastHop.response)}
                 </pre>
               </div>
             </>
@@ -728,7 +731,7 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
       if (!res.ok || (data as any).error) {
         setInvokeResult({ ok: false, latencyMs, summary: String((data as any).error ?? `HTTP ${res.status}`) });
       } else {
-        const summary = JSON.stringify(data).slice(0, 120);
+        const summary = prettyPayload(data);
         setInvokeResult({ ok: true, latencyMs, summary });
         toast.success(`${INVOKE_LABEL[service] ?? "Invoke"} — ${latencyMs}ms`);
       }
@@ -911,7 +914,7 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
                     : "border-destructive/30 bg-destructive/5 text-destructive",
                 )}>
                   <p>{invokeResult.ok ? "✓" : "✗"} {invokeResult.latencyMs}ms</p>
-                  <p className="break-all line-clamp-3 text-muted-foreground">{invokeResult.summary}</p>
+                  <pre className="whitespace-pre-wrap break-all text-muted-foreground max-h-32 overflow-auto">{invokeResult.summary}</pre>
                 </div>
               )}
             </div>
@@ -2380,14 +2383,17 @@ export default function PropertiesPanel() {
                       <option value={4}>4px</option>
                     </select>
                   </div>
-                  <div className="flex items-center gap-2 pt-4">
-                    <Switch
-                      checked={selectedEdge.data?.dashed ?? false}
-                      onCheckedChange={(v) =>
-                        updateEdge(selectedEdgeId, { dashed: v })
-                      }
-                    />
-                    <Label className="text-xs">Dashed</Label>
+                  <div>
+                    <Label className="text-xs opacity-0 select-none" aria-hidden>·</Label>
+                    <div className="flex items-center gap-2 h-8">
+                      <Switch
+                        checked={selectedEdge.data?.dashed ?? false}
+                        onCheckedChange={(v) =>
+                          updateEdge(selectedEdgeId, { dashed: v })
+                        }
+                      />
+                      <Label className="text-xs">Dashed</Label>
+                    </div>
                   </div>
                 </div>
               </div>

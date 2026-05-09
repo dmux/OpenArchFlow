@@ -321,12 +321,13 @@ export async function POST(
             Payload: Buffer.from(payload || "{}"),
           }),
         );
-        const responsePayload = res.Payload ? Buffer.from(res.Payload).toString("utf-8") : null;
-        return NextResponse.json({
-          statusCode: res.StatusCode,
-          functionError: res.FunctionError,
-          payload: responsePayload,
-        });
+        const raw = res.Payload ? Buffer.from(res.Payload).toString("utf-8") : null;
+        if (res.FunctionError) {
+          return NextResponse.json({ error: raw ?? res.FunctionError }, { status: 500 });
+        }
+        let parsed: unknown = raw;
+        try { if (raw) parsed = JSON.parse(raw); } catch { /* return raw string */ }
+        return NextResponse.json(parsed ?? { statusCode: res.StatusCode });
       }
 
       // ── Lambda upload code ───────────────────────────────────────────────

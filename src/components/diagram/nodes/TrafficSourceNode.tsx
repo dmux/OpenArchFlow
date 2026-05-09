@@ -5,13 +5,15 @@ import { Handle, Position, type NodeProps } from "reactflow";
 import { Users, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDiagramStore, type AppNodeData } from "@/lib/store";
+import { prettyPayload } from "@/lib/format-payload";
 
 const TrafficSourceNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
   const isPlaying = useDiagramStore((s) => s.isPlaying);
-  const mock = data.mock as { requestsPerSecond?: number; httpMethod?: string; httpPath?: string } | undefined;
+  const mock = data.mock as { requestsPerSecond?: number; httpMethod?: string; httpPath?: string; _lastFireResult?: { ok: boolean; response: unknown } } | undefined;
   const rps    = mock?.requestsPerSecond ?? 0;
   const method = mock?.httpMethod ?? "POST";
   const path   = mock?.httpPath ?? "/";
+  const lastFire = mock?._lastFireResult;
 
   return (
     <div
@@ -57,6 +59,20 @@ const TrafficSourceNode = ({ id, data, selected }: NodeProps<AppNodeData>) => {
       <span className="text-[9px] font-mono text-violet-400/70 max-w-[120px] truncate">
         {method} {path}
       </span>
+
+      {/* Last fire result */}
+      {lastFire && (
+        <div className={cn(
+          "w-full rounded-lg border px-1.5 py-1 text-[9px] font-mono max-h-20 overflow-auto",
+          lastFire.ok
+            ? "border-green-500/30 bg-green-500/10 text-green-300"
+            : "border-red-500/30 bg-red-500/10 text-red-300",
+        )}>
+          <pre className="whitespace-pre-wrap break-all leading-tight">
+            {prettyPayload(lastFire.response)}
+          </pre>
+        </div>
+      )}
 
       {/* Source handle only — traffic source generates, doesn't receive */}
       <Handle
