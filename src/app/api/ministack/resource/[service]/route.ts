@@ -39,6 +39,7 @@ import {
   InvokeCommand,
   ListFunctionsCommand,
   UpdateFunctionCodeCommand,
+  UpdateFunctionConfigurationCommand,
 } from "@aws-sdk/client-lambda";
 
 // ── SNS ────────────────────────────────────────────────────────────────────
@@ -172,6 +173,7 @@ export async function GET(
             codeSize: fn.Configuration?.CodeSize,
             lastModified: fn.Configuration?.LastModified,
             state: fn.Configuration?.State,
+            environment: fn.Configuration?.Environment?.Variables ?? {},
           },
         });
       }
@@ -328,6 +330,28 @@ export async function POST(
       }
 
       // ── Lambda upload code ───────────────────────────────────────────────
+      case "lambda-config": {
+        const { functionName, runtime, handler, memorySize, timeout, environment } = body as {
+          functionName: string;
+          runtime?: string;
+          handler?: string;
+          memorySize?: number;
+          timeout?: number;
+          environment?: Record<string, string>;
+          config: MiniStackConfig;
+        };
+        const lambda = getLambdaClient(config);
+        await lambda.send(new UpdateFunctionConfigurationCommand({
+          FunctionName: functionName,
+          ...(runtime  && { Runtime: runtime as any }),
+          ...(handler  && { Handler: handler }),
+          ...(memorySize !== undefined && { MemorySize: memorySize }),
+          ...(timeout   !== undefined && { Timeout: timeout }),
+          ...(environment !== undefined && { Environment: { Variables: environment } }),
+        }));
+        return NextResponse.json({ ok: true });
+      }
+
       case "lambda-upload": {
         const { functionName, zipBase64 } = body as { functionName: string; zipBase64: string; config: MiniStackConfig };
         const lambda = getLambdaClient(config);
