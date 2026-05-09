@@ -23,6 +23,8 @@ interface RuntimeDef {
   fileName: string;
   handler: string;
   defaultCode: string;
+  compiled?: true;         // no in-browser editor — zip upload only
+  buildHint?: string;      // shown in the Code tab when compiled
 }
 
 const RUNTIMES: Record<string, RuntimeDef> = {
@@ -114,6 +116,36 @@ def lambda_handler(event, context):
         }),
     }`,
   },
+  "go1.x": {
+    label: "Go 1.x",
+    monacoLang: "plaintext",
+    fileName: "bootstrap",
+    handler: "bootstrap",
+    defaultCode: "",
+    compiled: true,
+    buildHint:
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bootstrap .\nzip function.zip bootstrap",
+  },
+  "provided.al2023": {
+    label: "Custom runtime (provided.al2023)",
+    monacoLang: "plaintext",
+    fileName: "bootstrap",
+    handler: "bootstrap",
+    defaultCode: "",
+    compiled: true,
+    buildHint:
+      "# Rust\ncross build --release --target x86_64-unknown-linux-musl\ncp target/x86_64-unknown-linux-musl/release/bootstrap .\nzip function.zip bootstrap\n\n# Go (provided.al2023)\nGOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bootstrap .\nzip function.zip bootstrap",
+  },
+  "provided.al2": {
+    label: "Custom runtime (provided.al2)",
+    monacoLang: "plaintext",
+    fileName: "bootstrap",
+    handler: "bootstrap",
+    defaultCode: "",
+    compiled: true,
+    buildHint:
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bootstrap .\nzip function.zip bootstrap",
+  },
 };
 
 const RUNTIME_KEYS = Object.keys(RUNTIMES);
@@ -123,6 +155,10 @@ function detectRuntime(raw?: string): string {
   if (!raw) return DEFAULT_RUNTIME;
   const normalized = raw.toLowerCase();
   return RUNTIME_KEYS.find((k) => k === normalized) ?? DEFAULT_RUNTIME;
+}
+
+function isCompiled(runtimeKey: string): boolean {
+  return RUNTIMES[runtimeKey]?.compiled === true;
 }
 
 type Tab = "overview" | "code" | "logs";
@@ -448,6 +484,7 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
       {/* ── Code Editor ── */}
       {activeTab === "code" && (
         <div className="flex flex-col gap-2 flex-1 min-h-0">
+          {/* Runtime selector — always visible */}
           <div className="flex items-center gap-2 shrink-0">
             <Settings2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <select
@@ -459,65 +496,116 @@ export function LambdaConsole({ config, resourceId }: { config: MiniStackConfig;
                 <option key={r} value={r}>{RUNTIMES[r].label} — {r}</option>
               ))}
             </select>
-            <Button
-              size="sm"
-              onClick={handleDeployCode}
-              disabled={deploying}
-              className="h-7 gap-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white shrink-0"
-            >
-              {deploying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Rocket className="w-3 h-3" />}
-              Deploy
-            </Button>
+            {!isCompiled(runtime) && (
+              <Button
+                size="sm"
+                onClick={handleDeployCode}
+                disabled={deploying}
+                className="h-7 gap-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+              >
+                {deploying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Rocket className="w-3 h-3" />}
+                Deploy
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[10px] text-muted-foreground">
-              File: <code className="font-mono">{def.fileName}</code>
-              {" · "}Handler: <code className="font-mono">{def.handler}</code>
+              Handler: <code className="font-mono">{def.handler}</code>
             </span>
           </div>
 
-          <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border">
-            <Editor
-              height="100%"
-              language={def.monacoLang}
-              value={code}
-              onChange={handleCodeChange}
-              theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
-              options={{
-                fontSize: 12,
-                minimap: { enabled: false },
-                lineNumbers: "on",
-                scrollBeyondLastLine: false,
-                wordWrap: "on",
-                padding: { top: 8, bottom: 8 },
-                overviewRulerLanes: 0,
-                renderLineHighlight: "gutter",
-                tabSize: def.monacoLang === "python" ? 4 : 2,
-              }}
-            />
-          </div>
+          {/* Compiled runtimes: build instructions + upload only */}
+          {isCompiled(runtime) ? (
+            <div className="flex flex-col gap-3 flex-1 min-h-0">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2 shrink-0">
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  Compiled runtime — in-browser editing not available
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Build a Linux binary named <code className="font-mono">bootstrap</code>, zip it, and upload below.
+                  See <code className="font-mono">docs/examples/lambda/</code> for Go and Rust examples.
+                </p>
+                {def.buildHint && (
+                  <pre className="text-[10px] font-mono bg-black/20 rounded p-2 whitespace-pre-wrap text-muted-foreground leading-relaxed">
+                    {def.buildHint}
+                  </pre>
+                )}
+              </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <p className="text-[10px] text-muted-foreground shrink-0">Or upload a .zip:</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".zip"
-              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-              className="flex-1 text-xs text-muted-foreground file:mr-2 file:text-xs file:border file:border-border file:rounded file:px-2 file:py-0.5 file:bg-muted file:text-foreground"
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleUploadZip}
-              disabled={!uploadFile || uploading}
-              className="h-7 gap-1.5 text-xs shrink-0"
-            >
-              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-              Upload
-            </Button>
-          </div>
+              <div className="space-y-2 shrink-0">
+                <p className="text-xs font-medium">Upload compiled .zip</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".zip"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                    className="flex-1 text-xs text-muted-foreground file:mr-2 file:text-xs file:border file:border-border file:rounded file:px-2 file:py-0.5 file:bg-muted file:text-foreground"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleUploadZip}
+                    disabled={!uploadFile || uploading}
+                    className="h-7 gap-1.5 text-xs shrink-0"
+                  >
+                    {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                    Upload
+                  </Button>
+                </div>
+                {uploadFile && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {uploadFile.name} — {(uploadFile.size / 1024).toFixed(1)} KB
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Interpreted runtimes: Monaco editor + zip upload */
+            <>
+              <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border">
+                <Editor
+                  height="100%"
+                  language={def.monacoLang}
+                  value={code}
+                  onChange={handleCodeChange}
+                  theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
+                  options={{
+                    fontSize: 12,
+                    minimap: { enabled: false },
+                    lineNumbers: "on",
+                    scrollBeyondLastLine: false,
+                    wordWrap: "on",
+                    padding: { top: 8, bottom: 8 },
+                    overviewRulerLanes: 0,
+                    renderLineHighlight: "gutter",
+                    tabSize: def.monacoLang === "python" ? 4 : 2,
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <p className="text-[10px] text-muted-foreground shrink-0">Or upload a .zip:</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".zip"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                  className="flex-1 text-xs text-muted-foreground file:mr-2 file:text-xs file:border file:border-border file:rounded file:px-2 file:py-0.5 file:bg-muted file:text-foreground"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleUploadZip}
+                  disabled={!uploadFile || uploading}
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                >
+                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                  Upload
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
