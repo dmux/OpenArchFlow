@@ -1,5 +1,7 @@
 import { AppNode, AppEdge, NodeMockData } from "../store";
 import { getServiceBehavior, sampleLatency } from "./aws-behaviors";
+import type { MiniStackConfig } from "../ministack/types";
+import type { RealExecutionResult } from "./ministack-executor";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -72,6 +74,16 @@ interface ActiveRequest {
   nodeEnteredAt: number;
 }
 
+// ─── Traffic Source payload builder ──────────────────────────────────────────
+
+function buildTrafficPayload(mock: NodeMockData | undefined): Record<string, unknown> {
+  const method = (mock as any)?.httpMethod ?? "POST";
+  const path = (mock as any)?.httpPath ?? "/";
+  let body: unknown = {};
+  try { body = JSON.parse((mock as any)?.payloadTemplate ?? "{}"); } catch { body = {}; }
+  return { _method: method, _path: path, _body: body };
+}
+
 // Per-node active concurrency tracking (cleared on stop)
 const activeConcurrency: Map<string, number> = new Map();
 
@@ -98,6 +110,11 @@ export class SimulationEngine {
   private _nodes: AppNode[] = [];
   private _edges: AppEdge[] = [];
 
+  // ── MiniStack hybrid execution ────────────────────────────────────────────
+  private ministackConfig: MiniStackConfig | null = null;
+  private pendingRealCalls: Set<string> = new Set();
+  private realCallResults: Map<string, RealExecutionResult> = new Map();
+
   private constructor() {}
 
   public static getInstance(): SimulationEngine {
@@ -111,6 +128,10 @@ export class SimulationEngine {
 
   public setKilledNodes(killed: Set<string>) {
     this.killedNodes = killed;
+  }
+
+  public setMinistackConfig(config: MiniStackConfig | null) {
+    this.ministackConfig = config;
   }
 
   /** Hot-update nodes during a running simulation (e.g. mock changes). */
@@ -146,6 +167,8 @@ export class SimulationEngine {
     activeConcurrency.clear();
     queueDepths.clear();
     rrCounters.clear();
+    this.pendingRealCalls.clear();
+    this.realCallResults.clear();
 
     const entryNodes = nodes.filter((n) => {
       const mock = n.data.mock as NodeMockData | undefined;
@@ -245,12 +268,18 @@ export class SimulationEngine {
       const chance = rps / 10;
       const spawns = Math.floor(chance) + (Math.random() < chance % 1 ? 1 : 0);
       for (let i = 0; i < spawns; i++) {
+        // Traffic Source nodes carry method/path/body so downstream services
+        // (API Gateway, Lambda) can use the real configured values.
+        const initialPayload = node.type === "traffic-source"
+          ? buildTrafficPayload(mock)
+          : undefined;
         this.activeRequests.push({
           id: crypto.randomUUID(),
           currentNodeId: node.id,
           path: [node.id],
           startTime: now,
           status: "pending",
+          payload: initialPayload,
           hops: [],
           nodeEnteredAt: now,
         });
@@ -273,6 +302,96 @@ export class SimulationEngine {
       activeNodeIds.push(currentNode.id);
       const mock = currentNode.data.mock as NodeMockData | undefined;
       const behavior = getServiceBehavior(currentNode.data.service ?? "");
+
+      // ── MiniStack real execution ────────────────────────────────────────
+      const isDeployed =
+        this.ministackConfig !== null &&
+        currentNode.data.ministack?.status === "deployed" &&
+        currentNode.type !== "traffic-source";
+
+      if (isDeployed) {
+        if (this.realCallResults.has(req.id)) {
+          // Result arrived — apply real latency and continue with routing
+          const realResult = this.realCallResults.get(req.id)!;
+          this.realCallResults.delete(req.id);
+
+          if (realResult.status === "error") {
+            logs.push({
+              nodeId: currentNode.id,
+              level: "error",
+              message: `✗ [${currentNode.data.label}] ${realResult.errorMessage ?? "error"} (${realResult.latencyMs}ms real)`,
+            });
+            edges
+              .filter((e) => e.target === currentNode.id)
+              .forEach((e) => activeEdgeIds.push({ id: e.id, status: "error" }));
+            req.hops.push({
+              nodeId: currentNode.id,
+              nodeLabel: currentNode.data.label,
+              enteredAt: req.nodeEnteredAt,
+              exitedAt: now,
+              latencyMs: realResult.latencyMs,
+              status: "error",
+              errorMessage: realResult.errorMessage,
+            });
+            completedTraces.push(this.finishTrace(req, "error", now));
+            addDelta({ nodeId: currentNode.id, requests: 1, errors: 1, latencySample: realResult.latencyMs });
+            this.releaseConcurrency(currentNode.id, undefined);
+            continue;
+          }
+
+          // Success — update payload with real response and let routing run with real latency
+          if (realResult.responsePayload !== undefined) req.payload = realResult.responsePayload;
+          logs.push({
+            nodeId: currentNode.id,
+            level: "success",
+            message: `⚡ [${currentNode.data.label}] real call ${realResult.latencyMs}ms`,
+          });
+
+          // Override latency for this hop; routing logic below will use `realLatency`
+          const realLatency = realResult.latencyMs;
+          addDelta({ nodeId: currentNode.id, requests: 1, errors: 0, latencySample: realLatency });
+          const costDelta = behavior.cost.pricePerUnit * behavior.cost.unitsPerRequest;
+          if (costDelta > 0) addDelta({ nodeId: currentNode.id, requests: 0, errors: 0, costDelta });
+
+          const outEdgesReal = edges.filter((e) => e.source === currentNode.id);
+          if (outEdgesReal.length === 0) {
+            req.hops.push({ nodeId: currentNode.id, nodeLabel: currentNode.data.label, enteredAt: req.nodeEnteredAt, exitedAt: now, latencyMs: realLatency, status: "success" });
+            logs.push({ nodeId: currentNode.id, level: "success", message: `✓ Request complete at [${currentNode.data.label}]` });
+            completedTraces.push(this.finishTrace(req, "success", now));
+            continue;
+          }
+          const chosenEdgeReal = outEdgesReal[Math.floor(Math.random() * outEdgesReal.length)];
+          activeEdgeIds.push({ id: chosenEdgeReal.id, status: "active" });
+          req.hops.push({ nodeId: currentNode.id, nodeLabel: currentNode.data.label, enteredAt: req.nodeEnteredAt, exitedAt: now, latencyMs: realLatency, status: "success" });
+          req.currentNodeId = chosenEdgeReal.target;
+          req.path.push(chosenEdgeReal.target);
+          req.nodeEnteredAt = now;
+          nextRequests.push(req);
+          continue;
+
+        } else if (!this.pendingRealCalls.has(req.id)) {
+          // Launch the real call — park the request until it resolves
+          this.pendingRealCalls.add(req.id);
+          const reqId = req.id;
+          const payload = req.payload;
+          const cfg = this.ministackConfig!;
+          import("./ministack-executor").then(({ executeMiniStackNode }) => {
+            executeMiniStackNode(currentNode, payload, cfg).then((result) => {
+              this.realCallResults.set(reqId, result);
+              this.pendingRealCalls.delete(reqId);
+            }).catch(() => {
+              this.realCallResults.set(reqId, { latencyMs: 0, status: "error", errorMessage: "Executor error" });
+              this.pendingRealCalls.delete(reqId);
+            });
+          });
+          nextRequests.push(req);
+          continue;
+        } else {
+          // Still in-flight — park for another tick
+          nextRequests.push(req);
+          continue;
+        }
+      }
 
       // ── Killed node ────────────────────────────────────────────────────
       if (this.killedNodes.has(currentNode.id)) {

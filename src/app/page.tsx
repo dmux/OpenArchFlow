@@ -25,10 +25,13 @@ import LayersPanel from "@/components/diagram/LayersPanel";
 import KeyboardShortcutsDialog from "@/components/layout/KeyboardShortcutsDialog";
 import TemplatesDialog from "@/components/diagram/TemplatesDialog";
 import TerraformPanel from "@/components/diagram/TerraformPanel";
+import MiniStackPanel from "@/components/ministack/MiniStackPanel";
+import { OnboardingTour } from "@/components/layout/OnboardingTour";
 
 // Service
 import { WebLLMService } from "@/lib/ai/webllm";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useGoogleDriveSync } from "@/hooks/useGoogleDriveSync";
 
 // UI Components
 
@@ -69,6 +72,9 @@ function HomeContent() {
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Google Drive auto-sync
+  const driveSync = useGoogleDriveSync();
 
   // UI Panel State
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -197,6 +203,7 @@ function HomeContent() {
   );
 
   return (
+    <>
     <ReactFlowProvider>
       <div className="flex h-full w-full relative">
         {/* Unified Toolbar */}
@@ -208,6 +215,7 @@ function HomeContent() {
           isGenerating={isGenerating}
           setIsGenerating={setIsGenerating}
           useLocalAI={aiProvider === "local"}
+          driveSync={driveSync}
         />
 
         {/* Main Content Area */}
@@ -338,6 +346,12 @@ function HomeContent() {
           geminiApiKey={geminiApiKey}
         />
 
+        <MiniStackPanel
+          isOpen={activePanel === "ministack"}
+          onClose={() => setActivePanel(null)}
+          nodes={currentNodes}
+        />
+
         <PropertiesPanel />
 
         {/* Sidebar (Left Drawer) */}
@@ -376,5 +390,7 @@ function HomeContent() {
         />
       </div>
     </ReactFlowProvider>
+    <OnboardingTour />
+    </>
   );
 }

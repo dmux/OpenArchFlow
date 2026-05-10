@@ -7,6 +7,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.1] - 2026-05-10
+
+### Added
+
+**Google Drive Sync — Automatic Cloud Backup**
+
+OpenArchFlow can now automatically sync all your diagrams to your personal Google Drive, eliminating the risk of losing work on browser data clears or device switches.
+
+- **Auto-sync** — Every diagram change is automatically uploaded to your Google Drive (debounced 3s after the last edit). The sync file (`OpenArchFlow_Sync.json`) uses the `drive.file` scope, meaning the app can only access files it created.
+- **Conflict detection** — On app load, if the cloud copy is newer than local data, a prompt appears letting you choose "Use Cloud" or "Keep Local" — no silent overwrites.
+- **Sync status button** — A new Google Drive icon in the toolbar (Group 5, after Collaborate) shows real-time sync status: idle, syncing spinner, or error state with last-sync timestamp.
+- **Error recovery** — Sync errors surface as toasts with a "Retry" action. Token expiry triggers a reconnect prompt.
+- **Privacy-first** — The feature is entirely opt-in and gated by the `NEXT_PUBLIC_GOOGLE_CLIENT_ID` environment variable. The button is hidden when the variable is not set.
+- **No backend required** — OAuth and Drive API calls run entirely in the browser using Google Identity Services.
+
+### Changed
+
+- Version bumped to 0.8.1.
+
+---
+
+## [0.8.0] - 2026-05-09
+
+### Added
+
+**MiniStack Local Deploy — Design, Deploy & Operate**
+
+OpenArchFlow can now deploy your AWS architecture diagrams to a local AWS emulator ([MiniStack](https://ministack.dev) — LocalStack-compatible) running on `localhost:4566`, turning it into a full **design → deploy → operate** platform for local development without any AWS account or real cloud costs.
+
+**Deploy Engine**
+
+- **One-click Deploy All** — Deploy every supported node in your diagram to MiniStack with a single click from the MiniStack panel (Rocket icon in the toolbar). Progress is reported per-node in real time.
+- **Per-node deploy** — Deploy, re-deploy, or reset individual resources from the Properties Panel's collapsible "MiniStack Deployment" section.
+- **Resource name override** — Customize the MiniStack resource name before deploying via the Properties Panel input (sanitized and suffixed with the node ID for uniqueness).
+- **Idempotent deploys** — Re-deploying an already-existing resource detects it and updates the status without error.
+- **Teardown** — Delete all deployed resources from MiniStack with a single "Teardown All" action.
+- **Status badges** — Each diagram node shows a bottom-left badge (`deploying` spinner / `deployed` green / `error` red / `not_supported` grey) at a glance.
+
+**Supported services (13 total):**
+
+| Category | Service | What gets created |
+|---|---|---|
+| Storage | S3 | `CreateBucketCommand` |
+| Compute | Lambda | `CreateFunctionCommand` (stub handler; upload your own zip from the console) |
+| Database | DynamoDB | `CreateTableCommand` (hash key: `id`) |
+| Messaging | SQS | `CreateQueueCommand` |
+| Messaging | SNS | `CreateTopicCommand` |
+| Messaging | EventBridge | `CreateEventBusCommand` |
+| Messaging | Kinesis | `CreateStreamCommand` (1 shard) |
+| API | API Gateway | `CreateRestApiCommand` + routes from mock endpoints + CORS + `test` stage |
+| Security | IAM | `CreateRoleCommand` |
+| Security | KMS | `CreateKeyCommand` |
+| Security | Secrets Manager | `CreateSecretCommand` |
+| Security | SSM Parameter Store | `PutParameterCommand` |
+| Observability | CloudWatch Logs | Read-only console (groups, streams, live polling) |
+
+**Mini Console (per-service interactive UIs)**
+
+- **S3 Console** — List objects, upload files, delete objects.
+- **SQS Console** — Queue attributes, receive and delete messages, send test messages.
+- **DynamoDB Console** — Table info, scan items, put item.
+- **Lambda Console** — Function configuration, environment variables editor, invoke with custom payload, upload real `.zip` code, live CloudWatch log streaming.
+- **SNS Console** — Topic attributes, subscriptions, publish test message, add subscription.
+- **EventBridge Console** — Bus info, rules list, put custom events.
+- **API Gateway Console** — Routes and stages list, add route (method + path + optional Lambda), test endpoint invocation.
+- **CloudWatch Console** — Log groups and streams browser, live polling of log events (2 s interval).
+
+**Simulation + MiniStack Hybrid Mode**
+
+- **Real-traffic simulation** — When `ministackConfig.enabled` and a node is `deployed`, simulation requests are routed to the actual MiniStack resource instead of the synthetic engine. Wall-clock latency replaces the simulated value.
+- **Traffic Source node** — New node type (purple, `Users` icon) that generates simulation traffic at a configurable `req/s`. Shows a live `✓`/`✗` status icon (top-right corner) that opens a scrollable response popover on click.
+- **Supported in simulation**: Lambda, SQS, DynamoDB, SNS, EventBridge, S3, API Gateway.
+
+**Browser-Direct Architecture**
+
+- All AWS SDK v3 calls go directly from the browser to `localhost:4566` — no Next.js API route proxy required. This means the panel works even when the app is hosted on Vercel (the user's browser calls their local MiniStack directly).
+- MiniStack CORS support enables this without any extra configuration.
+
+### Technical
+
+- New files: `src/lib/ministack/types.ts`, `src/lib/ministack/client.ts`, `src/lib/ministack/service-map.ts`, `src/lib/ministack/browser-actions.ts` (~750 lines — all SDK logic, browser-safe).
+- New files: `src/components/ministack/MiniStackConfigDialog.tsx`, `src/components/ministack/MiniStackPanel.tsx`, `src/components/ministack/MiniConsoleDialog.tsx`, `src/components/ministack/consoles/` (8 console components).
+- New files: `src/components/diagram/nodes/TrafficSourceNode.tsx`, `src/lib/simulation/ministack-executor.ts`.
+- API routes retained but no longer called by the UI: `src/app/api/ministack/{deploy,health,logs,resource,teardown}`.
+- `AppNodeData` extended with `ministack?: MiniStackNodeState`.
+- Store extended with `ministackConfig`, `setMinistackConfig`, `setNodeMinistackState`, `resetAllMinistackStates`.
+- New dependencies: `@aws-sdk/client-s3`, `@aws-sdk/client-sqs`, `@aws-sdk/client-dynamodb`, `@aws-sdk/client-lambda`, `@aws-sdk/client-sns`, `@aws-sdk/client-api-gateway`, `@aws-sdk/client-eventbridge`, `@aws-sdk/client-iam`, `@aws-sdk/client-secrets-manager`, `@aws-sdk/client-ssm`, `@aws-sdk/client-kinesis`, `@aws-sdk/client-cloudwatch-logs`, `@aws-sdk/client-kms`.
+
+---
+
 ## [0.7.0] - 2026-05-05
 
 ### Added

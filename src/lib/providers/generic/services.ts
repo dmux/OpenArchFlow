@@ -2,6 +2,18 @@ import { ServiceCategory } from "../types";
 
 export const GENERIC_SERVICES: ServiceCategory[] = [
   {
+    category: "Simulation",
+    items: [
+      {
+        name: "Traffic Source",
+        service: "traffic-source",
+        type: "traffic-source",
+        description:
+          "Simulated traffic entry point. Generates requests at a configurable rate. Connect to any service node. Set req/s in the mock panel.",
+      },
+    ],
+  },
+  {
     category: "Diagram Tools",
     items: [
       {

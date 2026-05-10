@@ -8,7 +8,7 @@ import {
   NodeSimulationStatus,
   useDiagramStore,
 } from "@/lib/store";
-import { Loader2, CheckCircle, XCircle, Zap } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Zap, Rocket } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -58,12 +58,20 @@ function getMetricBadgeProps(
 }
 
 const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
-  const { label, service, simulation, provider, metadata } = data as any;
+  const { label, service, simulation, provider, metadata, ministack } = data as any;
   const isProcessing = simulation?.status === "processing";
   const isSuccess = simulation?.status === "success";
   const isError = simulation?.status === "error";
 
+  const msStatus = ministack?.status;
+  const msDeployed = msStatus === "deployed";
+  const msDeploying = msStatus === "deploying";
+  const msPending = msStatus === "pending";
+  const msDeployError = msStatus === "error";
+
   const isPlaying = useDiagramStore((s) => s.isPlaying);
+  const nodeDisplayMode = useDiagramStore((s) => s.nodeDisplayMode);
+  const iconMode = nodeDisplayMode === "icon";
   const metricBadge = getMetricBadgeProps(
     simulation as NodeSimulationStatus | undefined,
     isPlaying,
@@ -95,115 +103,174 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     (data.subtype as string) || (data.type as string),
   );
 
-  return (
+  // ── Shared badges (same in both modes) ──────────────────────────────────────
+  const simBadge = simulation?.status && simulation.status !== "idle" && (
+    <div
+      className={cn(
+        "absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full flex items-center justify-center text-white shadow-sm",
+        isProcessing && "bg-blue-500",
+        isSuccess && "bg-green-500",
+        isError && "bg-destructive",
+      )}
+    >
+      {isProcessing && <Loader2 className="w-3 h-3 animate-spin" />}
+      {isSuccess && <CheckCircle className="w-3 h-3" />}
+      {isError && <XCircle className="w-3 h-3" />}
+    </div>
+  );
+
+  const metricsDot = metricBadge && (
     <Tooltip>
       <TooltipTrigger asChild>
         <div
           className={cn(
-            "relative group flex flex-col items-center justify-center p-4 min-w-[120px] rounded-xl border-2 transition-all duration-200",
-            selected
-              ? "border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-105 bg-card"
-              : "border-border hover:border-primary/50 hover:shadow-lg bg-card",
-            isProcessing &&
-              "border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-            isSuccess &&
-              "border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]",
-            isError &&
-              "border-destructive shadow-[0_0_15px_rgba(239,68,68,0.5)]",
+            "absolute -bottom-1.5 -right-1.5 z-10 w-4 h-4 rounded-full flex items-center justify-center shadow border border-background cursor-default",
+            metricBadge.color === "green" && "bg-green-500",
+            metricBadge.color === "yellow" && "bg-yellow-400",
+            metricBadge.color === "red" && "bg-destructive",
           )}
-          style={styleOverrides}
         >
-          {/* Simulation Status Badge */}
-          {simulation?.status && simulation.status !== "idle" && (
-            <div
-              className={cn(
-                "absolute -top-3 -right-3 z-10 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] shadow-sm",
-                isProcessing && "bg-blue-500",
-                isSuccess && "bg-green-500",
-                isError && "bg-destructive",
-              )}
-            >
-              {isProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              {isSuccess && <CheckCircle className="w-3.5 h-3.5" />}
-              {isError && <XCircle className="w-3.5 h-3.5" />}
-            </div>
-          )}
+          <Zap className="w-2 h-2 text-white" />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-xs">{metricBadge.tooltip}</TooltipContent>
+    </Tooltip>
+  );
 
-          {/* Live Metrics Badge */}
-          {metricBadge && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn(
-                    "absolute -bottom-2 -right-2 z-10 w-5 h-5 rounded-full flex items-center justify-center shadow border border-background cursor-default",
-                    metricBadge.color === "green" && "bg-green-500",
-                    metricBadge.color === "yellow" && "bg-yellow-400",
-                    metricBadge.color === "red" && "bg-destructive",
-                  )}
-                >
-                  <Zap className="w-2.5 h-2.5 text-white" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                {metricBadge.tooltip}
-              </TooltipContent>
-            </Tooltip>
+  const ministackDot = msStatus && msStatus !== "idle" && msStatus !== "not_supported" && (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            "absolute -bottom-1.5 -left-1.5 z-10 w-4 h-4 rounded-full flex items-center justify-center shadow border border-background cursor-default",
+            msDeployed && "bg-orange-500",
+            msDeploying && "bg-blue-500",
+            msPending && "bg-yellow-500",
+            msDeployError && "bg-destructive",
           )}
-          {/* Input Handle */}
-          <Handle
-            type="target"
-            position={Position.Top}
-            className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
-          />
+        >
+          {(msDeploying || msPending) && <Loader2 className="w-2 h-2 text-white animate-spin" />}
+          {msDeployed && <Rocket className="w-2 h-2 text-white" />}
+          {msDeployError && <XCircle className="w-2 h-2 text-white" />}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-xs">
+        {msDeployed && `MiniStack: ${ministack?.resourceId ?? "deployed"}`}
+        {msDeploying && "Deploying to MiniStack…"}
+        {msPending && "Pending deploy"}
+        {msDeployError && `Deploy error: ${ministack?.errorMessage ?? "unknown"}`}
+      </TooltipContent>
+    </Tooltip>
+  );
 
-          {/* Icon Circle */}
+  const handles = (
+    <>
+      <Handle type="target" position={Position.Top}    className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
+      <Handle type="source" position={Position.Bottom} className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
+    </>
+  );
+
+  const iconEl = (
+    <Icon
+      {...({ title: "" } as any)}
+      size={iconMode ? 52 : 48}
+      className={cn(
+        "transition-colors",
+        iconMode ? "w-13 h-13" : "w-12 h-12",
+        data.type === "client" || data.type === "cloud-native" || !data.type || data.type === "default" || data.type === "generic"
+          ? "text-blue-500"
+          : "",
+      )}
+    />
+  );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {iconMode ? (
+          // ── Icon-only mode ─────────────────────────────────────────────────
           <div
             className={cn(
-              "p-3 rounded-full mb-2 transition-colors",
-              selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5",
+              "relative group flex flex-col items-center gap-1.5 transition-all duration-200 cursor-pointer select-none",
+              "min-w-[72px] px-2 py-1",
             )}
+            style={{ opacity: styleOverrides.opacity }}
           >
-            <Icon
-              {...({ title: "" } as any)}
-              size={48}
-              className={cn(
-                "w-12 h-12 transition-colors",
-                data.type === "client" ||
-                  data.type === "cloud-native" ||
-                  !data.type ||
-                  data.type === "default" ||
-                  data.type === "generic"
-                  ? "text-blue-500"
-                  : "",
-              )}
-            />
-          </div>
+            {handles}
 
-          {/* Labels */}
-          <div className="text-center">
+            {/* Icon with selection ring */}
             <div
-              className="font-semibold text-sm text-foreground leading-tight"
-              style={
-                metadata?.textColor ? { color: metadata.textColor } : undefined
-              }
+              className={cn(
+                "relative rounded-2xl p-1.5 transition-all duration-200",
+                selected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110",
+                isProcessing && "ring-2 ring-blue-500 ring-offset-2 ring-offset-background",
+                isSuccess   && "ring-2 ring-green-500 ring-offset-2 ring-offset-background",
+                isError     && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
+                !selected && !isProcessing && !isSuccess && !isError &&
+                  "hover:ring-2 hover:ring-primary/40 hover:ring-offset-1 hover:ring-offset-background",
+              )}
+            >
+              {iconEl}
+              {simBadge}
+              {metricsDot}
+              {ministackDot}
+            </div>
+
+            {/* Label */}
+            <span
+              className="text-[11px] font-semibold text-foreground text-center leading-tight max-w-[100px] truncate"
+              style={metadata?.textColor ? { color: metadata.textColor } : undefined}
             >
               {label}
+            </span>
+          </div>
+        ) : (
+          // ── Card mode (default) ────────────────────────────────────────────
+          <div
+            className={cn(
+              "relative group flex flex-col items-center justify-center p-4 min-w-[120px] rounded-xl border-2 transition-all duration-200",
+              selected
+                ? "border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-105 bg-card"
+                : "border-border hover:border-primary/50 hover:shadow-lg bg-card",
+              isProcessing && "border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+              isSuccess    && "border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]",
+              isError      && "border-destructive shadow-[0_0_15px_rgba(239,68,68,0.5)]",
+            )}
+            style={styleOverrides}
+          >
+            {/* Simulation status — card size */}
+            {simulation?.status && simulation.status !== "idle" && (
+              <div className={cn("absolute -top-3 -right-3 z-10 w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] shadow-sm", isProcessing && "bg-blue-500", isSuccess && "bg-green-500", isError && "bg-destructive")}>
+                {isProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isSuccess && <CheckCircle className="w-3.5 h-3.5" />}
+                {isError && <XCircle className="w-3.5 h-3.5" />}
+              </div>
+            )}
+            {metricsDot}
+            {ministackDot}
+
+            {handles}
+
+            {/* Icon circle */}
+            <div className={cn("p-3 rounded-full mb-2 transition-colors", selected ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5")}>
+              {iconEl}
             </div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-medium bg-muted/50 px-2 py-0.5 rounded-full inline-block">
-              {service}{" "}
-              {resolvedProvider !== "aws" && resolvedProvider !== "generic"
-                ? `(${resolvedProvider})`
-                : ""}
+
+            {/* Labels */}
+            <div className="text-center">
+              <div
+                className="font-semibold text-sm text-foreground leading-tight"
+                style={metadata?.textColor ? { color: metadata.textColor } : undefined}
+              >
+                {label}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-medium bg-muted/50 px-2 py-0.5 rounded-full inline-block">
+                {service}{" "}
+                {resolvedProvider !== "aws" && resolvedProvider !== "generic" ? `(${resolvedProvider})` : ""}
+              </div>
             </div>
           </div>
-
-          {/* Output Handle */}
-          <Handle
-            type="source"
-            position={Position.Bottom}
-            className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary"
-          />
-        </div>
+        )}
       </TooltipTrigger>
       {description && (
         <TooltipContent side="right" className="max-w-[200px]">

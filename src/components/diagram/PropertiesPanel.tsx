@@ -31,6 +31,20 @@ import JsonEditor from "./JsonEditor";
 import PricingSection from "./PricingSection";
 import { SiTerraform } from "react-icons/si";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
+import { MiniConsoleDialog } from "@/components/ministack/MiniConsoleDialog";
+import { Rocket, CheckCircle, XCircle, Clock, Play, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { prettyPayload } from "@/lib/format-payload";
+import {
+  lambdaInvoke,
+  sqsSendMessage,
+  dynamoPutItem,
+  snsPublish,
+  eventBridgePutEvents,
+  s3PutObject,
+  apiGatewayInvoke,
+  deployNodes,
+} from "@/lib/ministack/browser-actions";
 
 const LANE_COLORS = [
   "#6366f1",
@@ -498,6 +512,431 @@ function IaCConfigSection({
   );
 }
 
+// ── Traffic Source Fire Section ───────────────────────────────────────────────
+interface FireHop {
+  label: string;
+  latencyMs: number;
+  ok: boolean;
+  response: unknown;
+}
+
+function TrafficSourceFireSection({ node, nodes, edges }: { node: any; nodes: any[]; edges: any[] }) {
+  const ministackConfig = useDiagramStore((s) => s.ministackConfig);
+  const updateNodeMock = useDiagramStore((s) => s.updateNodeMock);
+  const mock = node.data.mock as any;
+  const [firing, setFiring] = React.useState(false);
+  const [hops, setHops] = React.useState<FireHop[]>([]);
+
+  const handleFire = React.useCallback(async () => {
+    const method = (mock?.httpMethod ?? "POST").toUpperCase();
+    const path   = mock?.httpPath ?? "/";
+    let body: unknown = {};
+    try { body = JSON.parse(mock?.payloadTemplate ?? "{}"); } catch { body = {}; }
+
+    setFiring(true);
+    setHops([]);
+
+    const { executeMiniStackNode } = await import("@/lib/simulation/ministack-executor");
+    const visited = new Set<string>();
+    const collectedHops: FireHop[] = [];
+
+    // Traverse the graph from sourceNodeId, calling deployed nodes along the way.
+    // payload evolves: Traffic Source sets _method/_path/_body; downstream nodes
+    // receive the previous hop's response as their input.
+    async function traverse(currentNodeId: string, payload: unknown, depth: number): Promise<void> {
+      if (depth > 8 || visited.has(currentNodeId)) return;
+      visited.add(currentNodeId);
+
+      const outgoing = edges.filter((e: any) => e.source === currentNodeId);
+      for (const edge of outgoing) {
+        const target = nodes.find((n: any) => n.id === edge.target);
+        if (!target || visited.has(target.id)) continue;
+
+        const isDeployed = target.data?.ministack?.status === "deployed";
+        if (!isDeployed) {
+          // Non-deployed node: pass through without a real call, continue chain
+          await traverse(target.id, payload, depth + 1);
+          continue;
+        }
+
+        const t0 = performance.now();
+        try {
+          const result = await executeMiniStackNode(target, payload, ministackConfig);
+          const latencyMs = Math.round(performance.now() - t0);
+          const hop: FireHop = {
+            label: target.data.label ?? target.data.service,
+            latencyMs,
+            ok: result.status === "success",
+            response: result.status === "success" ? result.responsePayload : result.errorMessage,
+          };
+          collectedHops.push(hop);
+          setHops([...collectedHops]);
+
+          // Use this hop's response as payload for the next hop
+          const nextPayload = result.status === "success" && result.responsePayload != null
+            ? result.responsePayload
+            : payload;
+          await traverse(target.id, nextPayload, depth + 1);
+        } catch (e) {
+          collectedHops.push({
+            label: target.data.label ?? target.data.service,
+            latencyMs: Math.round(performance.now() - t0),
+            ok: false,
+            response: e instanceof Error ? e.message : "Error",
+          });
+          setHops([...collectedHops]);
+        }
+      }
+    }
+
+    try {
+      await traverse(node.id, { _method: method, _path: path, _body: body }, 0);
+      if (collectedHops.length === 0) {
+        setHops([{ label: "—", latencyMs: 0, ok: false, response: "No deployed node reachable. Deploy downstream nodes first." }]);
+      } else {
+        const last = collectedHops[collectedHops.length - 1];
+        updateNodeMock(node.id, { _lastFireResult: { ok: last.ok, response: last.response } } as any);
+      }
+    } finally {
+      setFiring(false);
+    }
+  }, [mock, node.id, nodes, edges, ministackConfig, updateNodeMock]);
+
+  const totalMs = hops.reduce((s, h) => s + h.latencyMs, 0);
+  const allOk = hops.length > 0 && hops.every((h) => h.ok);
+  const lastHop = hops[hops.length - 1];
+
+  return (
+    <div className="space-y-2 pt-1">
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full gap-1.5 text-xs h-7 border-violet-500/40 text-violet-400 hover:bg-violet-500/10"
+        onClick={handleFire}
+        disabled={firing}
+      >
+        {firing
+          ? <><Loader2 className="w-3 h-3 animate-spin" /> Firing…</>
+          : <><Play className="w-3 h-3" /> Fire 1 request</>}
+      </Button>
+
+      {hops.length > 0 && (
+        <div className={cn(
+          "rounded border p-2 text-xs space-y-1.5",
+          allOk ? "border-green-500/30 bg-green-500/5" : "border-destructive/30 bg-destructive/5",
+        )}>
+          {/* Per-hop results */}
+          {hops.map((hop, i) => (
+            <div key={i} className="flex items-start gap-1.5 font-mono">
+              <span className={hop.ok ? "text-green-400 shrink-0" : "text-destructive shrink-0"}>
+                {hop.ok ? "✓" : "✗"}
+              </span>
+              <span className="text-muted-foreground shrink-0">{hop.label}</span>
+              <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{hop.latencyMs}ms</span>
+            </div>
+          ))}
+
+          {/* Separator + final response */}
+          {lastHop && (
+            <>
+              <div className="border-t border-border/50 pt-1">
+                <p className="text-[10px] text-muted-foreground mb-0.5">
+                  Response {hops.length > 1 ? `(${totalMs}ms total)` : ""}
+                </p>
+                <pre className="text-[10px] break-all whitespace-pre-wrap max-h-28 overflow-auto">
+                  {prettyPayload(lastHop.response)}
+                </pre>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const INVOKE_DEFAULTS: Record<string, string> = {
+  lambda:       '{\n  "key": "value"\n}',
+  sqs:          '{\n  "message": "hello from simulation"\n}',
+  dynamodb:     '{\n  "id": { "S": "sim-1" },\n  "data": { "S": "value" }\n}',
+  sns:          '{\n  "event": "notification",\n  "payload": {}\n}',
+  eventbridge:  '{\n  "source": "openarchflow.simulation",\n  "detail": {}\n}',
+  s3:           '{\n  "body": "hello world"\n}',
+  apigateway:   '{\n  "_method": "GET",\n  "_path": "/",\n  "_body": {}\n}',
+  "api-gateway":'{\n  "_method": "GET",\n  "_path": "/",\n  "_body": {}\n}',
+};
+
+const INVOKE_LABEL: Record<string, string> = {
+  lambda: "Invoke", sqs: "Send message", dynamodb: "Put item",
+  sns: "Publish", eventbridge: "Put event", s3: "Put object",
+  apigateway: "Send request", "api-gateway": "Send request",
+};
+
+function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [consoleOpen, setConsoleOpen] = React.useState(false);
+  const [deploying, setDeploying] = React.useState(false);
+  const [nameOverride, setNameOverride] = React.useState<string>(() => node.data.ministack?.resourceNameOverride ?? "");
+  const [invokeOpen, setInvokeOpen] = React.useState(false);
+  const [invokePayload, setInvokePayload] = React.useState<string>(() => {
+    const svc = (node.data.service ?? "").toLowerCase();
+    return INVOKE_DEFAULTS[svc] ?? '{\n  "key": "value"\n}';
+  });
+  const [invoking, setInvoking] = React.useState(false);
+  const [invokeResult, setInvokeResult] = React.useState<{ ok: boolean; latencyMs: number; summary: string } | null>(null);
+
+  const ministackConfig = useDiagramStore((s) => s.ministackConfig);
+  const setNodeMinistackState = useDiagramStore((s) => s.setNodeMinistackState);
+  const resetNodeMinistackState = useDiagramStore((s) => s.resetNodeMinistackState);
+
+  const ms = node.data.ministack;
+  const status = ms?.status;
+  const isDeployed = status === "deployed";
+  const isError = status === "error";
+  const service = (node.data.service ?? "").toLowerCase();
+  const resourceId = ms?.resourceId ?? "";
+
+  const handleQuickInvoke = React.useCallback(async () => {
+    let body: unknown;
+    try { body = JSON.parse(invokePayload); } catch { toast.error("Invalid JSON payload"); return; }
+    setInvoking(true);
+    setInvokeResult(null);
+    const t0 = performance.now();
+    try {
+      const cfg = ministackConfig;
+      let result: unknown;
+
+      if (service === "lambda") {
+        result = await lambdaInvoke(cfg, resourceId, invokePayload);
+      } else if (service === "sqs") {
+        const queueUrl = ms?.endpoint ?? `${cfg.endpoint}/000000000000/${resourceId}`;
+        const messageId = await sqsSendMessage(cfg, queueUrl, invokePayload);
+        result = { messageId };
+      } else if (service === "dynamodb") {
+        await dynamoPutItem(cfg, resourceId, body as Record<string, unknown>);
+        result = { ok: true };
+      } else if (service === "sns") {
+        const topicArn = ms?.resourceArn ?? `arn:aws:sns:${cfg.region}:${cfg.accountId}:${resourceId}`;
+        const messageId = await snsPublish(cfg, topicArn, invokePayload);
+        result = { messageId };
+      } else if (service === "eventbridge") {
+        result = await eventBridgePutEvents(cfg, resourceId, "openarchflow.invoke", "ManualInvoke", invokePayload);
+      } else if (service === "s3") {
+        await s3PutObject(cfg, resourceId, `invoke/${Date.now()}.json`, invokePayload);
+        result = { ok: true };
+      } else if (service === "apigateway" || service === "api-gateway") {
+        const p = body as Record<string, unknown>;
+        const method = String(p._method ?? "POST").toUpperCase();
+        const path = String(p._path ?? "/");
+        const gwBody = p._body ?? body;
+        result = await apiGatewayInvoke(cfg, resourceId, method, path, gwBody);
+      } else {
+        toast.error("Quick invoke not supported for this service");
+        return;
+      }
+
+      const latencyMs = Math.round(performance.now() - t0);
+      setInvokeResult({ ok: true, latencyMs, summary: prettyPayload(result) });
+      toast.success(`${INVOKE_LABEL[service] ?? "Invoke"} — ${latencyMs}ms`);
+    } catch (e) {
+      const latencyMs = Math.round(performance.now() - t0);
+      setInvokeResult({ ok: false, latencyMs, summary: e instanceof Error ? e.message : "Error" });
+    } finally {
+      setInvoking(false);
+    }
+  }, [invokePayload, service, resourceId, ms, ministackConfig]);
+
+  const handleSaveNameOverride = () => {
+    setNodeMinistackState(nodeId, { resourceNameOverride: nameOverride.trim() || undefined });
+  };
+
+  const handleDeployThis = async () => {
+    setDeploying(true);
+    setNodeMinistackState(nodeId, { status: "deploying" });
+    const override = nameOverride.trim() || undefined;
+    try {
+      await deployNodes(
+        [{
+          nodeId,
+          service: node.data.service,
+          label: node.data.label,
+          nodeConfig: override ? { resourceNameOverride: override } : undefined,
+        }],
+        ministackConfig,
+        (result) => {
+          if (result.status === "deployed") {
+            setNodeMinistackState(nodeId, {
+              status: "deployed",
+              resourceId: result.resourceId,
+              resourceArn: result.resourceArn,
+              endpoint: result.endpoint,
+              deployedAt: Date.now(),
+              resourceNameOverride: override,
+            });
+          } else {
+            setNodeMinistackState(nodeId, { status: result.status ?? "error", errorMessage: result.errorMessage });
+          }
+        },
+      );
+    } catch (e) {
+      setNodeMinistackState(nodeId, { status: "error", errorMessage: e instanceof Error ? e.message : "Deploy failed" });
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  const statusColor = isDeployed
+    ? "text-green-600 dark:text-green-400"
+    : isError
+      ? "text-destructive"
+      : "text-muted-foreground";
+
+  return (
+    <div className="w-full">
+      <button
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex items-center justify-between w-full text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors py-0.5"
+      >
+        <span className="flex items-center gap-2">
+          <Rocket size={14} className={statusColor} />
+          MiniStack Deploy
+        </span>
+        <span className="text-xs text-muted-foreground">{isOpen ? "▲" : "▼"}</span>
+      </button>
+
+      {isOpen && (
+        <div className="mt-2 space-y-2">
+          {/* Status row */}
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-border bg-muted/20">
+            {isDeployed && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
+            {isError    && <XCircle    className="w-3.5 h-3.5 text-destructive shrink-0" />}
+            {!isDeployed && !isError && <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+            <span className={cn("text-xs font-medium capitalize", statusColor)}>{status ?? "idle"}</span>
+          </div>
+
+          {/* Resource details — block layout with break-all, no flex truncation */}
+          {(ms?.resourceId || ms?.resourceArn || ms?.endpoint) && (
+            <div className="rounded-lg border border-border bg-muted/10 p-2 space-y-1.5 text-[10px] font-mono">
+              {ms?.resourceId && (
+                <div className="flex gap-1.5 items-start">
+                  <span className="text-muted-foreground shrink-0 pt-px">ID</span>
+                  <span className="break-all flex-1 leading-tight">{ms.resourceId}</span>
+                  <button className="shrink-0 px-1 py-px rounded border border-border text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(ms.resourceId!)}>Copy</button>
+                </div>
+              )}
+              {ms?.resourceArn && (
+                <div className="flex gap-1.5 items-start">
+                  <span className="text-muted-foreground shrink-0 pt-px">ARN</span>
+                  <span className="break-all flex-1 leading-tight">{ms.resourceArn}</span>
+                  <button className="shrink-0 px-1 py-px rounded border border-border text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(ms.resourceArn!)}>Copy</button>
+                </div>
+              )}
+              {ms?.endpoint && (
+                <div className="flex gap-1.5 items-start">
+                  <span className="text-muted-foreground shrink-0 pt-px">URL</span>
+                  <span className="break-all flex-1 leading-tight">{ms.endpoint}</span>
+                  <button className="shrink-0 px-1 py-px rounded border border-border text-muted-foreground hover:text-foreground" onClick={() => navigator.clipboard.writeText(ms.endpoint!)}>Copy</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Error */}
+          {isError && ms?.errorMessage && (
+            <p className="text-xs text-destructive bg-destructive/10 px-2 py-1.5 rounded break-all">
+              {ms.errorMessage}
+            </p>
+          )}
+
+          {/* Resource name override */}
+          {!isDeployed && (
+            <input
+              type="text"
+              value={nameOverride}
+              onChange={(e) => setNameOverride(e.target.value)}
+              onBlur={handleSaveNameOverride}
+              placeholder="Resource name (auto from label)"
+              className="w-full text-xs px-2 py-1.5 rounded border border-border bg-background font-mono placeholder:text-muted-foreground/50"
+            />
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" variant="outline" onClick={handleDeployThis} disabled={deploying} className="h-7 text-xs gap-1">
+              <Rocket className="w-3 h-3 shrink-0" />
+              {deploying ? "Deploying…" : isDeployed ? "Re-deploy" : "Deploy"}
+            </Button>
+            {isDeployed && (
+              <Button size="sm" variant="outline" onClick={() => setInvokeOpen((v) => !v)} className={cn("h-7 text-xs gap-1", invokeOpen && "bg-muted")}>
+                <Play className="w-3 h-3 shrink-0" />
+                {INVOKE_LABEL[service] ?? "Invoke"}
+              </Button>
+            )}
+            {isDeployed && (
+              <Button size="sm" variant="outline" onClick={() => setConsoleOpen(true)} className="h-7 text-xs gap-1">
+                <Settings size={12} className="shrink-0" />
+                Console
+              </Button>
+            )}
+            {status && status !== "idle" && (
+              <Button size="sm" variant="ghost" onClick={() => resetNodeMinistackState(nodeId)} className="h-7 text-xs text-muted-foreground gap-1">
+                Reset
+              </Button>
+            )}
+          </div>
+
+          {/* Quick Invoke panel */}
+          {isDeployed && invokeOpen && (
+            <div className="space-y-2 border-t border-border pt-2">
+              {(service === "apigateway" || service === "api-gateway") && (
+                <p className="text-[10px] text-muted-foreground">
+                  Use <code className="font-mono">_method</code>, <code className="font-mono">_path</code>, <code className="font-mono">_body</code> to configure the request.
+                </p>
+              )}
+              <textarea
+                value={invokePayload}
+                onChange={(e) => setInvokePayload(e.target.value)}
+                rows={3}
+                className="w-full text-xs p-2 rounded border border-border bg-background font-mono resize-none"
+                placeholder='{"key": "value"}'
+              />
+              <Button size="sm" onClick={handleQuickInvoke} disabled={invoking} className="h-7 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white w-full">
+                {invoking
+                  ? <><Loader2 className="w-3 h-3 animate-spin" /> Running…</>
+                  : <><Play className="w-3 h-3" /> {INVOKE_LABEL[service] ?? "Invoke"}</>}
+              </Button>
+              {invokeResult && (
+                <div className={cn(
+                  "rounded border px-2 py-1.5 text-[10px] font-mono space-y-0.5",
+                  invokeResult.ok
+                    ? "border-green-500/30 bg-green-500/5 text-green-400"
+                    : "border-destructive/30 bg-destructive/5 text-destructive",
+                )}>
+                  <p>{invokeResult.ok ? "✓" : "✗"} {invokeResult.latencyMs}ms</p>
+                  <pre className="whitespace-pre-wrap break-all text-muted-foreground max-h-32 overflow-auto">{invokeResult.summary}</pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {consoleOpen && ms?.resourceId && (
+        <MiniConsoleDialog
+          open={consoleOpen}
+          onClose={() => setConsoleOpen(false)}
+          service={node.data.service}
+          nodeLabel={node.data.label}
+          config={ministackConfig}
+          resourceId={ms.resourceId}
+          resourceArn={ms.resourceArn}
+          endpoint={ms.endpoint}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function PropertiesPanel() {
   const {
     selectedNodeId,
@@ -566,7 +1005,7 @@ export default function PropertiesPanel() {
       service?.toLowerCase().includes("database") ||
       service?.toLowerCase().includes("store") ||
       type === "database";
-    const isClient = type === "client";
+    const isClient = type === "client" || type === "traffic-source";
 
     // Get connected target nodes for Gateway routing
     const connectedEdges = activeDiagram.edges.filter(
@@ -1030,6 +1469,16 @@ export default function PropertiesPanel() {
               {/* Simulation / Mock Configuration - Only for non-Frame/Annotation nodes */}
               {!isFrame && !isAnnotation && (
                 <div className="space-y-4">
+                  {/* Deployed-node notice — mock settings are overridden by real MiniStack */}
+                  {selectedNode.data.ministack?.status === "deployed" && (
+                    <div className="flex items-start gap-2 rounded-lg border border-orange-500/30 bg-orange-500/8 px-3 py-2 text-xs text-orange-400">
+                      <Rocket size={12} className="mt-0.5 shrink-0" />
+                      <span>
+                        Node deployed to MiniStack — simulation will use real latency &amp; behavior.
+                        Mock settings below are <strong>ignored</strong>.
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
@@ -1077,6 +1526,7 @@ export default function PropertiesPanel() {
                     </div>
                     <Switch
                       checked={mock?.enabled !== false}
+                      disabled={selectedNode.data.ministack?.status === "deployed"}
                       onCheckedChange={(checked) =>
                         updateNodeMock(selectedNodeId, { enabled: checked })
                       }
@@ -1084,7 +1534,10 @@ export default function PropertiesPanel() {
                   </div>
 
                   {mock?.enabled !== false && (
-                    <div className="space-y-4 border rounded-lg p-3 bg-muted/20">
+                    <div className={cn(
+                      "space-y-4 border rounded-lg p-3 bg-muted/20",
+                      selectedNode.data.ministack?.status === "deployed" && "pointer-events-none opacity-40",
+                    )}>
                       {/* Gateway Specific Config */}
                       {isGateway && (
                         <div className="space-y-3">
@@ -1261,6 +1714,60 @@ export default function PropertiesPanel() {
                               0 = Single request. &gt;0 = Continuous stream.
                             </p>
                           </div>
+                          {/* Traffic Source — method / path / payload */}
+                          {type === "traffic-source" && (
+                            <>
+                              <Separator className="my-2" />
+                              <div className="space-y-2">
+                                <Label className="text-xs uppercase text-muted-foreground">
+                                  Request Config
+                                </Label>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={(mock as any)?.httpMethod ?? "POST"}
+                                    onChange={(e) =>
+                                      updateNodeMock(selectedNodeId, { httpMethod: e.target.value } as any)
+                                    }
+                                    className="h-7 w-[80px] text-xs rounded-md border border-input bg-background px-2 py-1 shrink-0"
+                                  >
+                                    {["GET", "POST", "PUT", "DELETE", "PATCH"].map((m) => (
+                                      <option key={m} value={m}>{m}</option>
+                                    ))}
+                                  </select>
+                                  <Input
+                                    value={(mock as any)?.httpPath ?? "/"}
+                                    onChange={(e) =>
+                                      updateNodeMock(selectedNodeId, { httpPath: e.target.value } as any)
+                                    }
+                                    placeholder="/path"
+                                    className="h-7 text-xs font-mono flex-1"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Payload (JSON)</Label>
+                                  <textarea
+                                    value={(mock as any)?.payloadTemplate ?? "{}"}
+                                    onChange={(e) =>
+                                      updateNodeMock(selectedNodeId, { payloadTemplate: e.target.value } as any)
+                                    }
+                                    rows={4}
+                                    className="w-full text-xs p-2 rounded border border-input bg-background font-mono resize-none"
+                                    placeholder='{"key": "value"}'
+                                  />
+                                  <p className="text-[10px] text-muted-foreground">
+                                    Forwarded as HTTP body to API Gateway, or as Lambda event.
+                                  </p>
+                                </div>
+                              </div>
+                              <Separator className="my-2" />
+                              <TrafficSourceFireSection
+                                node={selectedNode}
+                                nodes={activeDiagram.nodes}
+                                edges={activeDiagram.edges}
+                              />
+                            </>
+                          )}
+
                           <Separator className="my-2" />
 
                           <div className="flex items-center justify-between">
@@ -1714,6 +2221,11 @@ export default function PropertiesPanel() {
                 <IaCConfigSection nodeId={selectedNodeId} node={selectedNode} />
               )}
 
+              {/* MiniStack Deploy — shown for all AWS nodes */}
+              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
+                <MiniStackSection nodeId={selectedNodeId} node={selectedNode} />
+              )}
+
               {/* Custom Properties */}
               <CustomPropertiesEditor
                 nodeId={selectedNodeId}
@@ -1870,14 +2382,17 @@ export default function PropertiesPanel() {
                       <option value={4}>4px</option>
                     </select>
                   </div>
-                  <div className="flex items-center gap-2 pt-4">
-                    <Switch
-                      checked={selectedEdge.data?.dashed ?? false}
-                      onCheckedChange={(v) =>
-                        updateEdge(selectedEdgeId, { dashed: v })
-                      }
-                    />
-                    <Label className="text-xs">Dashed</Label>
+                  <div>
+                    <Label className="text-xs opacity-0 select-none" aria-hidden>·</Label>
+                    <div className="flex items-center gap-2 h-8">
+                      <Switch
+                        checked={selectedEdge.data?.dashed ?? false}
+                        onCheckedChange={(v) =>
+                          updateEdge(selectedEdgeId, { dashed: v })
+                        }
+                      />
+                      <Label className="text-xs">Dashed</Label>
+                    </div>
                   </div>
                 </div>
               </div>
