@@ -298,6 +298,22 @@ interface DiagramState {
   setNodeMinistackState: (nodeId: string, state: Partial<MiniStackNodeState>) => void;
   resetNodeMinistackState: (nodeId: string) => void;
   resetAllMinistackStates: () => void;
+
+  // Google Drive Sync
+  driveFileId: string | null;
+  driveLastSyncedAt: number | null;
+  driveSyncStatus: "idle" | "syncing" | "error" | "conflict";
+  driveLastError: string | null;
+  setDriveFileId: (id: string | null) => void;
+  setDriveSyncStatus: (status: "idle" | "syncing" | "error" | "conflict") => void;
+  setDriveSyncResult: (fileId: string, syncedAt: number) => void;
+  setDriveError: (error: string | null) => void;
+
+  // Onboarding tour
+  tourCompleted: boolean;
+  tourOpen: boolean;
+  setTourCompleted: () => void;
+  setTourOpen: (open: boolean) => void;
 }
 
 export const useDiagramStore = create<DiagramState>()(
@@ -328,6 +344,12 @@ export const useDiagramStore = create<DiagramState>()(
           "active" | "error" | "throttled"
         >(),
         ministackConfig: { ...DEFAULT_MINISTACK_CONFIG },
+        driveFileId: null,
+        driveLastSyncedAt: null,
+        driveSyncStatus: "idle" as const,
+        driveLastError: null,
+        tourCompleted: false,
+        tourOpen: false,
 
         setCollaborationRoomId: (id) => {
           if (!id) {
@@ -1516,6 +1538,14 @@ export const useDiagramStore = create<DiagramState>()(
             };
           });
         },
+
+        setDriveFileId: (id) => set({ driveFileId: id }),
+        setDriveSyncStatus: (status) => set({ driveSyncStatus: status }),
+        setDriveSyncResult: (fileId, syncedAt) =>
+          set({ driveFileId: fileId, driveLastSyncedAt: syncedAt, driveSyncStatus: "idle", driveLastError: null }),
+        setDriveError: (error) => set({ driveSyncStatus: "error", driveLastError: error }),
+        setTourCompleted: () => set({ tourCompleted: true, tourOpen: false }),
+        setTourOpen: (open) => set({ tourOpen: open }),
       }),
       {
         name: "open-arch-flow-storage-v2", // Changed version to reset/separate storage
@@ -1529,6 +1559,9 @@ export const useDiagramStore = create<DiagramState>()(
           customShapes: state.customShapes,
           ministackConfig: state.ministackConfig,
           nodeDisplayMode: state.nodeDisplayMode,
+          driveFileId: state.driveFileId,
+          driveLastSyncedAt: state.driveLastSyncedAt,
+          tourCompleted: state.tourCompleted,
         }),
         onRehydrateStorage: () => (state) => {
           // Ensure there is at least one diagram if none exist after hydration

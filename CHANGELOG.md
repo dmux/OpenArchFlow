@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.1] - 2026-05-10
+
+### Added
+
+**Google Drive Sync — Automatic Cloud Backup**
+
+OpenArchFlow can now automatically sync all your diagrams to your personal Google Drive, eliminating the risk of losing work on browser data clears or device switches.
+
+- **Auto-sync** — Every diagram change is automatically uploaded to your Google Drive (debounced 3s after the last edit). The sync file (`OpenArchFlow_Sync.json`) uses the `drive.file` scope, meaning the app can only access files it created.
+- **Conflict detection** — On app load, if the cloud copy is newer than local data, a prompt appears letting you choose "Use Cloud" or "Keep Local" — no silent overwrites.
+- **Sync status button** — A new Google Drive icon in the toolbar (Group 5, after Collaborate) shows real-time sync status: idle, syncing spinner, or error state with last-sync timestamp.
+- **Error recovery** — Sync errors surface as toasts with a "Retry" action. Token expiry triggers a reconnect prompt.
+- **Privacy-first** — The feature is entirely opt-in and gated by the `NEXT_PUBLIC_GOOGLE_CLIENT_ID` environment variable. The button is hidden when the variable is not set.
+- **No backend required** — OAuth and Drive API calls run entirely in the browser using Google Identity Services.
+
+### Changed
+
+- Version bumped to 0.8.1.
+
+---
+
 ## [0.8.0] - 2026-05-09
 
 ### Added
