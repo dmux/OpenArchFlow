@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
     try {
-        const { prompt, apiKey, currentNodes, currentEdges, history } = await req.json();
+        const { prompt, apiKey, currentNodes, currentEdges, history, model } = await req.json();
 
         if (!prompt) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
         // Initialize Google Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const geminiModel = genAI.getGenerativeModel({ model: model || 'gemini-2.5-flash' });
 
         const hasExistingArchitecture = currentNodes && currentNodes.length > 0;
         let serializedCurrent = "";
@@ -39,7 +39,7 @@ When discussing specific components, refer to them by their label or service nam
 Do NOT generate a JSON schema of the architecture unless explicitly asked to provide JSON. Provide textual analysis, explanations, pricing estimates, or security reviews as requested.`;
 
         // Start chat session with history
-        const chat = model.startChat({
+        const chat = geminiModel.startChat({
             history: [
                 {
                     role: "user",

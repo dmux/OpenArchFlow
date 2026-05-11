@@ -75,7 +75,7 @@ import html2canvas from "html2canvas";
 import { WebLLMService } from "@/lib/ai/webllm";
 import BillOfMaterials from "../diagram/BillOfMaterials";
 import { CollaborateButton } from "./CollaborateButton";
-import { GoogleDriveSyncButton } from "./GoogleDriveSyncButton";
+import { GoogleAccountButton } from "./GoogleAccountButton";
 import { type GoogleDriveSyncHook } from "@/hooks/useGoogleDriveSync";
 
 interface UnifiedToolbarProps {
@@ -113,6 +113,7 @@ export function UnifiedToolbar({
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagrams = useDiagramStore((state) => state.diagrams);
   const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
+  const geminiModel = useDiagramStore((state) => state.geminiModel);
   const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
   const { setTheme, theme } = useTheme();
 
@@ -263,7 +264,7 @@ export function UnifiedToolbar({
         const response = await fetch("/api/generate-spec", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nodes, edges, apiKey: geminiApiKey, diagramName: activeDiagramName }),
+          body: JSON.stringify({ nodes, edges, apiKey: geminiApiKey, model: geminiModel, diagramName: activeDiagramName }),
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -566,20 +567,9 @@ export function UnifiedToolbar({
           <div data-tour="collaborate">
             <CollaborateButton />
           </div>
-          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
-            <div data-tour="google-drive-sync">
-              <GoogleDriveSyncButton
-                isConnected={driveSync.isConnected}
-                isSyncing={driveSync.isSyncing}
-                lastSyncedAt={driveSync.lastSyncedAt}
-                syncStatus={driveSync.syncStatus}
-                lastError={driveSync.lastError}
-                onConnect={driveSync.connect}
-                onDisconnect={driveSync.disconnect}
-                onSyncNow={driveSync.syncNow}
-              />
-            </div>
-          )}
+          <div data-tour="google-drive-sync">
+            <GoogleAccountButton driveSync={driveSync} btnCls={btnCls} icoSize={icoSize} />
+          </div>
 
           {sep}
 

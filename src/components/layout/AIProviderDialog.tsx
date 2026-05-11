@@ -25,10 +25,18 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
   const geminiApiKey = useDiagramStore((s) => s.geminiApiKey);
   const setGeminiApiKey = useDiagramStore((s) => s.setGeminiApiKey);
   const setOfflineMode = useDiagramStore((s) => s.setOfflineMode);
+  const geminiModel = useDiagramStore((s) => s.geminiModel);
+  const setGeminiModel = useDiagramStore((s) => s.setGeminiModel);
 
   const [keyInput, setKeyInput] = useState(
     geminiApiKey && geminiApiKey !== "offline" ? geminiApiKey : "",
   );
+
+  const GEMINI_MODELS = [
+    { id: "gemini-2.0-flash", label: "2.0 Flash", description: "Fastest" },
+    { id: "gemini-2.5-flash", label: "2.5 Flash", description: "Balanced" },
+    { id: "gemini-2.5-pro", label: "2.5 Pro", description: "Most capable" },
+  ];
 
   const handleSelectOffline = () => {
     setAiProvider("offline");
@@ -101,7 +109,7 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Uses Google Gemini 2.5 Flash. Requires a Google AI API key.
+                Requires a Google AI Studio API key (separate from your Google account).
               </p>
               <div className="flex gap-2">
                 <Input
@@ -120,6 +128,26 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                 >
                   Save
                 </Button>
+              </div>
+
+              {/* Model selector */}
+              <div className="flex gap-1 pt-0.5">
+                {GEMINI_MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setGeminiModel(m.id)}
+                    className={cn(
+                      "flex-1 rounded-lg border px-2 py-1.5 text-center transition-all",
+                      geminiModel === m.id
+                        ? "border-sky-500 bg-sky-500/10 text-sky-600"
+                        : "border-border hover:border-foreground/30 text-muted-foreground",
+                    )}
+                  >
+                    <p className="text-xs font-semibold">{m.label}</p>
+                    <p className="text-[10px] opacity-70">{m.description}</p>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

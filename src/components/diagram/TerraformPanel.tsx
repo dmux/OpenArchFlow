@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { AppNode, AppEdge } from "@/lib/store";
+import { useDiagramStore, type AppNode, type AppEdge } from "@/lib/store";
 import { TerraformGenerator } from "@/lib/iac/terraform";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
 import { exportTerraform, exportTerraformZip } from "@/lib/export/terraform";
@@ -147,6 +147,7 @@ export default function TerraformPanel({
   diagramName,
   geminiApiKey,
 }: TerraformPanelProps) {
+  const geminiModel = useDiagramStore((s) => s.geminiModel);
   const [activeTab, setActiveTab] = useState<PanelTab>("code");
   const [activeFile, setActiveFile] = useState<CodeFile>("main.tf");
   const [output, setOutput] = useState<IaCOutput | null>(null);
@@ -235,6 +236,7 @@ export default function TerraformPanel({
           region,
           providerVersion,
           geminiApiKey,
+          model: geminiModel,
           useAI: true,
         }),
       });

@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const { prompt, apiKey, currentNodes, currentEdges } = await req.json();
+        const { prompt, apiKey, currentNodes, currentEdges, model } = await req.json();
 
         if (!prompt) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
 
         // 3. Google Gemini Generation
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: 'gemini-2.5-flash',
+        const geminiModel = genAI.getGenerativeModel({
+            model: model || 'gemini-2.5-flash',
             generationConfig: { responseMimeType: "application/json" }
         });
 
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       If user asks for "Serverless API", include API Gateway -> Lambda -> DynamoDB, plus CloudWatch for logs.`}
     `;
 
-        const result = await model.generateContent([systemPrompt, prompt]);
+        const result = await geminiModel.generateContent([systemPrompt, prompt]);
         const response = await result.response;
         const text = response.text();
 
