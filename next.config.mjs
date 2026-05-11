@@ -9,6 +9,12 @@ const nextConfig = {
     env: {
         NEXT_PUBLIC_APP_VERSION: pkg.version,
     },
+    images: {
+        remotePatterns: [
+            { protocol: "https", hostname: "lh3.googleusercontent.com" },
+            { protocol: "https", hostname: "*.googleusercontent.com" },
+        ],
+    },
 };
 
 export default nextConfig;

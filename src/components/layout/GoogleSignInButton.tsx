@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,10 +59,11 @@ export function GoogleSignInButton({ btnCls, icoSize }: GoogleSignInButtonProps)
               size="icon"
               className={`${btnCls} hover:bg-accent p-0.5 overflow-hidden`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={user.picture}
                 alt={user.name}
+                width={36}
+                height={36}
                 className="rounded-full w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -84,11 +86,12 @@ export function GoogleSignInButton({ btnCls, icoSize }: GoogleSignInButtonProps)
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1" />
         <div className="px-2 py-2 flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={user.picture}
             alt={user.name}
-            className="rounded-full w-8 h-8 object-cover shrink-0"
+            width={32}
+            height={32}
+            className="rounded-full object-cover shrink-0"
             referrerPolicy="no-referrer"
           />
           <div className="min-w-0">

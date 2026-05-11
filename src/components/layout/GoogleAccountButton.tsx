@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   CloudUpload,
   HardDriveUpload,
@@ -81,10 +82,11 @@ export function GoogleAccountButton({ driveSync, btnCls, icoSize }: GoogleAccoun
                 size="icon"
                 className={`${btnCls} hover:bg-accent p-0.5 overflow-hidden relative`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={googleUser.picture}
                   alt={googleUser.name}
+                  width={36}
+                  height={36}
                   className="rounded-full w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -150,11 +152,12 @@ export function GoogleAccountButton({ driveSync, btnCls, icoSize }: GoogleAccoun
             {/* User identity */}
             {googleUser && (
               <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={googleUser.picture}
                   alt={googleUser.name}
-                  className="rounded-full w-9 h-9 object-cover shrink-0"
+                  width={36}
+                  height={36}
+                  className="rounded-full object-cover shrink-0"
                   referrerPolicy="no-referrer"
                 />
                 <div className="min-w-0">
