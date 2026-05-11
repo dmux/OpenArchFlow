@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.2] - 2026-05-10
+
+### Added
+
+**Unified Google Account — Sign-In + Drive Sync in One Flow**
+
+OpenArchFlow now uses a single Google OAuth flow to establish both user identity and Google Drive sync simultaneously.
+
+- **One-click sign-in** — A single popup requests `drive.file`, `profile`, and `email` scopes at once. No separate "Connect Drive" step needed after signing in.
+- **Unified `GoogleAccountButton`** — The toolbar now shows one button that replaces the previous `GoogleDriveSyncButton` and `GoogleSignInButton`. Before connecting it shows a cloud icon; after connecting it displays the user's profile photo with a Drive-status dot (green = idle, blue-pulse = syncing, red = error).
+- **Identity via UserInfo API** — After the OAuth token is granted, the app calls `https://www.googleapis.com/oauth2/v3/userinfo` with the same access token to retrieve name, email, and profile picture, which are persisted in Zustand and localStorage.
+- **Unified popover** — Clicking the avatar opens a popover showing the user profile (photo, name, email) alongside the Drive sync status (last sync time, sync file name, error details) and actions (Sync Now, Sign out). Signing out clears both identity and the Drive token.
+- **Onboarding tour updated** — The "Google Account & Drive Sync" tour step now describes the unified flow, with updated hint text for both spotlight and fallback-centered variants.
+
+**Gemini Model Selector**
+
+Users can now choose which Gemini model powers AI generation without leaving the app.
+
+- **Model picker in AI Provider dialog** — A segmented button group inside the Gemini Cloud section lets users select between **2.0 Flash** (fastest), **2.5 Flash** (balanced, default), and **2.5 Pro** (most capable). The selection is persisted in Zustand + localStorage.
+- **All API routes respect the choice** — The selected model is forwarded to `/api/chat`, `/api/generate`, `/api/generate-spec`, and `/api/generate-terraform`. Each route falls back to `gemini-2.5-flash` if no model is specified (backwards-compatible).
+- **Clearer API key label** — The API key field now reads "Requires a Google AI Studio API key (separate from your Google account)" to avoid confusion with the new Google Sign-In.
+
+**Laser Pointer — Excalidraw-style Trail**
+
+The laser pointer trail now behaves like Excalidraw's:
+
+- **Time-based decay** — Each trail point carries a timestamp and fades out automatically ~1 second after being drawn, even when the mouse is stationary.
+- **`requestAnimationFrame` loop** — A continuous animation loop drives the fade, stopping itself once all points have decayed and the cursor has left the window.
+- **SVG line trail** — The trail is rendered as connected `<line>` segments with a constant `strokeWidth="2"` (replacing variable-size `<div>` circles), giving a thin, consistent appearance. A second blurred layer provides a soft glow effect.
+
+### Changed
+
+- Version bumped to 0.8.2.
+
+---
+
 ## [0.8.1] - 2026-05-10
 
 ### Added
