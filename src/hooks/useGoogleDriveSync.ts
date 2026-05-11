@@ -68,6 +68,7 @@ export function useGoogleDriveSync(): GoogleDriveSyncHook {
   const setDriveSyncResult = useDiagramStore((s) => s.setDriveSyncResult);
   const setDriveError = useDiagramStore((s) => s.setDriveError);
   const setDriveSyncStatus = useDiagramStore((s) => s.setDriveSyncStatus);
+  const setGoogleUser = useDiagramStore((s) => s.setGoogleUser);
 
   const tokenRef = useRef(accessToken);
   tokenRef.current = accessToken;
@@ -241,8 +242,8 @@ export function useGoogleDriveSync(): GoogleDriveSyncHook {
 
     const client = gis.initTokenClient({
       client_id: clientId,
-      scope: "https://www.googleapis.com/auth/drive.file",
-      callback: (response) => {
+      scope: "https://www.googleapis.com/auth/drive.file profile email",
+      callback: async (response) => {
         if (response.error) {
           const descriptions: Record<string, string> = {
             access_denied: "You denied Drive access. Grant it to enable sync.",
@@ -267,6 +268,20 @@ export function useGoogleDriveSync(): GoogleDriveSyncHook {
         sessionStorage.setItem(SESSION_KEY, token);
         setAccessToken(token);
         hasCheckedOnLoad.current = false;
+
+        // Fetch identity from UserInfo API using the same access token
+        try {
+          const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const info = await res.json() as { sub: string; email: string; name: string; picture: string };
+            setGoogleUser({ sub: info.sub, email: info.email, name: info.name, picture: info.picture });
+          }
+        } catch {
+          // identity fetch failed — Drive sync still works
+        }
+
         toast.success("Connected to Google Drive. Auto-sync is now active.");
       },
     });
@@ -278,10 +293,11 @@ export function useGoogleDriveSync(): GoogleDriveSyncHook {
     setAccessToken(null);
     setDriveFileId(null);
     setDriveSyncStatus("idle");
+    setGoogleUser(null);
     useDiagramStore.setState({ driveLastSyncedAt: null, driveLastError: null });
     hasCheckedOnLoad.current = false;
     toast.info("Disconnected from Google Drive.");
-  }, [setDriveFileId, setDriveSyncStatus]);
+  }, [setDriveFileId, setDriveSyncStatus, setGoogleUser]);
 
   return {
     isConnected: !!accessToken,

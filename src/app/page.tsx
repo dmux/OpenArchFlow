@@ -58,6 +58,7 @@ function HomeContent() {
 
   const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
   const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
+  const geminiModel = useDiagramStore((state) => state.geminiModel);
   const generatedSpecification = useDiagramStore(
     (state) => state.generatedSpecification,
   );
@@ -151,6 +152,7 @@ function HomeContent() {
             body: JSON.stringify({
               prompt,
               apiKey: geminiApiKey,
+              model: geminiModel,
               currentNodes: currentNodes,
               currentEdges: currentEdges,
             }),
