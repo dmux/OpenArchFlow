@@ -8,6 +8,7 @@ const GenerateSpecRequestSchema = z.object({
     edges: z.array(z.any()),
     apiKey: z.string().min(1),
     diagramName: z.string().optional(),
+    model: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { nodes, edges, apiKey, diagramName } = validation.data;
+        const { nodes, edges, apiKey, diagramName, model } = validation.data;
 
         if (nodes.length === 0) {
             return NextResponse.json(
@@ -36,8 +37,8 @@ export async function POST(req: NextRequest) {
 
         // Generate specification using Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: 'gemini-2.5-flash',
+        const geminiModel = genAI.getGenerativeModel({
+            model: model || 'gemini-2.5-flash',
         });
 
         const systemPrompt = `
@@ -88,7 +89,7 @@ The specification should include:
 DO NOT include any preamble like "Here's the specification" - just output the markdown document directly.
         `.trim();
 
-        const result = await model.generateContent([
+        const result = await geminiModel.generateContent([
             systemPrompt,
             `\n\nDiagram to analyze:\n${diagramDescription}`
         ]);

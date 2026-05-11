@@ -19,10 +19,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.8.0-blue?style=flat-square" alt="Version 0.8.0" />
+  <img src="https://img.shields.io/badge/version-0.8.2-blue?style=flat-square" alt="Version 0.8.2" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
-  <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-orange?style=flat-square" alt="Gemini 2.5 Flash" />
+  <img src="https://img.shields.io/badge/AI-Gemini%202.0%20%7C%202.5%20Flash%20%7C%202.5%20Pro-orange?style=flat-square" alt="Gemini Models" />
 </p>
 
 ---
@@ -41,6 +41,7 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - 📚 **AWS Standards**: Uses AWS Documentation MCP for up-to-date service recommendations.
 - 🌐 **Offline Capable**: Local AI option (WebLLM) works without internet connection.
 - 🚀 **Local Deploy**: Deploy your diagram to a local AWS emulator (MiniStack) with one click — no cloud account needed.
+- ☁️ **Cloud Backup**: Sign in with Google to sync all your diagrams to Google Drive automatically.
 
 ---
 
@@ -53,9 +54,16 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **No Central Storage**: Your diagrams are never stored on any central server. Synchronization happens directly between peers via WebRTC.
 - **Live Presence**: See how many peers are connected to your session directly in the toolbar.
 
+### ☁️ Google Account & Drive Sync (NEW)
+
+- **One-click sign-in** — A single Google OAuth popup grants both identity and Drive access. Your profile photo appears in the toolbar as a status button.
+- **Auto-sync** — Every diagram change is automatically backed up to your personal Google Drive (debounced 3 s). Only files created by this app are ever accessed (`drive.file` scope).
+- **Conflict resolution** — If the cloud copy is newer on app load, you can choose "Use Cloud" or "Keep Local" — no silent overwrites.
+- **Unified status** — The account button shows a Drive-status dot (green / syncing / error) and a popover with last-sync time, Sync Now, and Sign out actions.
+
 ### 🤖 Dual AI Engine
 
-- **Cloud AI (Gemini)**: Fast generation with Google's Gemini 2.5 Flash
+- **Cloud AI (Gemini)**: Choose between **Gemini 2.0 Flash** (fastest), **Gemini 2.5 Flash** (balanced, default), or **Gemini 2.5 Pro** (most capable) — selectable directly from the AI Provider dialog.
 - **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU
 - **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch
 - **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews
@@ -213,7 +221,7 @@ pnpm start
 | **Styling**           | Tailwind CSS + shadcn/ui         |
 | **Diagramming**       | React Flow + dagre (Auto-layout) |
 | **State Management**  | Zustand                          |
-| **AI - Cloud**        | Google Gemini 2.5 Flash          |
+| **AI - Cloud**        | Google Gemini 2.0/2.5 Flash · 2.5 Pro |
 | **AI - Local**        | WebLLM (Phi-3-mini via WebGPU)   |
 | **P2P Collaboration** | Yjs + WebRTC                     |
 | **Documentation**     | react-markdown + remark-gfm      |
@@ -247,14 +255,20 @@ pnpm start
 - View rendered Markdown or raw code
 - Copy to clipboard for your wiki/documentation
 
-### 4. Collaborate in Real-time
+### 4. Sign in with Google (optional)
+
+1. Click the **cloud/account icon** in the toolbar
+2. Complete the Google sign-in popup — grants identity and Drive access in one step
+3. Your profile photo replaces the icon; diagrams auto-sync to Drive from this point on
+
+### 5. Collaborate in Real-time
 
 1. Click the **Users** icon in the toolbar
 2. Click **Start Collaborating**
 3. Share the generated link (E2EE) with your team
 4. Watch updates happen instantly across all screens!
 
-### 5. Deploy to Local AWS (MiniStack)
+### 6. Deploy to Local AWS (MiniStack)
 
 1. Start MiniStack: `docker run -p 4566:4566 ministackorg/ministack`
 2. Click the **🚀 Rocket** icon in the toolbar
@@ -263,12 +277,12 @@ pnpm start
 5. Click any deployed node → **Open Console** to interact with the resource
 6. Run a simulation — deployed nodes receive real traffic from the simulation engine
 
-### 6. Export Diagram
+### 7. Export Diagram
 
 - Click **Actions** → **Export as PNG**
 - Download professional diagrams for presentations
 
-### 7. Manage Diagrams (Import/Export)
+### 8. Manage Diagrams (Import/Export)
 
 - **Export Single**: Click the download icon (⬇️) next to a diagram in the sidebar to save it as a JSON file.
 - **Backup All**: Click **Backup All** in the sidebar footer to export all your diagrams at once.

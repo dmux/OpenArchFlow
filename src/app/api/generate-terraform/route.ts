@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { nodes = [], edges = [], diagramName = "diagram", region = "us-east-1", providerVersion = "5.0", geminiApiKey, useAI = false } = body;
+    const { nodes = [], edges = [], diagramName = "diagram", region = "us-east-1", providerVersion = "5.0", geminiApiKey, useAI = false, model } = body;
 
     // Always generate the static version first as fallback
     const generator = new TerraformGenerator({ region, providerVersion });
@@ -98,15 +98,15 @@ ${terraformContext ? `\nTerraform Provider Documentation Context:\n${terraformCo
 Generate improved, production-ready HCL. Add security groups, IAM roles, and proper resource linking where applicable.`;
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+    const geminiModel = genAI.getGenerativeModel({
+      model: model || "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.2,
       },
     });
 
-    const result = await model.generateContent(systemPrompt + "\n\n" + userPrompt);
+    const result = await geminiModel.generateContent(systemPrompt + "\n\n" + userPrompt);
 
     const responseText = result.response.text();
     let aiOutput: { files: { name: string; content: string }[]; warnings: string[] };

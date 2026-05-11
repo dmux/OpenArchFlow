@@ -299,6 +299,14 @@ interface DiagramState {
   resetNodeMinistackState: (nodeId: string) => void;
   resetAllMinistackStates: () => void;
 
+  // Google Sign-In
+  googleUser: { sub: string; email: string; name: string; picture: string } | null;
+  setGoogleUser: (user: { sub: string; email: string; name: string; picture: string } | null) => void;
+
+  // Gemini Model
+  geminiModel: string;
+  setGeminiModel: (model: string) => void;
+
   // Google Drive Sync
   driveFileId: string | null;
   driveLastSyncedAt: number | null;
@@ -344,6 +352,8 @@ export const useDiagramStore = create<DiagramState>()(
           "active" | "error" | "throttled"
         >(),
         ministackConfig: { ...DEFAULT_MINISTACK_CONFIG },
+        googleUser: null,
+        geminiModel: "gemini-2.5-flash",
         driveFileId: null,
         driveLastSyncedAt: null,
         driveSyncStatus: "idle" as const,
@@ -1539,6 +1549,8 @@ export const useDiagramStore = create<DiagramState>()(
           });
         },
 
+        setGoogleUser: (user) => set({ googleUser: user }),
+        setGeminiModel: (model) => set({ geminiModel: model }),
         setDriveFileId: (id) => set({ driveFileId: id }),
         setDriveSyncStatus: (status) => set({ driveSyncStatus: status }),
         setDriveSyncResult: (fileId, syncedAt) =>
@@ -1555,6 +1567,8 @@ export const useDiagramStore = create<DiagramState>()(
           geminiApiKey: state.geminiApiKey,
           isOfflineMode: state.isOfflineMode,
           aiProvider: state.aiProvider,
+          geminiModel: state.geminiModel,
+          googleUser: state.googleUser,
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
           ministackConfig: state.ministackConfig,

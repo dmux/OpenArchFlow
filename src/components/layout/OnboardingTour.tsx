@@ -90,9 +90,9 @@ const STEPS: TourStep[] = [
   {
     target: "google-drive-sync",
     fallbackCentered: true,
-    title: "Auto-Sync to Google Drive",
+    title: "Google Account & Drive Sync",
     description:
-      "Connect your Google account and every change is automatically backed up to your personal Drive. Your work stays safe even if the browser data is cleared.",
+      "Sign in with Google to unlock your profile and automatic Drive backup. One click connects your identity and keeps every diagram safely synced to your personal Google Drive.",
     icon: <HardDriveUpload className="h-5 w-5 text-sky-500" />,
     accent: "sky",
   },
@@ -345,7 +345,7 @@ export function OnboardingTour() {
 
               {current.target === "google-drive-sync" && (
                 <p className="text-[11px] text-sky-500 font-medium">
-                  Click the cloud icon in the toolbar to connect your account.
+                  Click the account icon in the toolbar to sign in and enable Drive sync.
                 </p>
               )}
 
@@ -380,11 +380,11 @@ export function OnboardingTour() {
                   </p>
                   {current.target === "google-drive-sync" && (
                     <p className="text-xs text-sky-500 font-medium mt-2">
-                      Enable it by setting{" "}
+                      Requires{" "}
                       <code className="bg-muted px-1 py-0.5 rounded text-[11px]">
                         NEXT_PUBLIC_GOOGLE_CLIENT_ID
                       </code>{" "}
-                      in your environment and connecting via the toolbar.
+                      in your environment. Click the account icon in the toolbar to sign in.
                     </p>
                   )}
                 </div>

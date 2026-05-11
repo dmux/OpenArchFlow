@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import { useDiagramStore } from '@/lib/store';
 
 interface DiagramChatProps {
     isOpen: boolean;
@@ -44,6 +45,7 @@ export default function DiagramChat({
     currentEdges,
     geminiApiKey
 }: DiagramChatProps) {
+    const geminiModel = useDiagramStore((s) => s.geminiModel);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +85,7 @@ export default function DiagramChat({
                 body: JSON.stringify({
                     prompt: promptText,
                     apiKey: geminiApiKey,
+                    model: geminiModel,
                     currentNodes,
                     currentEdges,
                     history: chatHistory
