@@ -10,9 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { WifiOff, Cloud, Laptop, Check } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Check, RefreshCw } from "lucide-react";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
+import { BedrockAuthDialog } from "./BedrockAuthDialog";
 
 interface AIProviderDialogProps {
   open: boolean;
@@ -28,9 +29,13 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
   const geminiModel = useDiagramStore((s) => s.geminiModel);
   const setGeminiModel = useDiagramStore((s) => s.setGeminiModel);
 
+  const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
+  const bedrockModel = useDiagramStore((s) => s.bedrockModel);
+
   const [keyInput, setKeyInput] = useState(
     geminiApiKey && geminiApiKey !== "offline" ? geminiApiKey : "",
   );
+  const [showBedrockAuth, setShowBedrockAuth] = useState(false);
 
   const GEMINI_MODELS = [
     { id: "gemini-2.0-flash", label: "2.0 Flash", description: "Fastest" },
@@ -174,8 +179,79 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
               </p>
             </div>
           </div>
+
+          {/* AWS Bedrock */}
+          <div
+            className={cn(
+              "flex items-start gap-3 rounded-xl border p-4 transition-all",
+              aiProvider === "bedrock" && bedrockConfig
+                ? "border-orange-500 bg-orange-500/5"
+                : "hover:border-foreground/40 cursor-pointer",
+            )}
+            onClick={() => {
+              if (bedrockConfig) {
+                setAiProvider("bedrock");
+                setOfflineMode(false);
+                onClose();
+              } else {
+                setShowBedrockAuth(true);
+              }
+            }}
+          >
+            <svg
+              className="mt-0.5 h-5 w-5 text-orange-500 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">AWS Bedrock</p>
+                {aiProvider === "bedrock" && bedrockConfig && (
+                  <Check className="h-4 w-4 text-orange-500" />
+                )}
+              </div>
+              {bedrockConfig ? (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    {bedrockConfig.accountName} / {bedrockConfig.roleName}
+                  </p>
+                  <p className="text-xs text-orange-500/80">
+                    Expires in {Math.max(0, Math.floor((bedrockConfig.credentials.expiration - Date.now()) / 60000))}m
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowBedrockAuth(true);
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3" /> Refresh credentials
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Use models like Claude, Llama, Mistral via AWS SSO. Login with your corporate identity.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </DialogContent>
+
+      <BedrockAuthDialog
+        open={showBedrockAuth}
+        onClose={() => setShowBedrockAuth(false)}
+        onSuccess={() => {
+          setShowBedrockAuth(false);
+          onClose();
+        }}
+      />
     </Dialog>
   );
 }

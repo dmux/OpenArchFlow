@@ -46,6 +46,9 @@ export default function DiagramChat({
     geminiApiKey
 }: DiagramChatProps) {
     const geminiModel = useDiagramStore((s) => s.geminiModel);
+    const aiProvider = useDiagramStore((s) => s.aiProvider);
+    const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
+    const bedrockModel = useDiagramStore((s) => s.bedrockModel);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +65,17 @@ export default function DiagramChat({
 
     const handleSend = async (promptText: string = input) => {
         if (!promptText.trim()) return;
-        if (!geminiApiKey || geminiApiKey === 'offline') {
+
+        if (aiProvider === "bedrock") {
+            if (!bedrockConfig) {
+                toast.error("Please configure AWS Bedrock first.");
+                return;
+            }
+            if (Date.now() > bedrockConfig.credentials.expiration) {
+                toast.error("Bedrock credentials expired. Please re-authenticate.");
+                return;
+            }
+        } else if (!geminiApiKey || geminiApiKey === 'offline') {
             toast.error("Please set your Gemini API Key first.");
             return;
         }
@@ -73,23 +86,36 @@ export default function DiagramChat({
         setIsLoading(true);
 
         try {
-            // Convert existing messages to Gemini format (excluding system prompt logic which is in API)
             const chatHistory = messages.map(msg => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 content: msg.content
             }));
 
+            const body: Record<string, unknown> = {
+                prompt: promptText,
+                currentNodes,
+                currentEdges,
+                history: chatHistory,
+            };
+
+            if (aiProvider === "bedrock" && bedrockConfig) {
+                body.provider = "bedrock";
+                body.bedrockCreds = {
+                    region: bedrockConfig.region,
+                    accessKeyId: bedrockConfig.credentials.accessKeyId,
+                    secretAccessKey: bedrockConfig.credentials.secretAccessKey,
+                    sessionToken: bedrockConfig.credentials.sessionToken,
+                };
+                body.bedrockModel = bedrockModel;
+            } else {
+                body.apiKey = geminiApiKey;
+                body.model = geminiModel;
+            }
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: promptText,
-                    apiKey: geminiApiKey,
-                    model: geminiModel,
-                    currentNodes,
-                    currentEdges,
-                    history: chatHistory
-                }),
+                body: JSON.stringify(body),
             });
 
             if (!response.ok) {

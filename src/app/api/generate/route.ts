@@ -60,14 +60,10 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const { prompt, apiKey, currentNodes, currentEdges, model } = await req.json();
+        const { prompt, apiKey, currentNodes, currentEdges, model, provider, bedrockCreds, bedrockModel } = await req.json();
 
         if (!prompt) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
-        }
-
-        if (!apiKey) {
-            return NextResponse.json({ error: 'API Key is required' }, { status: 401 });
         }
 
         // 2. Fetch AWS Documentation Context
@@ -81,13 +77,6 @@ export async function POST(req: NextRequest) {
             console.error("Failed to fetch AWS context:", mcpError);
             // Continue without context
         }
-
-        // 3. Google Gemini Generation
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const geminiModel = genAI.getGenerativeModel({
-            model: model || 'gemini-2.5-flash',
-            generationConfig: { responseMimeType: "application/json" }
-        });
 
         const hasExistingArchitecture = currentNodes && currentNodes.length > 0;
         let serializedCurrent = "";
@@ -143,14 +132,34 @@ export async function POST(req: NextRequest) {
       If user asks for "Serverless API", include API Gateway -> Lambda -> DynamoDB, plus CloudWatch for logs.`}
     `;
 
-        const result = await geminiModel.generateContent([systemPrompt, prompt]);
-        const response = await result.response;
-        const text = response.text();
+        // 3. Generate via Bedrock or Gemini
+        let text: string;
+
+        if (provider === "bedrock") {
+            if (!bedrockCreds?.accessKeyId) {
+                return NextResponse.json({ error: 'Bedrock credentials required' }, { status: 401 });
+            }
+            const { bedrockConverse } = await import('@/lib/ai/bedrock');
+            text = await bedrockConverse(bedrockCreds, bedrockModel || 'anthropic.claude-3-5-sonnet-20241022-v2:0', systemPrompt, prompt);
+        } else {
+            if (!apiKey) {
+                return NextResponse.json({ error: 'API Key is required' }, { status: 401 });
+            }
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const geminiModel = genAI.getGenerativeModel({
+                model: model || 'gemini-2.5-flash',
+                generationConfig: { responseMimeType: "application/json" }
+            });
+            const result = await geminiModel.generateContent([systemPrompt, prompt]);
+            const geminiResponse = await result.response;
+            text = geminiResponse.text();
+        }
 
         // 3. Validation & Sanitization
         let rawJson;
         try {
-            rawJson = JSON.parse(text);
+            const { extractJson } = await import('@/lib/ai/bedrock');
+            rawJson = extractJson(text);
         } catch (e) {
             console.error("AI returned invalid JSON:", text);
             return NextResponse.json({ error: 'Failed to generate valid structure' }, { status: 500 });
@@ -173,9 +182,12 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
         console.error('Generation Error:', error);
+        const { bedrockErrorCode } = await import('@/lib/ai/bedrock');
+        const code = bedrockErrorCode(error);
+        const msg = error instanceof Error ? error.message : 'Internal Server Error';
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Internal Server Error' },
-            { status: 500 }
+            { error: msg, ...(code && { code }) },
+            { status: code === "model_not_available" ? 403 : code === "credentials_expired" ? 401 : 500 }
         );
     }
 }

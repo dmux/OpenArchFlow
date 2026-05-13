@@ -3,6 +3,25 @@ import { persist } from "zustand/middleware";
 import { temporal } from "zundo";
 import type { MiniStackNodeState, MiniStackConfig } from "./ministack/types";
 import { DEFAULT_MINISTACK_CONFIG } from "./ministack/types";
+
+export interface BedrockCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+  expiration: number; // Unix timestamp ms
+}
+
+export interface BedrockConfig {
+  region: string;
+  credentials: BedrockCredentials;
+  accountId: string;
+  accountName: string;
+  roleName: string;
+  ssoStartUrl: string;
+  ssoRegion: string;
+  accessToken: string;
+  accessTokenExpiration: number; // Unix timestamp ms
+}
 import {
   Connection,
   Edge,
@@ -184,10 +203,14 @@ interface DiagramState {
   selectedEdgeId: string | null;
   geminiApiKey: string | null;
   isOfflineMode: boolean;
-  aiProvider: "offline" | "gemini" | "local";
+  aiProvider: "offline" | "gemini" | "local" | "bedrock";
   nodeDisplayMode: "card" | "icon";
   setNodeDisplayMode: (mode: "card" | "icon") => void;
-  setAiProvider: (provider: "offline" | "gemini" | "local") => void;
+  setAiProvider: (provider: "offline" | "gemini" | "local" | "bedrock") => void;
+  bedrockConfig: BedrockConfig | null;
+  bedrockModel: string;
+  setBedrockConfig: (config: BedrockConfig | null) => void;
+  setBedrockModel: (model: string) => void;
   generatedSpecification: string | null;
 
   // Import Actions
@@ -354,6 +377,8 @@ export const useDiagramStore = create<DiagramState>()(
         ministackConfig: { ...DEFAULT_MINISTACK_CONFIG },
         googleUser: null,
         geminiModel: "gemini-2.5-flash",
+        bedrockConfig: null,
+        bedrockModel: "anthropic.claude-3-5-sonnet-20241022-v2:0",
         driveFileId: null,
         driveLastSyncedAt: null,
         driveSyncStatus: "idle" as const,
@@ -1551,6 +1576,8 @@ export const useDiagramStore = create<DiagramState>()(
 
         setGoogleUser: (user) => set({ googleUser: user }),
         setGeminiModel: (model) => set({ geminiModel: model }),
+        setBedrockConfig: (config) => set({ bedrockConfig: config }),
+        setBedrockModel: (model) => set({ bedrockModel: model }),
         setDriveFileId: (id) => set({ driveFileId: id }),
         setDriveSyncStatus: (status) => set({ driveSyncStatus: status }),
         setDriveSyncResult: (fileId, syncedAt) =>
@@ -1568,6 +1595,8 @@ export const useDiagramStore = create<DiagramState>()(
           isOfflineMode: state.isOfflineMode,
           aiProvider: state.aiProvider,
           geminiModel: state.geminiModel,
+          bedrockConfig: state.bedrockConfig,
+          bedrockModel: state.bedrockModel,
           googleUser: state.googleUser,
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
@@ -1578,6 +1607,13 @@ export const useDiagramStore = create<DiagramState>()(
           tourCompleted: state.tourCompleted,
         }),
         onRehydrateStorage: () => (state) => {
+          // Clear expired Bedrock credentials on load
+          if (state?.bedrockConfig) {
+            if (Date.now() > state.bedrockConfig.credentials.expiration) {
+              state.bedrockConfig = null;
+              if (state.aiProvider === "bedrock") state.aiProvider = "offline";
+            }
+          }
           // Ensure there is at least one diagram if none exist after hydration
           if (
             state &&
