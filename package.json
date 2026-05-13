@@ -1,6 +1,6 @@
 {
   "name": "open-arch-flow",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "private": true,
   "author": "Rafael Sales <rafael.sales@gmail.com>",
   "pnpm": {
@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-api-gateway": "^3.1045.0",
+    "@aws-sdk/client-bedrock": "^3.1045.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1045.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.1045.0",
     "@aws-sdk/client-dynamodb": "^3.1045.0",
     "@aws-sdk/client-eventbridge": "^3.1045.0",
@@ -33,6 +35,8 @@
     "@aws-sdk/client-sns": "^3.1045.0",
     "@aws-sdk/client-sqs": "^3.1045.0",
     "@aws-sdk/client-ssm": "^3.1045.0",
+    "@aws-sdk/client-sso": "^3.1045.0",
+    "@aws-sdk/client-sso-oidc": "^3.1045.0",
     "@google/generative-ai": "^0.24.1",
     "@mlc-ai/web-llm": "^0.2.82",
     "@modelcontextprotocol/sdk": "^1.29.0",

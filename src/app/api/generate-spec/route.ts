@@ -6,9 +6,12 @@ import { z } from 'zod';
 const GenerateSpecRequestSchema = z.object({
     nodes: z.array(z.any()),
     edges: z.array(z.any()),
-    apiKey: z.string().min(1),
+    apiKey: z.string().optional(),
     diagramName: z.string().optional(),
     model: z.string().optional(),
+    provider: z.string().optional(),
+    bedrockCreds: z.any().optional(),
+    bedrockModel: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { nodes, edges, apiKey, diagramName, model } = validation.data;
+        const { nodes, edges, apiKey, diagramName, model, provider, bedrockCreds, bedrockModel } = validation.data;
 
         if (nodes.length === 0) {
             return NextResponse.json(
@@ -32,14 +35,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        if (provider !== "bedrock" && !apiKey) {
+            return NextResponse.json({ error: 'API Key is required' }, { status: 401 });
+        }
+
         // Serialize diagram for AI processing
         const diagramDescription = serializeDiagram(nodes, edges, diagramName);
-
-        // Generate specification using Gemini
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const geminiModel = genAI.getGenerativeModel({
-            model: model || 'gemini-2.5-flash',
-        });
 
         const systemPrompt = `
 You are an experienced Solutions Architect and Technical Writer specializing in AWS cloud architectures.
@@ -89,21 +90,42 @@ The specification should include:
 DO NOT include any preamble like "Here's the specification" - just output the markdown document directly.
         `.trim();
 
-        const result = await geminiModel.generateContent([
-            systemPrompt,
-            `\n\nDiagram to analyze:\n${diagramDescription}`
-        ]);
+        let markdownSpec: string;
 
-        const response = await result.response;
-        const markdownSpec = response.text();
+        if (provider === "bedrock") {
+            if (!bedrockCreds?.accessKeyId) {
+                return NextResponse.json({ error: 'Bedrock credentials required' }, { status: 401 });
+            }
+            const { bedrockConverse } = await import('@/lib/ai/bedrock');
+            markdownSpec = await bedrockConverse(
+                bedrockCreds,
+                bedrockModel || 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+                systemPrompt,
+                `Diagram to analyze:\n${diagramDescription}`,
+            );
+        } else {
+            const genAI = new GoogleGenerativeAI(apiKey!);
+            const geminiModel = genAI.getGenerativeModel({
+                model: model || 'gemini-2.5-flash',
+            });
+            const result = await geminiModel.generateContent([
+                systemPrompt,
+                `\n\nDiagram to analyze:\n${diagramDescription}`
+            ]);
+            const response = await result.response;
+            markdownSpec = response.text();
+        }
 
         return NextResponse.json({ specification: markdownSpec });
 
     } catch (error) {
         console.error('Specification Generation Error:', error);
+        const { bedrockErrorCode } = await import('@/lib/ai/bedrock');
+        const code = bedrockErrorCode(error);
+        const msg = error instanceof Error ? error.message : 'Internal Server Error';
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Internal Server Error' },
-            { status: 500 }
+            { error: msg, ...(code && { code }) },
+            { status: code === "model_not_available" ? 403 : code === "credentials_expired" ? 401 : 500 }
         );
     }
 }

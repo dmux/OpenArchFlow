@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.3] - 2026-05-13
+
+### Added
+
+**AWS Bedrock — 4th AI Provider via SSO Device Authorization Flow**
+
+OpenArchFlow now supports AWS Bedrock as a fourth AI provider alongside Gemini, WebLLM, and Offline.
+
+- **SSO authentication** — Authenticates via AWS IAM Identity Center using the Device Authorization Flow (no manual credential entry). A 7-step dialog guides the user: enter SSO Start URL → register OIDC client → display user code → poll for approval → select account/role → load models → select model.
+- **Dynamic model list** — After authentication, available foundation models are fetched from the Bedrock API (`ListFoundationModels`) and presented grouped by provider (Anthropic, Meta, Amazon, Mistral AI, Cohere, AI21 Labs).
+- **Separate SSO and Bedrock regions** — The SSO region (where IAM Identity Center is deployed) and the Bedrock region (where models run) are configured independently, supporting cross-region setups.
+- **ConverseCommand inference** — Uses the model-agnostic `ConverseCommand` API, compatible with all Bedrock model families (Claude, Llama, Mistral, Titan, Cohere).
+- **Full feature coverage** — Bedrock works across all AI-driven features: diagram generation, diagram chat, architecture specification, and Terraform generation.
+- **Credential expiration handling** — Expired credentials are detected at page load (store rehydration), before each API call, and via server-side error codes, reopening the auth dialog automatically.
+- **Orange theme** — Bedrock is visually distinguished with an orange indicator ring and icon in the toolbar.
+
+### Fixed
+
+- **LocalStack endpoint conflict** — Bedrock SDK clients now explicitly pin to real AWS endpoints (`bedrock.{region}.amazonaws.com`, `bedrock-runtime.{region}.amazonaws.com`), preventing conflicts when `AWS_ENDPOINT_URL` is set in the environment for LocalStack.
+- **Model unavailable error** — When a selected Bedrock model is not enabled for the account, a `model_not_available` error code is returned and the AI provider dialog opens automatically with a clear message to select a different model.
+- **JSON code fence stripping** — An `extractJson` helper strips markdown code fences (` ```json ``` `) from model responses before parsing, fixing "Failed to generate valid structure" errors from models that wrap their output.
+- **SSO Portal API paths** — Corrected account role listing endpoint to `GET /assignment/roles?account_id={id}` (was incorrectly using `/assignment/accounts/{id}/roles`).
+- **OIDC connectivity** — Replaced `@aws-sdk/client-sso-oidc` SDK calls with native `fetch` throughout the SSO proxy route, resolving `AggregateError` connection failures in the Next.js environment.
+
+---
+
 ## [0.8.2] - 2026-05-10
 
 ### Added

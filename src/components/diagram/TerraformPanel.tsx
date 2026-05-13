@@ -148,6 +148,9 @@ export default function TerraformPanel({
   geminiApiKey,
 }: TerraformPanelProps) {
   const geminiModel = useDiagramStore((s) => s.geminiModel);
+  const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
+  const bedrockModel = useDiagramStore((s) => s.bedrockModel);
+  const aiProvider = useDiagramStore((s) => s.aiProvider);
   const [activeTab, setActiveTab] = useState<PanelTab>("code");
   const [activeFile, setActiveFile] = useState<CodeFile>("main.tf");
   const [output, setOutput] = useState<IaCOutput | null>(null);
@@ -220,12 +223,23 @@ export default function TerraformPanel({
   }, [nodes, edges, diagramName, region, providerVersion, isOpen, awsNodes.length]);
 
   const generateWithAI = useCallback(async () => {
-    if (!geminiApiKey) {
-      toast.error("Gemini API key required for AI generation. Configure it in AI settings.");
+    if (aiProvider !== "bedrock" && !geminiApiKey) {
+      toast.error("AI provider not configured. Set up Gemini or AWS Bedrock in AI settings.");
+      return;
+    }
+    if (aiProvider === "bedrock" && !bedrockConfig) {
+      toast.error("AWS Bedrock not configured. Set it up in AI settings.");
+      return;
+    }
+    if (aiProvider === "bedrock" && bedrockConfig && Date.now() > bedrockConfig.credentials.expiration) {
+      toast.error("Bedrock credentials expired. Please re-authenticate.");
       return;
     }
     setIsGenerating(true);
     try {
+      const bedrockCreds = aiProvider === "bedrock" && bedrockConfig
+        ? { region: bedrockConfig.region, ...bedrockConfig.credentials }
+        : undefined;
       const res = await fetch("/api/generate-terraform", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,8 +249,11 @@ export default function TerraformPanel({
           diagramName,
           region,
           providerVersion,
-          geminiApiKey,
+          geminiApiKey: aiProvider !== "bedrock" ? geminiApiKey : undefined,
           model: geminiModel,
+          provider: aiProvider,
+          bedrockCreds,
+          bedrockModel: aiProvider === "bedrock" ? bedrockModel : undefined,
           useAI: true,
         }),
       });
@@ -253,7 +270,7 @@ export default function TerraformPanel({
     } finally {
       setIsGenerating(false);
     }
-  }, [nodes, edges, diagramName, region, providerVersion, geminiApiKey]);
+  }, [nodes, edges, diagramName, region, providerVersion, geminiApiKey, geminiModel, aiProvider, bedrockConfig, bedrockModel]);
 
   const currentFileContent = useMemo(() => {
     if (!output) return "";

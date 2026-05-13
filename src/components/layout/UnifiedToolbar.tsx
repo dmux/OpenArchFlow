@@ -114,6 +114,9 @@ export function UnifiedToolbar({
   const diagrams = useDiagramStore((state) => state.diagrams);
   const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
   const geminiModel = useDiagramStore((state) => state.geminiModel);
+  const bedrockConfig = useDiagramStore((state) => state.bedrockConfig);
+  const bedrockModel = useDiagramStore((state) => state.bedrockModel);
+  const aiProvider = useDiagramStore((state) => state.aiProvider);
   const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
   const { setTheme, theme } = useTheme();
 
@@ -258,6 +261,25 @@ export function UnifiedToolbar({
         const service = WebLLMService.getInstance();
         if (!service.isReady()) throw new Error("Local model not ready yet.");
         specification = await service.generateSpecification(nodes, edges, activeDiagramName);
+      } else if (aiProvider === "bedrock" && bedrockConfig) {
+        if (Date.now() > bedrockConfig.credentials.expiration) throw new Error("Bedrock credentials expired. Please re-authenticate.");
+        toast.info("Generating specification with AWS Bedrock...");
+        const response = await fetch("/api/generate-spec", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nodes, edges, diagramName: activeDiagramName,
+            provider: "bedrock",
+            bedrockCreds: { region: bedrockConfig.region, ...bedrockConfig.credentials },
+            bedrockModel,
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to generate specification");
+        }
+        const data = await response.json();
+        specification = data.specification;
       } else {
         if (!geminiApiKey) throw new Error("Gemini API Key is required.");
         toast.info("Generating specification with Cloud AI...");
@@ -278,7 +300,7 @@ export function UnifiedToolbar({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to generate specification");
     } finally { setIsGenerating(false); }
-  }, [nodes, edges, activeDiagramName, geminiApiKey, setGeneratedSpecification, setIsGenerating, useLocalAI]);
+  }, [nodes, edges, activeDiagramName, geminiApiKey, geminiModel, bedrockConfig, bedrockModel, aiProvider, setGeneratedSpecification, setIsGenerating, useLocalAI]);
 
   const btnCls = "h-9 w-9 md:h-7 md:w-7 rounded-lg transition-all duration-200";
   const icoSize = "h-4 w-4 md:h-3.5 md:w-3.5";

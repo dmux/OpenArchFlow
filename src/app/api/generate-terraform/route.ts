@@ -7,14 +7,14 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { nodes = [], edges = [], diagramName = "diagram", region = "us-east-1", providerVersion = "5.0", geminiApiKey, useAI = false, model } = body;
+    const { nodes = [], edges = [], diagramName = "diagram", region = "us-east-1", providerVersion = "5.0", geminiApiKey, useAI = false, model, provider, bedrockCreds, bedrockModel } = body;
 
     // Always generate the static version first as fallback
     const generator = new TerraformGenerator({ region, providerVersion });
     const staticOutput = generator.generate(nodes, edges, diagramName);
 
-    // If AI generation not requested or no API key, return static output
-    if (!useAI || !geminiApiKey) {
+    // If AI generation not requested or no credentials available, return static output
+    if (!useAI || (provider !== "bedrock" && !geminiApiKey)) {
       return NextResponse.json({ ...staticOutput, source: "static" });
     }
 
@@ -97,22 +97,37 @@ ${terraformContext ? `\nTerraform Provider Documentation Context:\n${terraformCo
 
 Generate improved, production-ready HCL. Add security groups, IAM roles, and proper resource linking where applicable.`;
 
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const geminiModel = genAI.getGenerativeModel({
-      model: model || "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
-    });
+    let responseText: string;
 
-    const result = await geminiModel.generateContent(systemPrompt + "\n\n" + userPrompt);
+    if (provider === "bedrock") {
+      if (!bedrockCreds?.accessKeyId) {
+        return NextResponse.json({ ...staticOutput, source: "static" });
+      }
+      const { bedrockConverse } = await import("@/lib/ai/bedrock");
+      responseText = await bedrockConverse(
+        bedrockCreds,
+        bedrockModel || "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        systemPrompt,
+        userPrompt,
+      );
+    } else {
+      const genAI = new GoogleGenerativeAI(geminiApiKey);
+      const geminiModel = genAI.getGenerativeModel({
+        model: model || "gemini-2.5-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2,
+        },
+      });
+      const result = await geminiModel.generateContent(systemPrompt + "\n\n" + userPrompt);
+      responseText = result.response.text();
+    }
 
-    const responseText = result.response.text();
     let aiOutput: { files: { name: string; content: string }[]; warnings: string[] };
 
     try {
-      aiOutput = JSON.parse(responseText);
+      const { extractJson } = await import('@/lib/ai/bedrock');
+      aiOutput = extractJson(responseText) as typeof aiOutput;
     } catch {
       // AI returned non-JSON — wrap static output
       return NextResponse.json({ ...staticOutput, source: "static", warnings: [...staticOutput.warnings, "AI response could not be parsed. Returning static generation."] });
@@ -121,9 +136,12 @@ Generate improved, production-ready HCL. Add security groups, IAM roles, and pro
     return NextResponse.json({ ...aiOutput, source: "ai" });
   } catch (error) {
     console.error("generate-terraform route error:", error);
+    const { bedrockErrorCode } = await import('@/lib/ai/bedrock');
+    const code = bedrockErrorCode(error);
+    const msg = error instanceof Error ? error.message : "Failed to generate Terraform code";
     return NextResponse.json(
-      { error: "Failed to generate Terraform code", details: String(error) },
-      { status: 500 },
+      { error: msg, ...(code && { code }) },
+      { status: code === "model_not_available" ? 403 : code === "credentials_expired" ? 401 : 500 },
     );
   }
 }
