@@ -59,6 +59,8 @@ function HomeContent() {
   const setGeminiApiKey = useDiagramStore((state) => state.setGeminiApiKey);
   const geminiApiKey = useDiagramStore((state) => state.geminiApiKey);
   const geminiModel = useDiagramStore((state) => state.geminiModel);
+  const bedrockConfig = useDiagramStore((state) => state.bedrockConfig);
+  const bedrockModel = useDiagramStore((state) => state.bedrockModel);
   const generatedSpecification = useDiagramStore(
     (state) => state.generatedSpecification,
   );
@@ -141,6 +143,44 @@ function HomeContent() {
               "Local AI generated invalid JSON. Please try again.",
             );
           }
+        } else if (aiProvider === "bedrock") {
+          if (!bedrockConfig) {
+            setIsAIDialogOpen(true);
+            throw new Error("Please configure AWS Bedrock first.");
+          }
+          if (Date.now() > bedrockConfig.credentials.expiration) {
+            setIsAIDialogOpen(true);
+            throw new Error("Bedrock credentials expired. Please re-authenticate.");
+          }
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt,
+              provider: "bedrock",
+              bedrockCreds: {
+                region: bedrockConfig.region,
+                accessKeyId: bedrockConfig.credentials.accessKeyId,
+                secretAccessKey: bedrockConfig.credentials.secretAccessKey,
+                sessionToken: bedrockConfig.credentials.sessionToken,
+              },
+              bedrockModel,
+              currentNodes: currentNodes,
+              currentEdges: currentEdges,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            if (errorData.code === "credentials_expired") setIsAIDialogOpen(true);
+            if (errorData.code === "model_not_available") {
+              setIsAIDialogOpen(true);
+              throw new Error("This model is not enabled for your AWS account. Select a different model.");
+            }
+            throw new Error(errorData.error || "Failed to generate architecture");
+          }
+
+          result = await response.json();
         } else {
           if (!geminiApiKey || geminiApiKey === "offline") {
             setIsAIDialogOpen(true);
@@ -201,6 +241,9 @@ function HomeContent() {
       currentNodes,
       currentEdges,
       setIsAIDialogOpen,
+      bedrockConfig,
+      bedrockModel,
+      geminiModel,
     ],
   );
 
@@ -242,6 +285,8 @@ function HomeContent() {
                       "animate-pulse bg-sky-500/20 shadow-[0_0_12px_4px_rgb(14_165_233_/_0.35)]",
                     aiProvider === "local" &&
                       "animate-pulse bg-emerald-500/20 shadow-[0_0_12px_4px_rgb(16_185_129_/_0.35)]",
+                    aiProvider === "bedrock" &&
+                      "animate-pulse bg-orange-500/20 shadow-[0_0_12px_4px_rgb(249_115_22_/_0.35)]",
                   )}
                 />
                 <button
@@ -252,13 +297,16 @@ function HomeContent() {
                       ? "Nenhuma IA configurada — clique para configurar"
                       : aiProvider === "gemini"
                         ? "Gemini Cloud AI ativo — clique para alterar"
-                        : "Local AI (WebLLM) ativo — clique para alterar"
+                        : aiProvider === "bedrock"
+                          ? "AWS Bedrock ativo — clique para alterar"
+                          : "Local AI (WebLLM) ativo — clique para alterar"
                   }
                   className={cn(
                     "relative flex items-center justify-center w-10 h-10 rounded-2xl bg-background/80 backdrop-blur-xl border shadow-xl hover:bg-background/100 transition-all hover:scale-110 disabled:opacity-50 disabled:pointer-events-none",
                     aiProvider === "offline" && "border-border",
                     aiProvider === "gemini" && "border-sky-500/60",
                     aiProvider === "local" && "border-emerald-500/60",
+                    aiProvider === "bedrock" && "border-orange-500/60",
                   )}
                 >
                   {aiProvider === "offline" && (
@@ -269,6 +317,11 @@ function HomeContent() {
                   )}
                   {aiProvider === "local" && (
                     <Laptop className="w-4 h-4 text-emerald-500" />
+                  )}
+                  {aiProvider === "bedrock" && (
+                    <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
                   )}
                 </button>
               </div>
