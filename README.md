@@ -22,7 +22,7 @@
   <img src="https://img.shields.io/badge/version-0.8.3-blue?style=flat-square" alt="Version 0.8.3" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
-  <img src="https://img.shields.io/badge/AI-Gemini%202.0%20%7C%202.5%20Flash%20%7C%202.5%20Pro-orange?style=flat-square" alt="Gemini Models" />
+  <img src="https://img.shields.io/badge/AI-Gemini%20%7C%20AWS%20Bedrock%20%7C%20WebLLM-orange?style=flat-square" alt="AI Providers" />
 </p>
 
 ---
@@ -61,9 +61,10 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **Conflict resolution** — If the cloud copy is newer on app load, you can choose "Use Cloud" or "Keep Local" — no silent overwrites.
 - **Unified status** — The account button shows a Drive-status dot (green / syncing / error) and a popover with last-sync time, Sync Now, and Sign out actions.
 
-### 🤖 Dual AI Engine
+### 🤖 Multi-Provider AI Engine
 
 - **Cloud AI (Gemini)**: Choose between **Gemini 2.0 Flash** (fastest), **Gemini 2.5 Flash** (balanced, default), or **Gemini 2.5 Pro** (most capable) — selectable directly from the AI Provider dialog.
+- **AWS Bedrock**: Authenticate via AWS IAM Identity Center SSO (Device Authorization Flow) — no manual credential entry. Supports all Bedrock model families (Claude, Llama, Mistral, Titan, Cohere) with dynamic model discovery per account.
 - **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU
 - **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch
 - **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews
@@ -222,6 +223,7 @@ pnpm start
 | **Diagramming**       | React Flow + dagre (Auto-layout) |
 | **State Management**  | Zustand                          |
 | **AI - Cloud**        | Google Gemini 2.0/2.5 Flash · 2.5 Pro |
+| **AI - AWS**          | AWS Bedrock (Claude · Llama · Mistral · Titan · Cohere) via SSO |
 | **AI - Local**        | WebLLM (Phi-3-mini via WebGPU)   |
 | **P2P Collaboration** | Yjs + WebRTC                     |
 | **Documentation**     | react-markdown + remark-gfm      |
