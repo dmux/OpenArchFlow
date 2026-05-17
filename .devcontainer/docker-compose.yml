@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - openarchflow-pnpm-store:/home/node/.local/share/pnpm/store
+      - ${HOME}/.aws:/home/node/.aws:ro
+    environment:
+      MINISTACK_ENDPOINT: http://ministack:4566
+    command: sleep infinity
+    depends_on:
+      - ministack
+
+  ministack:
+    image: ministackorg/ministack
+    ports:
+      - "4566:4566"
+    restart: unless-stopped
+
+volumes:
+  openarchflow-pnpm-store:
