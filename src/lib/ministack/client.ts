@@ -13,10 +13,24 @@ import { KinesisClient } from "@aws-sdk/client-kinesis";
 import { KMSClient } from "@aws-sdk/client-kms";
 import type { MiniStackConfig } from "./types";
 
+/**
+ * Rewrites localhost:4566 to the internal Docker service URL when running
+ * server-side inside the devcontainer (MINISTACK_ENDPOINT env var is set).
+ * In the browser, process.env.MINISTACK_ENDPOINT is undefined so the original
+ * endpoint is preserved.
+ */
+export function resolveEndpoint(endpoint: string): string {
+  const internal = process.env.MINISTACK_ENDPOINT;
+  if (internal && /https?:\/\/(localhost|127\.0\.0\.1):4566/.test(endpoint)) {
+    return internal;
+  }
+  return endpoint;
+}
+
 function baseConfig(config: MiniStackConfig) {
   return {
     region: config.region,
-    endpoint: config.endpoint,
+    endpoint: resolveEndpoint(config.endpoint),
     credentials: {
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,

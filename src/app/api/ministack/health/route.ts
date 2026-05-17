@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveEndpoint } from "@/lib/ministack/client";
 
 export async function GET(req: NextRequest) {
-  const endpoint = req.nextUrl.searchParams.get("endpoint") ?? "http://localhost:4566";
+  const raw =
+    req.nextUrl.searchParams.get("endpoint") ?? "http://localhost:4566";
+  const endpoint = resolveEndpoint(raw);
 
   try {
     const res = await fetch(`${endpoint}/_ministack/health`, {
       signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) {
-      return NextResponse.json({ connected: false, error: `HTTP ${res.status}` });
+      return NextResponse.json({
+        connected: false,
+        error: `HTTP ${res.status}`,
+      });
     }
     let info: Record<string, unknown> = {};
     try {
