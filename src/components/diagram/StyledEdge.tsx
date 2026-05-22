@@ -22,9 +22,10 @@ export default function StyledEdge({
     selected,
 }: EdgeProps) {
     const edgeType: string = data?.edgeType ?? 'smoothstep';
-    const strokeColor: string = data?.strokeColor ?? 'hsl(var(--muted-foreground))';
+    const strokeColor: string = data?.strokeColor ?? '';
     const strokeWidth: number = data?.strokeWidth ?? 2;
     const dashed: boolean = data?.dashed ?? false;
+    const animated: boolean = data?.animated ?? false;
     const waypoints: { x: number; y: number }[] = data?.waypoints ?? [];
 
     let edgePath = '';
@@ -52,10 +53,16 @@ export default function StyledEdge({
         [edgePath, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
     }
 
+    const effectiveColor = selected
+        ? 'hsl(var(--primary))'
+        : strokeColor || 'hsl(var(--muted-foreground))';
+
     const style: React.CSSProperties = {
-        stroke: selected ? 'hsl(var(--primary))' : strokeColor,
+        stroke: effectiveColor,
         strokeWidth,
         strokeDasharray: dashed ? '6 3' : undefined,
+        // Inline animation for animated edges (supplement React Flow's built-in animated prop)
+        animation: animated && !selected ? 'dashdraw 0.5s linear infinite' : undefined,
     };
 
     // Resolve markerEnd — prefer data override, else inherit prop
@@ -65,9 +72,16 @@ export default function StyledEdge({
             ? `url(#arrow-${id})`
             : markerEnd;
 
+    // Resolve markerStart
+    const resolvedMarkerStart = data?.arrowStart === 'none' || !data?.arrowStart
+        ? undefined
+        : data?.arrowStart === 'arrowclosed'
+            ? { type: MarkerType.ArrowClosed }
+            : { type: MarkerType.Arrow };
+
     return (
         <>
-            <BaseEdge id={id} path={edgePath} style={style} markerEnd={resolvedMarkerEnd} markerStart={markerStart} />
+            <BaseEdge id={id} path={edgePath} style={style} markerEnd={resolvedMarkerEnd} markerStart={resolvedMarkerStart as any} />
             {label && (
                 <EdgeLabelRenderer>
                     <div

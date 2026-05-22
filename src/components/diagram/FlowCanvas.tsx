@@ -7,6 +7,7 @@ import ReactFlow, {
   ControlButton,
   MiniMap,
   MarkerType,
+  ConnectionLineType,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useDiagramStore } from "@/lib/store";
@@ -99,6 +100,7 @@ const selector = (state: any) => {
     interactionMode: state.interactionMode,
     layout: state.layout,
     activeSimulationEdges: state.activeSimulationEdges,
+    edgeSettings: state.edgeSettings,
   };
 };
 
@@ -120,6 +122,7 @@ function FlowCanvas() {
     interactionMode,
     layout,
     activeSimulationEdges,
+    edgeSettings,
   } = useDiagramStore(useShallow(selector));
 
   const [showMiniMap, setShowMiniMap] = useState(false);
@@ -210,14 +213,34 @@ function FlowCanvas() {
 
   const animatedEdges = React.useMemo(() => {
     return edges.map((edge: any) => {
-      // Edges with custom style data are rendered by StyledEdge
-      const hasStyle =
+      // Merge global edgeSettings as base, per-edge data takes precedence.
+      // Edges that have explicit per-edge overrides keep them; everything else
+      // falls back to the diagram-wide settings.
+      const hasPerEdge =
         edge.data?.strokeColor ||
-        edge.data?.strokeWidth ||
-        edge.data?.dashed ||
+        edge.data?.strokeWidth != null ||
+        edge.data?.dashed != null ||
         edge.data?.edgeType;
-      const type = hasStyle ? "styled" : (edge.type ?? "smoothstep");
-      if (!isPlaying) return { ...edge, type };
+
+      const mergedData = {
+        edgeType: edgeSettings.type,
+        strokeWidth: edgeSettings.strokeWidth,
+        dashed: edgeSettings.dashed,
+        strokeColor: edgeSettings.color || undefined,
+        arrowEnd: edgeSettings.markerEnd,
+        arrowStart: edgeSettings.markerStart,
+        animated: edgeSettings.animated,
+        // Per-edge data always wins
+        ...(hasPerEdge ? edge.data : {}),
+        // But _global marker is just a creation hint, strip it
+        _global: undefined,
+      };
+
+      const type = "styled";
+
+      if (!isPlaying) {
+        return { ...edge, type, data: mergedData };
+      }
 
       const simStatus = activeSimulationEdges.get(edge.id);
       const strokeColor =
@@ -228,11 +251,12 @@ function FlowCanvas() {
             : simStatus === "active"
               ? "#22c55e"
               : "hsl(var(--primary))";
-      const strokeWidth = simStatus ? 3 : 2;
+      const strokeWidth = simStatus ? 3 : edgeSettings.strokeWidth;
 
       return {
         ...edge,
         type,
+        data: mergedData,
         animated: true,
         style: {
           ...edge.style,
@@ -242,7 +266,7 @@ function FlowCanvas() {
         },
       };
     });
-  }, [edges, isPlaying, activeSimulationEdges]);
+  }, [edges, edgeSettings, isPlaying, activeSimulationEdges]);
 
   // Initialize from store on mount if needed (Zustand persist handles hydration usually)
   // But ReactFlow internal state needs to be synced if controlled.
@@ -279,9 +303,17 @@ function FlowCanvas() {
           panOnDrag={isLaserMode || isPanMode ? true : [1, 2]}
           snapToGrid
           snapGrid={[16, 16]}
+          connectionLineType={
+            edgeSettings.type === "bezier" ? ConnectionLineType.Bezier
+            : edgeSettings.type === "straight" ? ConnectionLineType.Straight
+            : edgeSettings.type === "step" ? ConnectionLineType.Step
+            : ConnectionLineType.SmoothStep
+          }
           defaultEdgeOptions={{
-            type: "smoothstep",
-            markerEnd: { type: MarkerType.ArrowClosed },
+            type: "styled",
+            markerEnd: edgeSettings.markerEnd !== "none"
+              ? { type: edgeSettings.markerEnd === "arrow" ? MarkerType.Arrow : MarkerType.ArrowClosed }
+              : undefined,
           }}
         >
           <Background gap={12} size={1} />

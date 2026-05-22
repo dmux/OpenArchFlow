@@ -196,6 +196,26 @@ export interface Diagram {
   lastModified: number;
 }
 
+export interface EdgeSettings {
+  type: "smoothstep" | "bezier" | "straight" | "step";
+  strokeWidth: number;
+  dashed: boolean;
+  animated: boolean;
+  markerEnd: "arrowclosed" | "arrow" | "none";
+  markerStart: "arrowclosed" | "arrow" | "none";
+  color: string; // CSS color or empty string for theme default
+}
+
+export const DEFAULT_EDGE_SETTINGS: EdgeSettings = {
+  type: "smoothstep",
+  strokeWidth: 2,
+  dashed: false,
+  animated: false,
+  markerEnd: "arrowclosed",
+  markerStart: "none",
+  color: "",
+};
+
 interface DiagramState {
   diagrams: Record<string, Diagram>;
   activeDiagramId: string | null;
@@ -205,7 +225,9 @@ interface DiagramState {
   isOfflineMode: boolean;
   aiProvider: "offline" | "gemini" | "local" | "bedrock";
   nodeDisplayMode: "card" | "icon";
+  edgeSettings: EdgeSettings;
   setNodeDisplayMode: (mode: "card" | "icon") => void;
+  setEdgeSettings: (settings: Partial<EdgeSettings>) => void;
   setAiProvider: (provider: "offline" | "gemini" | "local" | "bedrock") => void;
   bedrockConfig: BedrockConfig | null;
   bedrockModel: string;
@@ -359,6 +381,7 @@ export const useDiagramStore = create<DiagramState>()(
         isOfflineMode: false,
         aiProvider: "offline" as const,
         nodeDisplayMode: "icon" as const,
+        edgeSettings: DEFAULT_EDGE_SETTINGS,
         isPlaying: false,
         isPaused: false,
         simulationSpeed: 1,
@@ -758,6 +781,8 @@ export const useDiagramStore = create<DiagramState>()(
           set({ geminiApiKey: key, isOfflineMode: false }),
         setOfflineMode: (isOffline) => set({ isOfflineMode: isOffline }),
         setNodeDisplayMode: (mode) => set({ nodeDisplayMode: mode }),
+        setEdgeSettings: (settings) =>
+          set((s) => ({ edgeSettings: { ...s.edgeSettings, ...settings } })),
         setAiProvider: (provider) => set({ aiProvider: provider }),
         setGeneratedSpecification: (spec) =>
           set({ generatedSpecification: spec }),
@@ -838,11 +863,14 @@ export const useDiagramStore = create<DiagramState>()(
         },
 
         onConnect: (connection: Connection) => {
-          const { activeDiagramId, diagrams, collaborationRoomId } = get();
+          const { activeDiagramId, diagrams, collaborationRoomId, edgeSettings } = get();
           if (!activeDiagramId || !diagrams[activeDiagramId]) return;
 
           const activeDiagram = diagrams[activeDiagramId];
-          const newEdges = addEdge(connection, activeDiagram.edges);
+          const newEdges = addEdge(
+            { ...connection, type: "styled", data: { _global: true } },
+            activeDiagram.edges,
+          );
 
           const newDiagrams = {
             ...diagrams,
@@ -1602,6 +1630,7 @@ export const useDiagramStore = create<DiagramState>()(
           customShapes: state.customShapes,
           ministackConfig: state.ministackConfig,
           nodeDisplayMode: state.nodeDisplayMode,
+          edgeSettings: state.edgeSettings,
           driveFileId: state.driveFileId,
           driveLastSyncedAt: state.driveLastSyncedAt,
           tourCompleted: state.tourCompleted,
