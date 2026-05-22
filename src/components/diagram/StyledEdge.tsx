@@ -9,7 +9,50 @@ import {
     EdgeLabelRenderer,
     BaseEdge,
     MarkerType,
+    Position,
 } from 'reactflow';
+
+/**
+ * Auto-detect the best source/target positions based on relative node positions.
+ * This fixes connections that were created using only Top/Bottom handles — even when
+ * nodes are placed side-by-side the routing now picks Left/Right automatically.
+ */
+function smartPositions(
+    sourceX: number, sourceY: number,
+    targetX: number, targetY: number,
+    fallbackSrc: Position, fallbackTgt: Position,
+) {
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // Only override when the horizontal delta clearly dominates (2:1 ratio).
+    // This preserves intentional vertical connections while fixing side-by-side cases.
+    if (absDx > absDy * 1.5) {
+        return {
+            srcPos: dx > 0 ? Position.Right : Position.Left,
+            tgtPos: dx > 0 ? Position.Left : Position.Right,
+        };
+    }
+    if (absDy > absDx * 1.5) {
+        return {
+            srcPos: dy > 0 ? Position.Bottom : Position.Top,
+            tgtPos: dy > 0 ? Position.Top : Position.Bottom,
+        };
+    }
+    // Diagonal — use whichever axis is larger
+    if (absDx >= absDy) {
+        return {
+            srcPos: dx > 0 ? Position.Right : Position.Left,
+            tgtPos: dx > 0 ? Position.Left : Position.Right,
+        };
+    }
+    return {
+        srcPos: dy > 0 ? Position.Bottom : Position.Top,
+        tgtPos: dy > 0 ? Position.Top : Position.Bottom,
+    };
+}
 
 export default function StyledEdge({
     id,
@@ -28,6 +71,12 @@ export default function StyledEdge({
     const animated: boolean = data?.animated ?? false;
     const waypoints: { x: number; y: number }[] = data?.waypoints ?? [];
 
+    // For straight lines we don't need position hinting — use raw coords.
+    // For all curved types, override source/target positions with smart detection.
+    const { srcPos, tgtPos } = edgeType === 'straight'
+        ? { srcPos: sourcePosition, tgtPos: targetPosition }
+        : smartPositions(sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition);
+
     let edgePath = '';
     let labelX = 0;
     let labelY = 0;
@@ -36,12 +85,15 @@ export default function StyledEdge({
         [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
     } else if (edgeType === 'step') {
         [edgePath, labelX, labelY] = getSmoothStepPath({
-            sourceX, sourceY, sourcePosition,
-            targetX, targetY, targetPosition,
+            sourceX, sourceY, sourcePosition: srcPos,
+            targetX, targetY, targetPosition: tgtPos,
             borderRadius: 0,
         });
     } else if (edgeType === 'bezier') {
-        [edgePath, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+        [edgePath, labelX, labelY] = getBezierPath({
+            sourceX, sourceY, sourcePosition: srcPos,
+            targetX, targetY, targetPosition: tgtPos,
+        });
     } else if (edgeType === 'waypoint' && waypoints.length > 0) {
         // Build polyline through waypoints
         const points = [{ x: sourceX, y: sourceY }, ...waypoints, { x: targetX, y: targetY }];
@@ -50,7 +102,10 @@ export default function StyledEdge({
         labelY = (sourceY + targetY) / 2;
     } else {
         // default smoothstep
-        [edgePath, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+        [edgePath, labelX, labelY] = getSmoothStepPath({
+            sourceX, sourceY, sourcePosition: srcPos,
+            targetX, targetY, targetPosition: tgtPos,
+        });
     }
 
     const effectiveColor = selected
