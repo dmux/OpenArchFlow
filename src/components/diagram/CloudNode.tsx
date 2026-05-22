@@ -165,13 +165,22 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
 
   // With ConnectionMode.Loose, source handles accept both incoming and outgoing
   // connections — no need for separate target handles at each position.
-  const handleCls = "!w-3 !h-3 !bg-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-all group-hover:!bg-primary";
+  const handleCls = cn(
+    "!w-5 !h-5 !rounded-full !bg-primary !border-0",
+    "opacity-0 group-hover:opacity-100 transition-all duration-150",
+    "flex items-center justify-center !cursor-crosshair",
+  );
+  const PlusHandle = ({ position }: { position: Position }) => (
+    <Handle type="source" position={position} className={handleCls}>
+      <span className="text-primary-foreground text-[13px] font-bold leading-none pointer-events-none select-none">+</span>
+    </Handle>
+  );
   const handles = (
     <>
-      <Handle type="source" position={Position.Top}    className={handleCls} />
-      <Handle type="source" position={Position.Bottom} className={handleCls} />
-      <Handle type="source" position={Position.Left}   className={handleCls} />
-      <Handle type="source" position={Position.Right}  className={handleCls} />
+      <PlusHandle position={Position.Top}    />
+      <PlusHandle position={Position.Bottom} />
+      <PlusHandle position={Position.Left}   />
+      <PlusHandle position={Position.Right}  />
     </>
   );
 
