@@ -78,7 +78,7 @@ function smartRoute(
     }
 
     // Calculate the exact midpoint of the chosen side for each node.
-    const coord = (pa: {x:number;y:number}, w: number, h: number, pos: Position) => {
+    const coord = (pa: {x:number;y:number}, w: number, h: number, pos: Position): {x:number;y:number} => {
         const cx = pa.x + w / 2;
         const cy = pa.y + h / 2;
         switch (pos) {
@@ -86,6 +86,7 @@ function smartRoute(
             case Position.Right:  return { x: pa.x + w, y: cy };
             case Position.Top:    return { x: cx,        y: pa.y };
             case Position.Bottom: return { x: cx,        y: pa.y + h };
+            default:              return { x: cx,        y: cy };
         }
     };
 
@@ -113,9 +114,11 @@ export default function StyledEdge({
     const animated: boolean = data?.animated ?? false;
     const waypoints: { x: number; y: number }[] = data?.waypoints ?? [];
 
-    // Use targeted selectors so the component re-renders when its specific nodes move.
-    const srcNode = useStore(React.useCallback((s: any) => s.nodeInternals.get(source), [source]));
-    const tgtNode = useStore(React.useCallback((s: any) => s.nodeInternals.get(target), [target]));
+    // Single store call; safe because the edge component already re-renders
+    // whenever sourceX/sourceY/targetX/targetY props change (node moved).
+    const nodeInternals = useStore((s: any) => s.nodeInternals);
+    const srcNode = nodeInternals?.get(source);
+    const tgtNode = nodeInternals?.get(target);
 
     // Waypoints are user-defined absolute positions — skip smart routing.
     const isWaypoint = edgeType === 'waypoint' && waypoints.length > 0;
