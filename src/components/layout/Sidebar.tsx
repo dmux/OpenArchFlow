@@ -138,7 +138,7 @@ export function Sidebar({
         // Estimate item height: 72px (item) + 8px (gap) = 80px
         // Subtract some padding (32px for p-4)
         const availableHeight = height - 32;
-        const calculated = Math.floor(availableHeight / 80);
+        const calculated = Math.floor(availableHeight / 88);
         setItemsPerPage(Math.max(2, calculated)); // Minimum 2 items
       }
     };
@@ -270,7 +270,7 @@ export function Sidebar({
       className={cn(
         "h-full bg-background border-r overflow-hidden flex-shrink-0",
         isOpen
-          ? "fixed inset-y-0 left-0 z-[70] w-72 shadow-2xl md:relative md:w-72 md:z-auto md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out"
+          ? "fixed inset-y-0 left-0 z-[70] w-72 shadow-2xl md:relative md:w-72 md:z-[70] md:shadow-none md:transition-[width] md:duration-300 md:ease-in-out"
           : "hidden md:block md:w-0 md:border-r-0 md:transition-[width] md:duration-300 md:ease-in-out",
       )}
     >
@@ -310,102 +310,106 @@ export function Sidebar({
                   key={diagram.id}
                   onClick={() => setActiveDiagram(diagram.id)}
                   className={cn(
-                    "group flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors",
+                    "group relative p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors",
                     activeDiagramId === diagram.id
                       ? "bg-accent border-primary"
                       : "bg-card",
                   )}
                 >
-                  <div className="flex-1 min-w-0 mr-2 overflow-hidden">
-                    {editingId === diagram.id ? (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          onBlur={saveEditing}
-                          onKeyDown={(
-                            e: React.KeyboardEvent<HTMLInputElement>,
-                          ) => {
-                            if (e.key === "Enter") saveEditing(e);
-                            if (e.key === "Escape") cancelEditing(e);
-                          }}
-                          autoFocus
-                          className="h-7 text-sm py-1 px-2"
-                        />
-                      </div>
-                    ) : (
-                      <>
+                  {editingId === diagram.id ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onBlur={saveEditing}
+                        onKeyDown={(
+                          e: React.KeyboardEvent<HTMLInputElement>,
+                        ) => {
+                          if (e.key === "Enter") saveEditing(e);
+                          if (e.key === "Escape") cancelEditing(e);
+                        }}
+                        autoFocus
+                        className="h-7 text-sm py-1 px-2"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Name row — icon + wrapping text, padded right for action buttons */}
+                      <div className="flex items-start gap-2 pr-20">
+                        <Layout className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
                         <h3
-                          className="font-medium text-sm truncate"
+                          className="font-medium text-sm leading-snug line-clamp-2 break-words min-w-0"
                           title={diagram.name}
                         >
                           {diagram.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {formatDate(diagram.lastModified)}
-                        </p>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 pl-5">
+                        {formatDate(diagram.lastModified)}
+                      </p>
 
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={(e) => handleExport(e, diagram)}
-                      title="Export JSON"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={(e) => startEditing(e, diagram)}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
+                      {/* Action buttons — absolute overlay, visible on hover */}
+                      <div className="absolute top-2 right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => handleExport(e, diagram)}
+                          title="Export JSON"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Download className="w-3.5 h-3.5" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Diagram?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{diagram.name}"?
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteDiagram(diagram.id);
-                            }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => startEditing(e, diagram)}
+                          title="Rename"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Diagram?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{diagram.name}"?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteDiagram(diagram.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

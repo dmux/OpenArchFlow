@@ -32,6 +32,7 @@ import { OnboardingTour } from "@/components/layout/OnboardingTour";
 import { WebLLMService } from "@/lib/ai/webllm";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useGoogleDriveSync } from "@/hooks/useGoogleDriveSync";
+import { useBedrockExpiry } from "@/hooks/useBedrockExpiry";
 
 // UI Components
 
@@ -45,6 +46,7 @@ export default function Home() {
 
 function HomeContent() {
   useKeyboardShortcuts();
+  useBedrockExpiry();
 
   const setNodes = useDiagramStore((state) => state.setNodes);
   const setEdges = useDiagramStore((state) => state.setEdges);
@@ -412,7 +414,7 @@ function HomeContent() {
         {/* Sidebar (Left Drawer) */}
         {isSidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/40 z-[69] md:hidden"
+            className="fixed inset-0 bg-black/40 md:bg-transparent z-[69]"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
