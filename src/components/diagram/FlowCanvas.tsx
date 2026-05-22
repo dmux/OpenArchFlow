@@ -8,6 +8,7 @@ import ReactFlow, {
   MiniMap,
   MarkerType,
   ConnectionLineType,
+  ConnectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useDiagramStore } from "@/lib/store";
@@ -301,6 +302,7 @@ function FlowCanvas() {
           elementsSelectable={!isLaserMode && !isPanMode}
           selectionOnDrag={!isLaserMode && !isPanMode}
           panOnDrag={isLaserMode || isPanMode ? true : [1, 2]}
+          connectionMode={ConnectionMode.Loose}
           snapToGrid
           snapGrid={[16, 16]}
           connectionLineType={

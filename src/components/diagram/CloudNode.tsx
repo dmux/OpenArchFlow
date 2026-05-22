@@ -163,14 +163,15 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     </Tooltip>
   );
 
+  // With ConnectionMode.Loose, source handles accept both incoming and outgoing
+  // connections — no need for separate target handles at each position.
+  const handleCls = "!w-3 !h-3 !bg-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-all group-hover:!bg-primary";
   const handles = (
     <>
-      <Handle type="target" position={Position.Top}    className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
-      <Handle type="source" position={Position.Bottom} className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
-      <Handle type="source" position={Position.Left}   className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
-      <Handle type="target" position={Position.Left}   id="left-target" className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
-      <Handle type="source" position={Position.Right}  className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
-      <Handle type="target" position={Position.Right}  id="right-target" className="w-3 h-3 !bg-muted-foreground transition-colors group-hover:!bg-primary" />
+      <Handle type="source" position={Position.Top}    className={handleCls} />
+      <Handle type="source" position={Position.Bottom} className={handleCls} />
+      <Handle type="source" position={Position.Left}   className={handleCls} />
+      <Handle type="source" position={Position.Right}  className={handleCls} />
     </>
   );
 
@@ -193,11 +194,10 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
       <TooltipTrigger asChild>
         {iconMode ? (
           // ── Icon-only mode ─────────────────────────────────────────────────
+          // Outer div is tight around the icon so handles sit at the visual boundary.
+          // The label is positioned absolutely below and does not expand the bounding box.
           <div
-            className={cn(
-              "relative group flex flex-col items-center gap-1.5 transition-all duration-200 cursor-pointer select-none",
-              "min-w-[72px] px-2 py-1",
-            )}
+            className="relative group inline-flex cursor-pointer select-none transition-all duration-200"
             style={{ opacity: styleOverrides.opacity }}
           >
             {handles}
@@ -220,9 +220,9 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
               {ministackDot}
             </div>
 
-            {/* Label */}
+            {/* Label — floats below the icon, does not affect bounding box */}
             <span
-              className="text-[11px] font-semibold text-foreground text-center leading-tight max-w-[100px] truncate"
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-[11px] font-semibold text-foreground text-center leading-tight whitespace-nowrap max-w-[120px] truncate pointer-events-none"
               style={metadata?.textColor ? { color: metadata.textColor } : undefined}
             >
               {label}

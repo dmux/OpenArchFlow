@@ -13,6 +13,46 @@ import {
     useStore,
 } from 'reactflow';
 
+// ReactFlow stores actual DOM handle positions under this Symbol on each node.
+const RF_INTERNALS = Symbol.for("internals");
+
+/**
+ * Get the exact center coordinates of the handle at `pos` on `node`,
+ * reading from ReactFlow's handleBounds for pixel-perfect accuracy.
+ * Falls back to geometric midpoint if bounds aren't available yet.
+ */
+function handleCoords(
+    node: any,
+    pa: { x: number; y: number },
+    pos: Position,
+    w: number,
+    h: number,
+): { x: number; y: number } {
+    const bounds = node?.[RF_INTERNALS]?.handleBounds;
+    if (bounds) {
+        const all: Array<{ x: number; y: number; width: number; height: number; position: string; id?: string | null }> =
+            [...(bounds.source ?? []), ...(bounds.target ?? [])];
+        // Prefer the unnamed (center) handle at the desired side.
+        const handle = all.find(hb => hb.position === pos && !hb.id) ?? all.find(hb => hb.position === pos);
+        if (handle) {
+            return {
+                x: pa.x + handle.x + handle.width  / 2,
+                y: pa.y + handle.y + handle.height / 2,
+            };
+        }
+    }
+    // Geometric fallback
+    const cx = pa.x + w / 2;
+    const cy = pa.y + h / 2;
+    switch (pos) {
+        case Position.Left:   return { x: pa.x,     y: cy };
+        case Position.Right:  return { x: pa.x + w, y: cy };
+        case Position.Top:    return { x: cx,        y: pa.y };
+        case Position.Bottom: return { x: cx,        y: pa.y + h };
+        default:              return { x: cx,        y: cy };
+    }
+}
+
 /**
  * Return the best exit/entry positions and the exact handle coordinates based on
  * the relative positions of two nodes' centers.
@@ -77,21 +117,10 @@ function smartRoute(
         tgtPos = dy > 0 ? Position.Top    : Position.Bottom;
     }
 
-    // Calculate the exact midpoint of the chosen side for each node.
-    const coord = (pa: {x:number;y:number}, w: number, h: number, pos: Position): {x:number;y:number} => {
-        const cx = pa.x + w / 2;
-        const cy = pa.y + h / 2;
-        switch (pos) {
-            case Position.Left:   return { x: pa.x,     y: cy };
-            case Position.Right:  return { x: pa.x + w, y: cy };
-            case Position.Top:    return { x: cx,        y: pa.y };
-            case Position.Bottom: return { x: cx,        y: pa.y + h };
-            default:              return { x: cx,        y: cy };
-        }
-    };
-
-    const { x: srcX, y: srcY } = coord(pa_s, sw, sh, srcPos);
-    const { x: tgtX, y: tgtY } = coord(pa_t, tw, th, tgtPos);
+    // Use the actual DOM-measured handle positions from ReactFlow's internal store.
+    // This accounts for handle CSS offsets and node padding, eliminating visual gaps.
+    const { x: srcX, y: srcY } = handleCoords(srcNode, pa_s, srcPos, sw, sh);
+    const { x: tgtX, y: tgtY } = handleCoords(tgtNode, pa_t, tgtPos, tw, th);
 
     return { srcPos, tgtPos, srcX, srcY, tgtX, tgtY };
 }
