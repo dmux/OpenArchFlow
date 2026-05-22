@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { convertResourcesToNodesAndEdges } from "@/lib/import/aws-infra";
 import type { DiscoveredService, DiscoveredResource, DiscoveredEdge } from "@/lib/aws/discovery";
 import { getServiceIcon } from "@/lib/registry";
+import { BedrockAuthDialog } from "@/components/layout/BedrockAuthDialog";
 
 type DiscoveryTab = "ministack" | "aws";
 type DialogPhase = "configure" | "discovering" | "results" | "error";
@@ -65,6 +66,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
   const [tab, setTab] = useState<DiscoveryTab>("ministack");
   const [phase, setPhase] = useState<DialogPhase>("configure");
   const [errorMsg, setErrorMsg] = useState("");
+  const [showBedrockAuth, setShowBedrockAuth] = useState(false);
 
   // AWS credentials state
   const [awsRegion, setAwsRegion] = useState("us-east-1");
@@ -158,7 +160,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
 
       setErrorMsg(
         isConnRefused && tab === "ministack"
-          ? "MiniStack não está rodando. Inicie-o pelo painel Deploy & Simulate."
+          ? "MiniStack is not running. Start it from the Deploy & Simulate panel."
           : message
       );
       setPhase("error");
@@ -203,7 +205,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
     );
 
     if (selectedResources.length === 0) {
-      toast.warning("Nenhum recurso selecionado.");
+      toast.warning("No resources selected.");
       return;
     }
 
@@ -231,8 +233,8 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
     setNodes([...existingNodes, ...newNodes]);
     setEdges([...existingEdges, ...newEdges]);
 
-    const edgeMsg = newEdges.length > 0 ? ` e ${newEdges.length} conexão(ões)` : "";
-    toast.success(`${newNodes.length} recurso(s)${edgeMsg} importado(s) para o diagrama.`);
+    const edgeMsg = newEdges.length > 0 ? ` and ${newEdges.length} connection(s)` : "";
+    toast.success(`${newNodes.length} resource(s)${edgeMsg} imported into the diagram.`);
     handleClose();
   }, [services, discoveredEdges, selectedIds, existingNodes, existingEdges, setNodes, setEdges, handleClose]);
 
@@ -252,7 +254,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
             <CloudDownload className="h-4 w-4 text-orange-500" />
-            Importar da AWS
+            Import from AWS
           </DialogTitle>
         </DialogHeader>
 
@@ -298,19 +300,19 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Região</Label>
+                        <Label className="text-xs text-muted-foreground">Region</Label>
                         <div className="rounded-md border border-border bg-muted px-3 py-2 text-sm font-mono text-muted-foreground">
                           {ministackConfig.region}
                         </div>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Usando as configurações do MiniStack. Para alterar o endpoint, use o painel Deploy &amp; Simulate.
+                      Using MiniStack settings. To change the endpoint, use the Deploy &amp; Simulate panel.
                     </p>
                   </div>
                   <Button onClick={discover} className="w-full">
                     <CloudDownload className="h-4 w-4 mr-2" />
-                    Descobrir recursos
+                    Discover Resources
                   </Button>
                 </>
               )}
@@ -318,8 +320,49 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
               {tab === "aws" && (
                 <>
                   <div className="space-y-3">
+                    {/* SSO login option */}
+                    <div className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-3 space-y-2">
+                      <p className="text-xs font-medium text-orange-700 dark:text-orange-400">Login with AWS SSO</p>
+                      {bedrockConfig ? (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                          <p className="text-xs text-muted-foreground flex-1">
+                            Signed in as <span className="font-medium">{bedrockConfig.accountName} / {bedrockConfig.roleName}</span>
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fillBedrockCreds}
+                            className="text-xs h-7 border-orange-500/40 text-orange-600 hover:bg-orange-500/10 shrink-0"
+                          >
+                            Use credentials
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <p className="text-xs text-muted-foreground">
+                            Authenticate via AWS IAM Identity Center to auto-fill credentials.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowBedrockAuth(true)}
+                            className="w-full text-xs border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
+                          >
+                            Login with AWS SSO
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative flex items-center gap-2">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-xs text-muted-foreground">or enter keys manually</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
                     <div className="space-y-1.5">
-                      <Label htmlFor="aws-region" className="text-sm">Região</Label>
+                      <Label htmlFor="aws-region" className="text-sm">Region</Label>
                       <Input
                         id="aws-region"
                         list="aws-regions-list"
@@ -333,18 +376,6 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
                         ))}
                       </datalist>
                     </div>
-
-                    {bedrockConfig && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fillBedrockCreds}
-                        className="text-xs w-full"
-                      >
-                        <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-500" />
-                        Usar credenciais do Bedrock
-                      </Button>
-                    )}
 
                     <div className="space-y-1.5">
                       <Label htmlFor="aws-access-key" className="text-sm">Access Key ID</Label>
@@ -370,14 +401,14 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
                     <div className="space-y-1.5">
                       <Label htmlFor="aws-session-token" className="text-sm">
                         Session Token{" "}
-                        <span className="text-muted-foreground font-normal">(opcional, para SSO)</span>
+                        <span className="text-muted-foreground font-normal">(optional, for SSO)</span>
                       </Label>
                       <Input
                         id="aws-session-token"
                         type="password"
                         value={awsSessionToken}
                         onChange={(e) => setAwsSessionToken(e.target.value)}
-                        placeholder="Token temporário de sessão"
+                        placeholder="Temporary session token"
                         autoComplete="off"
                       />
                     </div>
@@ -389,7 +420,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
                     className="w-full"
                   >
                     <CloudDownload className="h-4 w-4 mr-2" />
-                    Descobrir recursos
+                    Discover Resources
                   </Button>
                 </>
               )}
@@ -401,7 +432,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
             <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">
-                Buscando recursos em 13 serviços AWS...
+                Scanning resources across 24 AWS services...
               </p>
             </div>
           )}
@@ -414,7 +445,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
                 <div className="mx-6 mt-4 flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-600 dark:text-yellow-400">
                   <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                   <span>
-                    {partialErrors.length} serviço(s) com erro (sem permissão ou não suportado). Os demais foram importados.
+                    {partialErrors.length} service(s) returned errors (no permission or not supported). Others were scanned successfully.
                   </span>
                 </div>
               )}
@@ -422,7 +453,7 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
               {/* Select all / none controls */}
               <div className="flex items-center justify-between px-6 pt-3 pb-2">
                 <span className="text-xs text-muted-foreground">
-                  {totalCount} recurso(s) encontrado(s)
+                  {totalCount} resource(s) found
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -433,14 +464,14 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
                     }
                     className="text-xs text-primary hover:underline"
                   >
-                    Selecionar todos
+                    Select all
                   </button>
                   <span className="text-muted-foreground text-xs">·</span>
                   <button
                     onClick={() => setSelectedIds(new Set())}
                     className="text-xs text-muted-foreground hover:underline"
                   >
-                    Limpar seleção
+                    Clear selection
                   </button>
                 </div>
               </div>
@@ -464,12 +495,12 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
               {/* Footer */}
               <div className="flex items-center justify-between px-6 py-4 border-t border-border">
                 <Button variant="ghost" size="sm" onClick={handleClose}>
-                  Cancelar
+                  Cancel
                 </Button>
                 <Button onClick={importSelected} disabled={selectedCount === 0}>
                   <CloudDownload className="h-4 w-4 mr-2" />
-                  Importar{selectedCount > 0
-                    ? ` ${selectedCount} recurso(s)${relevantEdgeCount > 0 ? ` + ${relevantEdgeCount} conexão(ões)` : ""}`
+                  Import{selectedCount > 0
+                    ? ` ${selectedCount} resource(s)${relevantEdgeCount > 0 ? ` + ${relevantEdgeCount} connection(s)` : ""}`
                     : ""}
                 </Button>
               </div>
@@ -481,17 +512,33 @@ export function InfraDiscoveryDialog({ open, onClose }: Props) {
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-12 text-center">
               <AlertTriangle className="h-8 w-8 text-destructive" />
               <div className="space-y-1">
-                <p className="text-sm font-medium">Erro ao buscar infraestrutura</p>
+                <p className="text-sm font-medium">Failed to fetch infrastructure</p>
                 <p className="text-xs text-muted-foreground max-w-sm">{errorMsg}</p>
               </div>
               <Button variant="outline" size="sm" onClick={reset}>
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                Tentar novamente
+                Try again
               </Button>
             </div>
           )}
         </div>
       </DialogContent>
+
+      <BedrockAuthDialog
+        open={showBedrockAuth}
+        onClose={() => setShowBedrockAuth(false)}
+        onSuccess={() => {
+          setShowBedrockAuth(false);
+          // Auto-fill credentials from the newly configured Bedrock session
+          const cfg = useDiagramStore.getState().bedrockConfig;
+          if (cfg) {
+            setAwsRegion(cfg.region ?? "us-east-1");
+            setAwsAccessKey(cfg.credentials.accessKeyId ?? "");
+            setAwsSecretKey(cfg.credentials.secretAccessKey ?? "");
+            setAwsSessionToken(cfg.credentials.sessionToken ?? "");
+          }
+        }}
+      />
     </Dialog>
   );
 }
@@ -560,7 +607,7 @@ function ServiceSection({
         {svc.error ? (
           <span className="text-xs text-yellow-500 flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" />
-            Sem acesso
+            No access
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">{svc.resources.length}</span>

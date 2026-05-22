@@ -10,10 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { WifiOff, Cloud, Laptop, Check, RefreshCw } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Check, RefreshCw, Loader2 } from "lucide-react";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
 import { BedrockAuthDialog } from "./BedrockAuthDialog";
+import { refreshBedrockCredentials } from "@/hooks/useBedrockExpiry";
 
 interface AIProviderDialogProps {
   open: boolean;
@@ -30,18 +31,51 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
   const setGeminiModel = useDiagramStore((s) => s.setGeminiModel);
 
   const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
+  const setBedrockConfig = useDiagramStore((s) => s.setBedrockConfig);
   const bedrockModel = useDiagramStore((s) => s.bedrockModel);
 
   const [keyInput, setKeyInput] = useState(
     geminiApiKey && geminiApiKey !== "offline" ? geminiApiKey : "",
   );
   const [showBedrockAuth, setShowBedrockAuth] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshCredentials = async () => {
+    setIsRefreshing(true);
+    try {
+      const result = await refreshBedrockCredentials();
+      if (result === "refreshed") {
+        toast.success("AWS Bedrock credentials refreshed.");
+      } else {
+        // SSO token also expired — need full re-auth
+        setShowBedrockAuth(true);
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const GEMINI_MODELS = [
     { id: "gemini-2.0-flash", label: "2.0 Flash", description: "Fastest" },
     { id: "gemini-2.5-flash", label: "2.5 Flash", description: "Balanced" },
     { id: "gemini-2.5-pro", label: "2.5 Pro", description: "Most capable" },
   ];
+
+  const handleSignOutBedrock = () => {
+    setBedrockConfig(null);
+    setAiProvider("offline");
+    setOfflineMode(true);
+    toast.success("Signed out of AWS Bedrock.");
+    onClose();
+  };
+
+  const handleClearGeminiKey = () => {
+    setGeminiApiKey("offline");
+    setAiProvider("offline");
+    setOfflineMode(true);
+    setKeyInput("");
+    toast.success("Gemini API key removed.");
+  };
 
   const handleSelectOffline = () => {
     setAiProvider("offline");
@@ -133,6 +167,16 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                 >
                   Save
                 </Button>
+                {aiProvider === "gemini" && geminiApiKey && geminiApiKey !== "offline" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 shrink-0 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleClearGeminiKey}
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
 
               {/* Model selector */}
@@ -222,17 +266,35 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                   <p className="text-xs text-orange-500/80">
                     Expires in {Math.max(0, Math.floor((bedrockConfig.credentials.expiration - Date.now()) / 60000))}m
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowBedrockAuth(true);
-                    }}
-                  >
-                    <RefreshCw className="h-3 w-3" /> Refresh credentials
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isRefreshing}
+                      className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRefreshCredentials();
+                      }}
+                    >
+                      {isRefreshing
+                        ? <Loader2 className="h-3 w-3 animate-spin" />
+                        : <RefreshCw className="h-3 w-3" />}
+                      {isRefreshing ? "Refreshing..." : "Refresh credentials"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isRefreshing}
+                      className="h-6 px-2 text-xs gap-1 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSignOutBedrock();
+                      }}
+                    >
+                      Sign out
+                    </Button>
+                  </div>
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground mt-0.5">

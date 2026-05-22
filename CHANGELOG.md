@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-05-21
+
+### Added
+
+**AWS Infrastructure Discovery & Import**
+
+OpenArchFlow can now scan a live AWS account and import its resources directly into the diagram canvas.
+
+- **24 supported services** — Lambda, S3, DynamoDB, SQS, SNS, API Gateway, EC2 instances, VPCs, ECS clusters, EKS clusters, RDS instances, ElastiCache clusters, Application/Network Load Balancers, CloudFront distributions, Route 53 hosted zones, Cognito user pools, Step Functions state machines, IAM roles, Kinesis streams, EventBridge buses, KMS keys, Secrets Manager secrets, SNS topics, and SQS queues.
+- **Automatic node connections** — edges are inferred from ARN references across services: ELB→EC2 (via target groups), ECS→ALB (via `loadBalancers`), CloudFront→S3/ALB (via origins), Step Functions→Lambda (via state machine definition). The ARN index also matches path-end segments and ELB DNS names, resolving cross-service links that were previously missed.
+- **Partial-failure tolerance** — each service lister runs independently; a permission error on one service produces a "No access" badge without blocking the rest of the discovery.
+- **Import dialog** — a two-tab dialog (*MiniStack (Local)* / *AWS Account*) lets you configure credentials and select which resources to import. Resources are pre-selected, expandable per service, and individually toggleable before import.
+- **SSO login embedded in Import dialog** — the AWS Account tab now includes a "Login with AWS SSO" button that opens the Bedrock auth flow directly. Completing the SSO login auto-fills all credential fields, eliminating manual copy-paste.
+
+**AWS Bedrock — Direct Access Keys Authentication**
+
+- Added a second authentication method to the Bedrock connect dialog: **Access Keys** (alongside the existing SSO / Device Authorization flow).
+- Users can enter an IAM Access Key ID, Secret Access Key, and optional Session Token. The dialog skips account/role selection and proceeds straight to model listing.
+- Permanent IAM credentials (no session token) are treated as non-expiring (1-year TTL). Temporary credentials with a session token are assumed to expire in 1 hour.
+
+**Bedrock Credential Silent Refresh**
+
+- New `useBedrockExpiry` hook monitors STS credential expiry and silently refreshes credentials using the stored SSO access token before they expire — no user interaction required.
+- A warning toast appears 5 minutes before expiry. On expiry, if the SSO token is still valid, credentials are refreshed transparently. If the SSO session has also expired, the provider resets to offline with a re-auth prompt.
+- A "Refresh credentials" button in the AI Provider dialog triggers the same silent refresh on demand and falls back to re-opening the auth dialog if needed.
+
+**AI Provider Dialog — Sign-Out Actions**
+
+- **AWS Bedrock** — new "Sign out" button clears the stored credentials and session, immediately reverting to offline mode.
+- **Gemini** — new "Clear" button removes the saved API key when Gemini is the active provider.
+
+**Google Account — Proper Three-State Logout**
+
+- The Google account button now correctly handles three distinct states: *not signed in*, *signed in but Drive not connected*, and *signed in with Drive active*. Previously, users whose Drive token had expired were left with their avatar visible but no sign-out option.
+- `disconnect()` now revokes the OAuth2 access token server-side via `google.accounts.oauth2.revoke()` and calls `disableAutoSelect()` to prevent silent One Tap re-authentication after sign-out.
+
+### Fixed
+
+- **PropertiesPanel height on desktop** — the panel previously stretched to the full viewport height regardless of content. It now sizes itself to fit its content with a `max-h-[calc(100vh-8rem)]` cap and overflow scrolling.
+- **My Diagrams — long diagram names** — diagram cards previously truncated names to a single line. Names now wrap up to two lines (`line-clamp-2 break-words`) with action buttons repositioned as an absolute overlay.
+- **Sidebar click-outside to close** — clicking anywhere outside the "My Diagrams" sidebar now closes it on all screen sizes. Previously the click-capture overlay was hidden on desktop (`md:hidden`), making the panel only closeable via its X button.
+- **Bedrock credential expiration unit** — the SSO Portal returns the STS `expiration` field in Unix seconds. The route was multiplying by 1000 unconditionally, which could produce year-2554 timestamps. A threshold guard (`> 4,102,444,800`) now detects the unit before converting.
+- **Import from AWS — English translation** — all labels, toasts, placeholders, and button text in the discovery dialog have been translated to English.
+- **Import from AWS — missing node type mappings** — `stepfunctions`, `nlb`, `elbv2`, and `cloudfront` resource types were not mapped to canvas node types. They now correctly map to `aws-integration` and `aws-network`.
+
+---
+
 ## [0.8.3] - 2026-05-13
 
 ### Added

@@ -117,11 +117,15 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? `GetRoleCredentials failed (${res.status})`);
       const c = data.roleCredentials;
+      // AWS SSO Portal returns expiration as Unix seconds.
+      // Guard against already-ms values (> year 2100 in seconds = 4102444800).
+      const rawExp: number = c.expiration ?? 0;
+      const expirationMs = rawExp > 4_102_444_800 ? rawExp : rawExp * 1000;
       return NextResponse.json({
         accessKeyId: c.accessKeyId,
         secretAccessKey: c.secretAccessKey,
         sessionToken: c.sessionToken,
-        expiration: (c.expiration ?? 0) * 1000,
+        expiration: expirationMs,
       });
     }
 

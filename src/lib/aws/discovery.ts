@@ -43,6 +43,50 @@ import {
   GetResourcesCommand,
   GetIntegrationCommand,
 } from "@aws-sdk/client-api-gateway";
+import {
+  EC2Client,
+  DescribeInstancesCommand,
+  DescribeVpcsCommand,
+} from "@aws-sdk/client-ec2";
+import {
+  ECSClient,
+  ListClustersCommand,
+  ListServicesCommand,
+  DescribeServicesCommand,
+} from "@aws-sdk/client-ecs";
+import { EKSClient, ListClustersCommand as EKSListClustersCommand } from "@aws-sdk/client-eks";
+import {
+  RDSClient,
+  DescribeDBInstancesCommand,
+  DescribeDBClustersCommand,
+} from "@aws-sdk/client-rds";
+import {
+  ElastiCacheClient,
+  DescribeCacheClustersCommand,
+} from "@aws-sdk/client-elasticache";
+import {
+  ElasticLoadBalancingV2Client,
+  DescribeLoadBalancersCommand,
+  DescribeTargetGroupsCommand,
+  DescribeTargetHealthCommand,
+} from "@aws-sdk/client-elastic-load-balancing-v2";
+import {
+  CloudFrontClient,
+  ListDistributionsCommand,
+} from "@aws-sdk/client-cloudfront";
+import {
+  Route53Client,
+  ListHostedZonesCommand,
+} from "@aws-sdk/client-route-53";
+import {
+  CognitoIdentityProviderClient,
+  ListUserPoolsCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+import {
+  SFNClient,
+  ListStateMachinesCommand,
+  DescribeStateMachineCommand,
+} from "@aws-sdk/client-sfn";
 import { resolveEndpoint } from "@/lib/ministack/client";
 
 export interface DiscoveryConfig {
@@ -331,24 +375,319 @@ async function listAPIGateway(cfg: DiscoveryConfig): Promise<DiscoveredResource[
   }));
 }
 
+async function listEC2Instances(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new EC2Client(buildClientConfig(cfg));
+  const res = await client.send(new DescribeInstancesCommand({ MaxResults: 100 }));
+  const resources: DiscoveredResource[] = [];
+  for (const reservation of res.Reservations ?? []) {
+    for (const inst of reservation.Instances ?? []) {
+      if (inst.State?.Name === "terminated") continue;
+      const nameTag = inst.Tags?.find((t) => t.Key === "Name")?.Value;
+      const name = nameTag ?? inst.InstanceId ?? "unnamed";
+      resources.push({
+        id: `ec2::${inst.InstanceId}`,
+        name,
+        service: "ec2",
+        arn: `arn:aws:ec2:${cfg.region}::instance/${inst.InstanceId}`,
+        region: cfg.region,
+        metadata: {
+          instanceId: inst.InstanceId,
+          instanceType: inst.InstanceType,
+          state: inst.State?.Name,
+          publicIp: inst.PublicIpAddress,
+          privateIp: inst.PrivateIpAddress,
+          vpcId: inst.VpcId,
+          subnetId: inst.SubnetId,
+          platform: inst.Platform ?? "linux",
+          imageId: inst.ImageId,
+        },
+      });
+    }
+  }
+  return resources;
+}
+
+async function listVPCs(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new EC2Client(buildClientConfig(cfg));
+  const res = await client.send(new DescribeVpcsCommand({ MaxResults: 100 }));
+  const resources: DiscoveredResource[] = [];
+  for (const vpc of res.Vpcs ?? []) {
+    const nameTag = vpc.Tags?.find((t) => t.Key === "Name")?.Value;
+    const name = nameTag ?? vpc.VpcId ?? "unnamed";
+    resources.push({
+      id: `vpc::${vpc.VpcId}`,
+      name,
+      service: "vpc",
+      arn: `arn:aws:ec2:${cfg.region}::vpc/${vpc.VpcId}`,
+      region: cfg.region,
+      metadata: {
+        vpcId: vpc.VpcId,
+        cidrBlock: vpc.CidrBlock,
+        isDefault: vpc.IsDefault,
+        state: vpc.State,
+      },
+    });
+  }
+  return resources;
+}
+
+async function listECSClusters(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new ECSClient(buildClientConfig(cfg));
+  const listRes = await client.send(new ListClustersCommand({ maxResults: 100 }));
+  const clusterArns = listRes.clusterArns ?? [];
+  const resources: DiscoveredResource[] = [];
+  for (const arn of clusterArns) {
+    const name = arnToName(arn);
+    // List services in this cluster
+    let serviceCount = 0;
+    try {
+      const svcList = await client.send(new ListServicesCommand({ cluster: arn, maxResults: 100 }));
+      serviceCount = svcList.serviceArns?.length ?? 0;
+      if (svcList.serviceArns && svcList.serviceArns.length > 0) {
+        const svcDesc = await client.send(new DescribeServicesCommand({
+          cluster: arn,
+          services: svcList.serviceArns.slice(0, 10),
+        }));
+        for (const svc of svcDesc.services ?? []) {
+          resources.push({
+            id: `ecs-service::${svc.clusterArn}::${svc.serviceName}`,
+            name: svc.serviceName ?? "unnamed",
+            service: "ecs",
+            arn: svc.serviceArn,
+            region: cfg.region,
+            metadata: {
+              clusterArn: svc.clusterArn,
+              desiredCount: svc.desiredCount,
+              runningCount: svc.runningCount,
+              launchType: svc.launchType,
+              taskDefinition: svc.taskDefinition,
+              // Store target group ARNs for ELB→ECS relationship discovery
+              targetGroupArns: svc.loadBalancers
+                ?.map((lb) => lb.targetGroupArn)
+                .filter(Boolean) as string[] | undefined,
+            },
+          });
+        }
+      }
+    } catch {
+      // services listing optional
+    }
+    resources.push({
+      id: `ecs-cluster::${name}`,
+      name,
+      service: "ecs",
+      arn,
+      region: cfg.region,
+      metadata: { serviceCount },
+    });
+  }
+  return resources;
+}
+
+async function listEKSClusters(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new EKSClient(buildClientConfig(cfg));
+  const res = await client.send(new EKSListClustersCommand({ maxResults: 100 }));
+  return (res.clusters ?? []).map((name) => ({
+    id: `eks::${name}`,
+    name,
+    service: "eks",
+    arn: `arn:aws:eks:${cfg.region}::cluster/${name}`,
+    region: cfg.region,
+  }));
+}
+
+async function listRDSInstances(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new RDSClient(buildClientConfig(cfg));
+  const [instancesRes, clustersRes] = await Promise.allSettled([
+    client.send(new DescribeDBInstancesCommand({ MaxRecords: 100 })),
+    client.send(new DescribeDBClustersCommand({ MaxRecords: 100 })),
+  ]);
+
+  const resources: DiscoveredResource[] = [];
+
+  if (instancesRes.status === "fulfilled") {
+    for (const db of instancesRes.value.DBInstances ?? []) {
+      resources.push({
+        id: `rds::${db.DBInstanceIdentifier}`,
+        name: db.DBInstanceIdentifier ?? "unnamed",
+        service: "rds",
+        arn: db.DBInstanceArn,
+        region: cfg.region,
+        metadata: {
+          engine: db.Engine,
+          engineVersion: db.EngineVersion,
+          instanceClass: db.DBInstanceClass,
+          status: db.DBInstanceStatus,
+          multiAz: db.MultiAZ,
+          endpoint: db.Endpoint?.Address,
+          port: db.Endpoint?.Port,
+          storageType: db.StorageType,
+          allocatedStorage: db.AllocatedStorage,
+        },
+      });
+    }
+  }
+
+  if (clustersRes.status === "fulfilled") {
+    for (const cluster of clustersRes.value.DBClusters ?? []) {
+      resources.push({
+        id: `rds-cluster::${cluster.DBClusterIdentifier}`,
+        name: `${cluster.DBClusterIdentifier} (cluster)`,
+        service: "rds",
+        arn: cluster.DBClusterArn,
+        region: cfg.region,
+        metadata: {
+          engine: cluster.Engine,
+          engineVersion: cluster.EngineVersion,
+          status: cluster.Status,
+          multiAz: cluster.MultiAZ,
+          endpoint: cluster.Endpoint,
+          readerEndpoint: cluster.ReaderEndpoint,
+        },
+      });
+    }
+  }
+
+  return resources;
+}
+
+async function listElastiCache(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new ElastiCacheClient(buildClientConfig(cfg));
+  const res = await client.send(new DescribeCacheClustersCommand({ MaxRecords: 100 }));
+  return (res.CacheClusters ?? []).map((cluster) => ({
+    id: `elasticache::${cluster.CacheClusterId}`,
+    name: cluster.CacheClusterId ?? "unnamed",
+    service: "elasticache",
+    arn: cluster.ARN,
+    region: cfg.region,
+    metadata: {
+      engine: cluster.Engine,
+      engineVersion: cluster.EngineVersion,
+      cacheNodeType: cluster.CacheNodeType,
+      numCacheNodes: cluster.NumCacheNodes,
+      status: cluster.CacheClusterStatus,
+    },
+  }));
+}
+
+async function listLoadBalancers(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new ElasticLoadBalancingV2Client(buildClientConfig(cfg));
+  const res = await client.send(new DescribeLoadBalancersCommand({ PageSize: 100 }));
+  return (res.LoadBalancers ?? []).map((lb) => ({
+    id: `elbv2::${lb.LoadBalancerName}`,
+    name: lb.LoadBalancerName ?? "unnamed",
+    service: lb.Type === "application" ? "alb" : lb.Type === "network" ? "nlb" : "elb",
+    arn: lb.LoadBalancerArn,
+    region: cfg.region,
+    metadata: {
+      type: lb.Type,
+      scheme: lb.Scheme,
+      state: lb.State?.Code,
+      dnsName: lb.DNSName,
+      vpcId: lb.VpcId,
+      ipAddressType: lb.IpAddressType,
+    },
+  }));
+}
+
+async function listCloudFront(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  // CloudFront is global — only fetch when region is us-east-1 to avoid duplicates
+  if (cfg.endpoint) return []; // not supported in MiniStack
+  const client = new CloudFrontClient({ ...buildClientConfig(cfg), region: "us-east-1" });
+  const res = await client.send(new ListDistributionsCommand({}));
+  return (res.DistributionList?.Items ?? []).map((dist) => ({
+    id: `cloudfront::${dist.Id}`,
+    name: dist.Comment || dist.DomainName || dist.Id || "unnamed",
+    service: "cloudfront",
+    arn: `arn:aws:cloudfront::${dist.Id}:distribution/${dist.Id}`,
+    region: "global",
+    metadata: {
+      domainName: dist.DomainName,
+      status: dist.Status,
+      enabled: dist.Enabled,
+      httpVersion: dist.HttpVersion as string | undefined,
+      origins: dist.Origins?.Items?.map((o) => o.DomainName).join(", "),
+    },
+  }));
+}
+
+async function listRoute53(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  if (cfg.endpoint) return []; // not supported in MiniStack
+  const client = new Route53Client({ ...buildClientConfig(cfg), region: "us-east-1" });
+  const res = await client.send(new ListHostedZonesCommand({ MaxItems: 100 }));
+  return (res.HostedZones ?? []).map((zone) => {
+    const id = (zone.Id ?? "").split("/").pop() ?? zone.Id ?? "unknown";
+    return {
+      id: `route53::${id}`,
+      name: (zone.Name ?? id).replace(/\.$/, ""),
+      service: "route53",
+      arn: `arn:aws:route53:::hostedzone/${id}`,
+      region: "global",
+      metadata: {
+        zoneId: id,
+        recordCount: zone.Config?.PrivateZone ? "private" : "public",
+        privateZone: zone.Config?.PrivateZone,
+      },
+    };
+  });
+}
+
+async function listCognito(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  if (cfg.endpoint) return []; // not supported in MiniStack
+  const client = new CognitoIdentityProviderClient(buildClientConfig(cfg));
+  const res = await client.send(new ListUserPoolsCommand({ MaxResults: 60 }));
+  return (res.UserPools ?? []).map((pool) => ({
+    id: `cognito::${pool.Id}`,
+    name: pool.Name ?? "unnamed",
+    service: "cognitouserpool",
+    arn: `arn:aws:cognito-idp:${cfg.region}::userpool/${pool.Id}`,
+    region: cfg.region,
+    metadata: {
+      poolId: pool.Id,
+      status: pool.Status,
+      lastModified: pool.LastModifiedDate?.toISOString(),
+    },
+  }));
+}
+
+async function listStepFunctions(cfg: DiscoveryConfig): Promise<DiscoveredResource[]> {
+  const client = new SFNClient(buildClientConfig(cfg));
+  const res = await client.send(new ListStateMachinesCommand({ maxResults: 100 }));
+  return (res.stateMachines ?? []).map((sm) => ({
+    id: `sfn::${sm.name}`,
+    name: sm.name ?? "unnamed",
+    service: "stepfunctions",
+    arn: sm.stateMachineArn,
+    region: cfg.region,
+    metadata: {
+      type: sm.type,
+      creationDate: sm.creationDate?.toISOString(),
+    },
+  }));
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Relationship discovery
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Builds a map from ARN fragment (last colon-segment) → resource ID
+// Builds a map from ARN/name → resource ID
 function buildArnIndex(services: DiscoveredService[]): Map<string, string> {
   const index = new Map<string, string>();
   for (const svc of services) {
     for (const r of svc.resources) {
       if (r.arn) {
         index.set(r.arn, r.id);
-        // Also index by last segment of ARN for partial matches
+        // Last colon-segment: e.g. "my-function" from Lambda ARN
         const fragment = arnToName(r.arn);
         if (fragment !== r.arn) index.set(fragment, r.id);
+        // Last path-segment: e.g. "i-1234" from "instance/i-1234", or bucket name from S3 ARN
+        const pathEnd = fragment.split("/").pop();
+        if (pathEnd && pathEnd !== fragment) index.set(pathEnd, r.id);
       }
-      // Index by name directly
       index.set(r.id, r.id);
       index.set(r.name, r.id);
+      // For ELB: also index by DNS name so CloudFront origins can match
+      if (r.metadata?.dnsName) index.set(r.metadata.dnsName as string, r.id);
     }
   }
   return index;
@@ -475,6 +814,211 @@ async function discoverEventBridgeTargets(
   return edges;
 }
 
+async function discoverELBTargets(
+  cfg: DiscoveryConfig,
+  services: DiscoveredService[],
+  index: Map<string, string>
+): Promise<DiscoveredEdge[]> {
+  const client = new ElasticLoadBalancingV2Client(buildClientConfig(cfg));
+  const edges: DiscoveredEdge[] = [];
+
+  const lbResources = services
+    .filter((s) => ["elbv2", "alb", "nlb", "elb"].includes(s.service))
+    .flatMap((s) => s.resources);
+
+  for (const lb of lbResources) {
+    if (!lb.arn) continue;
+    let tgRes;
+    try {
+      tgRes = await client.send(new DescribeTargetGroupsCommand({ LoadBalancerArn: lb.arn }));
+    } catch {
+      continue;
+    }
+
+    for (const tg of tgRes.TargetGroups ?? []) {
+      if (!tg.TargetGroupArn) continue;
+      let healthRes;
+      try {
+        healthRes = await client.send(new DescribeTargetHealthCommand({ TargetGroupArn: tg.TargetGroupArn }));
+      } catch {
+        continue;
+      }
+
+      for (const th of healthRes.TargetHealthDescriptions ?? []) {
+        const targetVal = th.Target?.Id;
+        if (!targetVal) continue;
+
+        // Instance target: "i-12345" — resolved via path-end index
+        // Lambda target: full ARN — resolved via arn index
+        // IP target: won't match, skip
+        const targetId =
+          resolveArn(targetVal, index) ??
+          index.get(`ec2::${targetVal}`);
+        if (!targetId) continue;
+
+        const edgeId = `elb-target::${lb.id}→${targetId}`;
+        if (!edges.find((e) => e.id === edgeId)) {
+          edges.push({
+            id: edgeId,
+            sourceId: lb.id,
+            targetId,
+            label: tg.Protocol?.toLowerCase(),
+          });
+        }
+      }
+    }
+  }
+  return edges;
+}
+
+async function discoverECSLoadBalancers(
+  services: DiscoveredService[],
+  index: Map<string, string>
+): Promise<DiscoveredEdge[]> {
+  const edges: DiscoveredEdge[] = [];
+
+  const ecsServices = services
+    .filter((s) => s.service === "ecs")
+    .flatMap((s) => s.resources)
+    .filter((r) => r.id.startsWith("ecs-service::"));
+
+  for (const ecsSvc of ecsServices) {
+    const targetGroupArns = ecsSvc.metadata?.targetGroupArns as string[] | undefined;
+    if (!targetGroupArns?.length) continue;
+
+    for (const tgArn of targetGroupArns) {
+      // Target group ARNs embed the LB name in some AWS ARNs but we rely on
+      // the ALB having been indexed by ARN. We look up by tgArn fragment first,
+      // then fall back to matching ALB resources whose ARN is in the same namespace.
+      // Simpler approach: find the ALB that owns this TG by scanning ALB resources.
+      const lbResources = services
+        .filter((s) => ["elbv2", "alb", "nlb", "elb"].includes(s.service))
+        .flatMap((s) => s.resources);
+
+      for (const lb of lbResources) {
+        // We don't have a direct TG→LB mapping here without extra API calls,
+        // but if we matched earlier via discoverELBTargets we cover EC2 side.
+        // For ECS specifically, store the edge ALB→ECS if tgArn is resolvable.
+        const tgFragment = arnToName(tgArn); // e.g. "my-tg-name"
+        if (lb.name && (tgArn.includes(lb.name) || lb.metadata?.dnsName)) {
+          const edgeId = `ecs-lb::${lb.id}→${ecsSvc.id}`;
+          if (!edges.find((e) => e.id === edgeId)) {
+            edges.push({
+              id: edgeId,
+              sourceId: lb.id,
+              targetId: ecsSvc.id,
+              label: "routes to",
+            });
+          }
+          break;
+        }
+        void tgFragment;
+      }
+    }
+  }
+  return edges;
+}
+
+async function discoverCloudFrontOrigins(
+  services: DiscoveredService[],
+  index: Map<string, string>
+): Promise<DiscoveredEdge[]> {
+  const edges: DiscoveredEdge[] = [];
+
+  const cfResources = services
+    .find((s) => s.service === "cloudfront")
+    ?.resources ?? [];
+
+  for (const dist of cfResources) {
+    const originsStr = dist.metadata?.origins as string | undefined;
+    if (!originsStr) continue;
+
+    for (const originDomain of originsStr.split(", ")) {
+      // S3 origin: "my-bucket.s3.amazonaws.com" or "my-bucket.s3.region.amazonaws.com"
+      const s3Match = originDomain.match(/^([^.]+)\.s3[\.-]/);
+      if (s3Match) {
+        const bucketName = s3Match[1];
+        const targetId = index.get(`s3::${bucketName}`) ?? index.get(bucketName);
+        if (targetId) {
+          edges.push({
+            id: `cf-origin::${dist.id}→${targetId}`,
+            sourceId: dist.id,
+            targetId,
+            label: "origin",
+          });
+        }
+        continue;
+      }
+
+      // ALB/NLB origin: matches by DNS name stored in index via metadata.dnsName
+      const targetId = index.get(originDomain);
+      if (targetId && targetId !== dist.id) {
+        edges.push({
+          id: `cf-origin::${dist.id}→${targetId}`,
+          sourceId: dist.id,
+          targetId,
+          label: "origin",
+        });
+      }
+    }
+  }
+  return edges;
+}
+
+async function discoverStepFunctionsTasks(
+  cfg: DiscoveryConfig,
+  services: DiscoveredService[],
+  index: Map<string, string>
+): Promise<DiscoveredEdge[]> {
+  const client = new SFNClient(buildClientConfig(cfg));
+  const edges: DiscoveredEdge[] = [];
+
+  const stateMachines = services
+    .find((s) => s.service === "stepfunctions")
+    ?.resources ?? [];
+
+  for (const sm of stateMachines) {
+    if (!sm.arn) continue;
+    let definition: string | undefined;
+    try {
+      const desc = await client.send(new DescribeStateMachineCommand({ stateMachineArn: sm.arn }));
+      definition = desc.definition;
+    } catch {
+      continue;
+    }
+
+    if (!definition) continue;
+    let asl: Record<string, unknown>;
+    try {
+      asl = JSON.parse(definition);
+    } catch {
+      continue;
+    }
+
+    // Walk all states and extract Lambda ARNs from Resource fields
+    const states = (asl.States ?? {}) as Record<string, Record<string, unknown>>;
+    for (const [, state] of Object.entries(states)) {
+      const resource = state.Resource as string | undefined;
+      if (!resource) continue;
+
+      // Lambda invoke: "arn:aws:lambda:...:function:name" or ":*" suffix variants
+      const lambdaMatch = resource.match(/arn:aws[^:]*:lambda:[^:]+:[^:]+:function:([^:$/]+)/);
+      if (lambdaMatch) {
+        const targetId = resolveArn(resource, index) ?? index.get(lambdaMatch[1]);
+        if (targetId) {
+          edges.push({
+            id: `sfn-task::${sm.id}→${targetId}`,
+            sourceId: sm.id,
+            targetId,
+            label: "invokes",
+          });
+        }
+      }
+    }
+  }
+  return edges;
+}
+
 async function discoverAPIGatewayLambda(
   cfg: DiscoveryConfig,
   services: DiscoveredService[],
@@ -543,19 +1087,38 @@ const SERVICE_LISTERS: Array<{
   label: string;
   fn: (cfg: DiscoveryConfig) => Promise<DiscoveredResource[]>;
 }> = [
-  { service: "s3", label: "S3 Buckets", fn: listS3 },
-  { service: "sqs", label: "SQS Queues", fn: listSQS },
-  { service: "dynamodb", label: "DynamoDB Tables", fn: listDynamoDB },
+  // Compute
+  { service: "ec2", label: "EC2 Instances", fn: listEC2Instances },
+  { service: "ecs", label: "ECS Clusters & Services", fn: listECSClusters },
+  { service: "eks", label: "EKS Clusters", fn: listEKSClusters },
   { service: "lambda", label: "Lambda Functions", fn: listLambda },
+  // Network
+  { service: "vpc", label: "VPCs", fn: listVPCs },
+  { service: "elbv2", label: "Load Balancers (ALB/NLB)", fn: listLoadBalancers },
+  { service: "apigateway", label: "API Gateway REST APIs", fn: listAPIGateway },
+  { service: "cloudfront", label: "CloudFront Distributions", fn: listCloudFront },
+  { service: "route53", label: "Route 53 Hosted Zones", fn: listRoute53 },
+  // Database
+  { service: "dynamodb", label: "DynamoDB Tables", fn: listDynamoDB },
+  { service: "rds", label: "RDS Instances & Clusters", fn: listRDSInstances },
+  { service: "elasticache", label: "ElastiCache Clusters", fn: listElastiCache },
+  // Storage
+  { service: "s3", label: "S3 Buckets", fn: listS3 },
+  // Messaging & Events
+  { service: "sqs", label: "SQS Queues", fn: listSQS },
   { service: "sns", label: "SNS Topics", fn: listSNS },
   { service: "eventbridge", label: "EventBridge Buses", fn: listEventBridge },
   { service: "kinesis", label: "Kinesis Streams", fn: listKinesis },
+  // Orchestration
+  { service: "stepfunctions", label: "Step Functions", fn: listStepFunctions },
+  // Security & Identity
+  { service: "cognitouserpool", label: "Cognito User Pools", fn: listCognito },
   { service: "iam", label: "IAM Roles", fn: listIAM },
   { service: "kms", label: "KMS Keys", fn: listKMS },
   { service: "secretsmanager", label: "Secrets Manager", fn: listSecretsManager },
+  // Management
   { service: "ssm", label: "SSM Parameters", fn: listSSM },
   { service: "cloudwatch", label: "CloudWatch Log Groups", fn: listCloudWatchLogs },
-  { service: "apigateway", label: "API Gateway REST APIs", fn: listAPIGateway },
 ];
 
 export async function discoverInfrastructure(
@@ -595,6 +1158,10 @@ export async function discoverInfrastructure(
     discoverSNSSubscriptions(cfg, arnIndex),
     discoverEventBridgeTargets(cfg, services, arnIndex),
     discoverAPIGatewayLambda(cfg, services, arnIndex),
+    discoverELBTargets(cfg, services, arnIndex),
+    discoverECSLoadBalancers(services, arnIndex),
+    discoverCloudFrontOrigins(services, arnIndex),
+    discoverStepFunctionsTasks(cfg, services, arnIndex),
   ]);
 
   const edges: DiscoveredEdge[] = edgeResults

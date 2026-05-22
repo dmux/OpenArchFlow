@@ -6,39 +6,50 @@ import {
 } from "@/lib/iac/terraform/resource-map";
 
 const SERVICE_TO_NODE_TYPE: Record<string, string> = {
-  s3: "aws-storage",
-  efs: "aws-storage",
-  ebs: "aws-storage",
-  glacier: "aws-storage",
+  // Compute
   lambda: "aws-compute",
   ec2: "aws-compute",
   eks: "aws-compute",
   ecs: "aws-compute",
   fargate: "aws-compute",
   apprunner: "aws-compute",
+  // Storage
+  s3: "aws-storage",
+  efs: "aws-storage",
+  ebs: "aws-storage",
+  glacier: "aws-storage",
+  // Database
   dynamodb: "aws-database",
   rds: "aws-database",
   aurora: "aws-database",
   elasticache: "aws-database",
+  // Messaging & Events
   sqs: "aws-integration",
   sns: "aws-integration",
   eventbridge: "aws-integration",
   kinesis: "aws-integration",
   msk: "aws-integration",
+  stepfunctions: "aws-integration",
+  // Security & Identity
   iam: "aws-security",
   kms: "aws-security",
   secretsmanager: "aws-security",
   cognitouserpool: "aws-security",
   waf: "aws-security",
+  // Management
   cloudwatch: "aws-management",
   cloudtrail: "aws-management",
   ssm: "aws-management",
   systemsmanager: "aws-management",
+  // Network
   vpc: "aws-network",
   apigateway: "aws-network",
   route53: "aws-network",
   elb: "aws-network",
   alb: "aws-network",
+  nlb: "aws-network",
+  elbv2: "aws-network",
+  cloudfront: "aws-network",
 };
 
 const BAND_ORDER = [
