@@ -10,25 +10,21 @@ import {
     BaseEdge,
     MarkerType,
     Position,
+    useStore,
 } from 'reactflow';
 
 /**
- * Auto-detect the best source/target positions based on relative node positions.
- * This fixes connections that were created using only Top/Bottom handles — even when
- * nodes are placed side-by-side the routing now picks Left/Right automatically.
+ * Auto-detect the best source/target positions based on relative node centers.
  */
 function smartPositions(
-    sourceX: number, sourceY: number,
-    targetX: number, targetY: number,
-    fallbackSrc: Position, fallbackTgt: Position,
+    srcCX: number, srcCY: number,
+    tgtCX: number, tgtCY: number,
 ) {
-    const dx = targetX - sourceX;
-    const dy = targetY - sourceY;
+    const dx = tgtCX - srcCX;
+    const dy = tgtCY - srcCY;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
 
-    // Only override when the horizontal delta clearly dominates (2:1 ratio).
-    // This preserves intentional vertical connections while fixing side-by-side cases.
     if (absDx > absDy * 1.5) {
         return {
             srcPos: dx > 0 ? Position.Right : Position.Left,
@@ -41,7 +37,6 @@ function smartPositions(
             tgtPos: dy > 0 ? Position.Top : Position.Bottom,
         };
     }
-    // Diagonal — use whichever axis is larger
     if (absDx >= absDy) {
         return {
             srcPos: dx > 0 ? Position.Right : Position.Left,
@@ -54,8 +49,31 @@ function smartPositions(
     };
 }
 
+/** Given a node's internals and a desired handle position, return the correct X,Y. */
+function handleCoordsForPosition(
+    node: any,
+    pos: Position,
+    fallbackX: number,
+    fallbackY: number,
+): { x: number; y: number } {
+    const pa = node?.positionAbsolute;
+    const w: number = node?.width ?? 0;
+    const h: number = node?.height ?? 0;
+    if (!pa || !w || !h) return { x: fallbackX, y: fallbackY };
+
+    const cx = pa.x + w / 2;
+    const cy = pa.y + h / 2;
+    switch (pos) {
+        case Position.Left:   return { x: pa.x,     y: cy };
+        case Position.Right:  return { x: pa.x + w, y: cy };
+        case Position.Top:    return { x: cx,        y: pa.y };
+        case Position.Bottom: return { x: cx,        y: pa.y + h };
+    }
+}
+
 export default function StyledEdge({
     id,
+    source, target,
     sourceX, sourceY, targetX, targetY,
     sourcePosition, targetPosition,
     data,
@@ -71,40 +89,69 @@ export default function StyledEdge({
     const animated: boolean = data?.animated ?? false;
     const waypoints: { x: number; y: number }[] = data?.waypoints ?? [];
 
-    // For straight lines we don't need position hinting — use raw coords.
-    // For all curved types, override source/target positions with smart detection.
+    // Pull node internals so we can recalculate handle coordinates to match the
+    // desired routing side — the coordinates ReactFlow passes in always reflect the
+    // handle that was used when the edge was drawn (often Top/Bottom), not the side
+    // we want to route from after layout changes.
+    const nodeInternals = useStore((s: any) => s.nodeInternals);
+    const srcNode = nodeInternals.get(source);
+    const tgtNode = nodeInternals.get(target);
+
+    // Derive node centers from internals (fall back to passed-in coords).
+    const srcCX = srcNode?.positionAbsolute && srcNode?.width
+        ? srcNode.positionAbsolute.x + srcNode.width / 2
+        : sourceX;
+    const srcCY = srcNode?.positionAbsolute && srcNode?.height
+        ? srcNode.positionAbsolute.y + srcNode.height / 2
+        : sourceY;
+    const tgtCX = tgtNode?.positionAbsolute && tgtNode?.width
+        ? tgtNode.positionAbsolute.x + tgtNode.width / 2
+        : targetX;
+    const tgtCY = tgtNode?.positionAbsolute && tgtNode?.height
+        ? tgtNode.positionAbsolute.y + tgtNode.height / 2
+        : targetY;
+
+    // For straight lines use raw coords; for curved types use smart routing.
     const { srcPos, tgtPos } = edgeType === 'straight'
         ? { srcPos: sourcePosition, tgtPos: targetPosition }
-        : smartPositions(sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition);
+        : smartPositions(srcCX, srcCY, tgtCX, tgtCY);
+
+    // Recalculate actual handle X,Y to match the chosen side.
+    const { x: eSrcX, y: eSrcY } = edgeType === 'straight'
+        ? { x: sourceX, y: sourceY }
+        : handleCoordsForPosition(srcNode, srcPos, sourceX, sourceY);
+    const { x: eTgtX, y: eTgtY } = edgeType === 'straight'
+        ? { x: targetX, y: targetY }
+        : handleCoordsForPosition(tgtNode, tgtPos, targetX, targetY);
 
     let edgePath = '';
     let labelX = 0;
     let labelY = 0;
 
     if (edgeType === 'straight') {
-        [edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
+        [edgePath, labelX, labelY] = getStraightPath({ sourceX: eSrcX, sourceY: eSrcY, targetX: eTgtX, targetY: eTgtY });
     } else if (edgeType === 'step') {
         [edgePath, labelX, labelY] = getSmoothStepPath({
-            sourceX, sourceY, sourcePosition: srcPos,
-            targetX, targetY, targetPosition: tgtPos,
+            sourceX: eSrcX, sourceY: eSrcY, sourcePosition: srcPos,
+            targetX: eTgtX, targetY: eTgtY, targetPosition: tgtPos,
             borderRadius: 0,
         });
     } else if (edgeType === 'bezier') {
         [edgePath, labelX, labelY] = getBezierPath({
-            sourceX, sourceY, sourcePosition: srcPos,
-            targetX, targetY, targetPosition: tgtPos,
+            sourceX: eSrcX, sourceY: eSrcY, sourcePosition: srcPos,
+            targetX: eTgtX, targetY: eTgtY, targetPosition: tgtPos,
         });
     } else if (edgeType === 'waypoint' && waypoints.length > 0) {
         // Build polyline through waypoints
-        const points = [{ x: sourceX, y: sourceY }, ...waypoints, { x: targetX, y: targetY }];
+        const points = [{ x: eSrcX, y: eSrcY }, ...waypoints, { x: eTgtX, y: eTgtY }];
         edgePath = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
-        labelX = (sourceX + targetX) / 2;
-        labelY = (sourceY + targetY) / 2;
+        labelX = (eSrcX + eTgtX) / 2;
+        labelY = (eSrcY + eTgtY) / 2;
     } else {
         // default smoothstep
         [edgePath, labelX, labelY] = getSmoothStepPath({
-            sourceX, sourceY, sourcePosition: srcPos,
-            targetX, targetY, targetPosition: tgtPos,
+            sourceX: eSrcX, sourceY: eSrcY, sourcePosition: srcPos,
+            targetX: eTgtX, targetY: eTgtY, targetPosition: tgtPos,
         });
     }
 
