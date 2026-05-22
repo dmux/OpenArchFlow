@@ -129,7 +129,8 @@ export function GoogleAccountButton({ driveSync, btnCls, icoSize }: GoogleAccoun
         sideOffset={15}
         className="w-72 p-4 rounded-2xl shadow-2xl border-border bg-background/95 backdrop-blur-xl"
       >
-        {!driveSync.isConnected ? (
+        {/* ── State 1: Not signed in ── */}
+        {!googleUser && !driveSync.isConnected && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2.5">
               <CloudUpload className="h-5 w-5 text-muted-foreground" />
@@ -147,9 +148,57 @@ export function GoogleAccountButton({ driveSync, btnCls, icoSize }: GoogleAccoun
               Sign in with Google
             </Button>
           </div>
-        ) : (
+        )}
+
+        {/* ── State 2: Signed in but Drive not connected ── */}
+        {googleUser && !driveSync.isConnected && (
           <div className="flex flex-col gap-4">
-            {/* User identity */}
+            <div className="flex items-center gap-3">
+              <Image
+                src={googleUser.picture}
+                alt={googleUser.name}
+                width={36}
+                height={36}
+                className="rounded-full object-cover shrink-0"
+                referrerPolicy="no-referrer"
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{googleUser.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{googleUser.email}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border p-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <CloudOff className="h-4 w-4 shrink-0" />
+              <span>Google Drive not connected</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs rounded-lg h-8"
+                onClick={handleConnect}
+              >
+                <CloudUpload className="mr-1.5 h-3.5 w-3.5" />
+                Connect Drive
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 text-xs text-destructive hover:bg-destructive/10 rounded-lg h-8"
+                onClick={handleDisconnect}
+              >
+                <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                Sign out
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── State 3: Drive connected ── */}
+        {driveSync.isConnected && (
+          <div className="flex flex-col gap-4">
             {googleUser && (
               <div className="flex items-center gap-3">
                 <Image
@@ -167,7 +216,6 @@ export function GoogleAccountButton({ driveSync, btnCls, icoSize }: GoogleAccoun
               </div>
             )}
 
-            {/* Drive status */}
             <div className="rounded-xl border border-border p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -197,7 +245,6 @@ export function GoogleAccountButton({ driveSync, btnCls, icoSize }: GoogleAccoun
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-2 border-t border-border pt-3">
               <Button
                 variant="ghost"

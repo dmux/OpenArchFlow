@@ -10,10 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Loader2, ExternalLink, Check, ChevronRight, RotateCcw } from "lucide-react";
+import { Loader2, ExternalLink, Check, ChevronRight, RotateCcw, KeyRound, Building2 } from "lucide-react";
 import { useDiagramStore, type BedrockConfig } from "@/lib/store";
 import { toast } from "sonner";
 
+type AuthMethod = "sso" | "keys";
 type AuthStep =
   | "entering-url"
   | "registering"
@@ -67,10 +68,12 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
   const existingConfig = useDiagramStore((s) => s.bedrockConfig);
   const currentModel = useDiagramStore((s) => s.bedrockModel);
 
+  const [authMethod, setAuthMethod] = useState<AuthMethod>("sso");
   const [step, setStep] = useState<AuthStep>("entering-url");
+
+  // SSO fields
   const [ssoStartUrl, setSsoStartUrl] = useState(existingConfig?.ssoStartUrl ?? "");
   const [ssoRegion, setSsoRegion] = useState(existingConfig?.ssoRegion ?? "us-east-1");
-  const [bedrockRegion, setBedrockRegion] = useState(existingConfig?.region ?? "us-east-1");
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [deviceCode, setDeviceCode] = useState("");
@@ -84,14 +87,28 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
   const [accounts, setAccounts] = useState<AccountWithRoles[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AccountWithRoles | null>(null);
   const [selectedRole, setSelectedRole] = useState("");
+
+  // Direct key fields
+  const [directAccessKey, setDirectAccessKey] = useState("");
+  const [directSecretKey, setDirectSecretKey] = useState("");
+  const [directSessionToken, setDirectSessionToken] = useState("");
+
+  // Shared
+  const [bedrockRegion, setBedrockRegion] = useState(existingConfig?.region ?? "us-east-1");
   const [models, setModels] = useState<BedrockModel[]>([]);
-  const [tempCreds, setTempCreds] = useState<{ accessKeyId: string; secretAccessKey: string; sessionToken: string; expiration: number } | null>(null);
+  const [tempCreds, setTempCreds] = useState<{
+    accessKeyId: string;
+    secretAccessKey: string;
+    sessionToken: string;
+    expiration: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(0);
 
   // Reset when dialog opens
   useEffect(() => {
     if (open) {
+      setAuthMethod("sso");
       setStep("entering-url");
       setSsoStartUrl(existingConfig?.ssoStartUrl ?? "");
       setSsoRegion(existingConfig?.ssoRegion ?? "us-east-1");
@@ -108,8 +125,11 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
       setSelectedRole("");
       setModels([]);
       setTempCreds(null);
+      setDirectAccessKey("");
+      setDirectSecretKey("");
+      setDirectSessionToken("");
     }
-  }, [open]); // intentionally omit existingConfig — only pre-fill on mount
+  }, [open]); // intentionally omit existingConfig
 
   // Countdown timer
   useEffect(() => {
@@ -144,7 +164,6 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
         setAccessToken(token);
         setAccessTokenExpiration(tokenExpiration);
         setStep("selecting-account");
-        // Fetch accounts
         const accRes = await fetch("/api/bedrock/auth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -159,7 +178,7 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
     return () => clearInterval(interval);
   }, [step, deviceCode, clientId, clientSecret, ssoRegion, pollInterval]);
 
-  const handleConnect = useCallback(async () => {
+  const handleConnectSSO = useCallback(async () => {
     if (!ssoStartUrl.trim()) {
       toast.error("Please enter your SSO Start URL.");
       return;
@@ -167,7 +186,6 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
     setIsLoading(true);
     setStep("registering");
     try {
-      // Register OIDC client
       const regRes = await fetch("/api/bedrock/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,16 +196,14 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
       setClientId(reg.clientId);
       setClientSecret(reg.clientSecret);
 
-      // Start device authorization
       const startRes = await fetch("/api/bedrock/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ step: "start", ssoRegion, ssoStartUrl: ssoStartUrl.trim(), clientId: reg.clientId, clientSecret: reg.clientSecret }),
       });
       const start = await startRes.json();
-      console.log("[Bedrock SSO] start response:", start);
       if (!startRes.ok || start.error) throw new Error(start.error || `Start failed (${startRes.status}): ${start.code ?? ""}`);
-      if (!start.userCode) throw new Error(`SSO returned no user code. Check your SSO Start URL and region. (code: ${start.code ?? "unknown"})`);
+      if (!start.userCode) throw new Error(`SSO returned no user code. Check your SSO Start URL and region.`);
       setDeviceCode(start.deviceCode);
       setUserCode(start.userCode);
       setVerificationUri(start.verificationUri ?? "");
@@ -204,6 +220,50 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
     }
   }, [ssoStartUrl, ssoRegion]);
 
+  const handleConnectWithKeys = useCallback(async () => {
+    if (!directAccessKey.trim() || !directSecretKey.trim()) {
+      toast.error("Access Key ID and Secret Access Key are required.");
+      return;
+    }
+    setIsLoading(true);
+    setStep("fetching-models");
+    try {
+      const modRes = await fetch("/api/bedrock/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          region: bedrockRegion,
+          accessKeyId: directAccessKey.trim(),
+          secretAccessKey: directSecretKey.trim(),
+          ...(directSessionToken.trim() ? { sessionToken: directSessionToken.trim() } : {}),
+        }),
+      });
+      const modData = await modRes.json();
+      if (modData.error) throw new Error(modData.error);
+
+      // Permanent keys: expiry 1 year. Session token keys: assume 1 hour.
+      const expiration = directSessionToken.trim()
+        ? Date.now() + 60 * 60 * 1000
+        : Date.now() + 365 * 24 * 60 * 60 * 1000;
+
+      setTempCreds({
+        accessKeyId: directAccessKey.trim(),
+        secretAccessKey: directSecretKey.trim(),
+        sessionToken: directSessionToken.trim(),
+        expiration,
+      });
+      setSelectedAccount({ accountId: "direct", accountName: "Direct Access Keys", roles: [] });
+      setSelectedRole("IAMUser");
+      setModels(modData.models ?? []);
+      setStep("selecting-model");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to connect with access keys.");
+      setStep("entering-url");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [directAccessKey, directSecretKey, directSessionToken, bedrockRegion]);
+
   const handleSelectRole = useCallback(async (account: AccountWithRoles, roleName: string) => {
     setSelectedAccount(account);
     setSelectedRole(roleName);
@@ -219,7 +279,6 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
       setTempCreds(creds);
       setStep("fetching-models");
 
-      // Fetch models
       const modRes = await fetch("/api/bedrock/models", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -239,6 +298,7 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
 
   const handleSelectModel = useCallback((modelId: string) => {
     if (!tempCreds || !selectedAccount) return;
+    const isDirectKeys = authMethod === "keys";
     const config: BedrockConfig = {
       region: bedrockRegion,
       credentials: {
@@ -250,10 +310,12 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
       accountId: selectedAccount.accountId,
       accountName: selectedAccount.accountName,
       roleName: selectedRole,
-      ssoStartUrl: ssoStartUrl.trim(),
-      ssoRegion,
-      accessToken,
-      accessTokenExpiration,
+      ssoStartUrl: isDirectKeys ? "" : ssoStartUrl.trim(),
+      ssoRegion: isDirectKeys ? "" : ssoRegion,
+      accessToken: isDirectKeys ? "" : accessToken,
+      accessTokenExpiration: isDirectKeys
+        ? (directSessionToken.trim() ? 0 : tempCreds.expiration)
+        : accessTokenExpiration,
     };
     setBedrockConfig(config);
     setBedrockModel(modelId);
@@ -261,62 +323,167 @@ export function BedrockAuthDialog({ open, onClose, onSuccess }: BedrockAuthDialo
     setOfflineMode(false);
     toast.success("AWS Bedrock configured successfully!");
     onSuccess();
-  }, [tempCreds, selectedAccount, selectedRole, ssoStartUrl, ssoRegion, bedrockRegion, accessToken, accessTokenExpiration, setBedrockConfig, setBedrockModel, setAiProvider, setOfflineMode, onSuccess]);
+  }, [tempCreds, selectedAccount, selectedRole, authMethod, ssoStartUrl, ssoRegion, bedrockRegion, accessToken, accessTokenExpiration, directSessionToken, setBedrockConfig, setBedrockModel, setAiProvider, setOfflineMode, onSuccess]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent aria-describedby={undefined} className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" fill="none" />
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
-            AWS Bedrock — SSO Login
+            AWS Bedrock — Connect
           </DialogTitle>
         </DialogHeader>
 
         {/* Step: entering-url */}
         {step === "entering-url" && (
           <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Enter your AWS IAM Identity Center start URL to authenticate via SSO.
-            </p>
-            <div className="space-y-2">
-              <label className="text-xs font-medium">SSO Start URL</label>
-              <Input
-                value={ssoStartUrl}
-                onChange={(e) => setSsoStartUrl(e.target.value)}
-                placeholder="https://myorg.awsapps.com/start"
-                className="text-sm"
-                onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-              />
+            {/* Auth method switcher */}
+            <div className="flex rounded-lg border p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setAuthMethod("sso")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-all",
+                  authMethod === "sso"
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                SSO / Identity Center
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMethod("keys")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium transition-all",
+                  authMethod === "keys"
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                Access Keys
+              </button>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium">SSO Region <span className="text-muted-foreground font-normal">(IAM Identity Center region)</span></label>
-              <Input
-                value={ssoRegion}
-                onChange={(e) => setSsoRegion(e.target.value)}
-                placeholder="us-east-1"
-                className="text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium">Bedrock Region <span className="text-muted-foreground font-normal">(where Bedrock models are deployed)</span></label>
-              <Input
-                value={bedrockRegion}
-                onChange={(e) => setBedrockRegion(e.target.value)}
-                placeholder="us-east-1"
-                className="text-sm"
-              />
-            </div>
-            <Button
-              onClick={handleConnect}
-              disabled={!ssoStartUrl.trim() || isLoading}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Connect with SSO
-            </Button>
+
+            {/* SSO form */}
+            {authMethod === "sso" && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Enter your AWS IAM Identity Center start URL to authenticate via SSO.
+                </p>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">SSO Start URL</label>
+                  <Input
+                    value={ssoStartUrl}
+                    onChange={(e) => setSsoStartUrl(e.target.value)}
+                    placeholder="https://myorg.awsapps.com/start"
+                    className="text-sm"
+                    onKeyDown={(e) => e.key === "Enter" && handleConnectSSO()}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">
+                    SSO Region{" "}
+                    <span className="text-muted-foreground font-normal">(IAM Identity Center region)</span>
+                  </label>
+                  <Input
+                    value={ssoRegion}
+                    onChange={(e) => setSsoRegion(e.target.value)}
+                    placeholder="us-east-1"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">
+                    Bedrock Region{" "}
+                    <span className="text-muted-foreground font-normal">(where Bedrock models are deployed)</span>
+                  </label>
+                  <Input
+                    value={bedrockRegion}
+                    onChange={(e) => setBedrockRegion(e.target.value)}
+                    placeholder="us-east-1"
+                    className="text-sm"
+                  />
+                </div>
+                <Button
+                  onClick={handleConnectSSO}
+                  disabled={!ssoStartUrl.trim() || isLoading}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Connect with SSO
+                </Button>
+              </div>
+            )}
+
+            {/* Access Keys form */}
+            {authMethod === "keys" && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Enter your AWS credentials directly. Works with IAM user keys or STS temporary credentials.
+                </p>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">
+                    Bedrock Region{" "}
+                    <span className="text-muted-foreground font-normal">(where Bedrock models are deployed)</span>
+                  </label>
+                  <Input
+                    value={bedrockRegion}
+                    onChange={(e) => setBedrockRegion(e.target.value)}
+                    placeholder="us-east-1"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Access Key ID</label>
+                  <Input
+                    value={directAccessKey}
+                    onChange={(e) => setDirectAccessKey(e.target.value)}
+                    placeholder="AKIAIOSFODNN7EXAMPLE"
+                    autoComplete="off"
+                    className="text-sm font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Secret Access Key</label>
+                  <Input
+                    type="password"
+                    value={directSecretKey}
+                    onChange={(e) => setDirectSecretKey(e.target.value)}
+                    placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                    autoComplete="off"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">
+                    Session Token{" "}
+                    <span className="text-muted-foreground font-normal">(optional, for temporary credentials)</span>
+                  </label>
+                  <Input
+                    type="password"
+                    value={directSessionToken}
+                    onChange={(e) => setDirectSessionToken(e.target.value)}
+                    placeholder="Temporary session token"
+                    autoComplete="off"
+                    className="text-sm"
+                  />
+                </div>
+                <Button
+                  onClick={handleConnectWithKeys}
+                  disabled={!directAccessKey.trim() || !directSecretKey.trim() || isLoading}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Connect with Keys
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

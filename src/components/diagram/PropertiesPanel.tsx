@@ -1022,7 +1022,7 @@ export default function PropertiesPanel() {
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 20, stiffness: 100 }}
-          className="fixed right-0 md:right-4 top-16 md:top-24 bottom-0 md:bottom-4 w-full md:w-96 bg-card border border-border rounded-none md:rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden"
+          className="fixed right-0 md:right-4 top-16 md:top-24 w-full md:w-96 max-h-[calc(100vh-8rem)] bg-card border border-border rounded-none md:rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="p-4 border-b border-border flex items-start justify-between bg-muted/30">
@@ -1048,7 +1048,7 @@ export default function PropertiesPanel() {
           </div>
 
           {/* Content */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="overflow-y-auto p-4">
             <div className="space-y-6">
               {/* Quick Start traffic banner — shown on client/entry nodes with no traffic configured */}
               {(isClient || isGateway) &&
@@ -2283,7 +2283,7 @@ export default function PropertiesPanel() {
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 20, stiffness: 100 }}
-          className="fixed right-0 md:right-4 top-16 md:top-24 bottom-0 md:bottom-4 w-full md:w-96 bg-card border border-border rounded-none md:rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden"
+          className="fixed right-0 md:right-4 top-16 md:top-24 w-full md:w-96 max-h-[calc(100vh-8rem)] bg-card border border-border rounded-none md:rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="p-4 border-b border-border flex items-start justify-between bg-muted/30">
@@ -2306,7 +2306,7 @@ export default function PropertiesPanel() {
           </div>
 
           {/* Content */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="overflow-y-auto p-4">
             <div className="space-y-6">
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">

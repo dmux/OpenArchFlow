@@ -289,6 +289,14 @@ export function useGoogleDriveSync(): GoogleDriveSyncHook {
   }, []);
 
   const disconnect = useCallback(() => {
+    // Revoke the OAuth2 access token so Google invalidates it server-side
+    const token = tokenRef.current;
+    if (token) {
+      (window as Window & { google?: { accounts?: { oauth2?: { revoke: (t: string, cb: () => void) => void } } } })
+        .google?.accounts?.oauth2?.revoke(token, () => {});
+    }
+    // Prevent One Tap from silently re-signing in
+    window.google?.accounts?.id?.disableAutoSelect();
     sessionStorage.removeItem(SESSION_KEY);
     setAccessToken(null);
     setDriveFileId(null);
@@ -296,7 +304,7 @@ export function useGoogleDriveSync(): GoogleDriveSyncHook {
     setGoogleUser(null);
     useDiagramStore.setState({ driveLastSyncedAt: null, driveLastError: null });
     hasCheckedOnLoad.current = false;
-    toast.info("Disconnected from Google Drive.");
+    toast.info("Signed out of Google.");
   }, [setDriveFileId, setDriveSyncStatus, setGoogleUser]);
 
   return {

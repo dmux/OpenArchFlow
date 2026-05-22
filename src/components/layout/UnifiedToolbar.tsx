@@ -32,6 +32,7 @@ import {
   BoxSelect,
   Shapes,
   Compass,
+  CloudDownload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,6 +75,7 @@ import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { WebLLMService } from "@/lib/ai/webllm";
 import BillOfMaterials from "../diagram/BillOfMaterials";
+import { InfraDiscoveryDialog } from "../diagram/InfraDiscoveryDialog";
 import { CollaborateButton } from "./CollaborateButton";
 import { GoogleAccountButton } from "./GoogleAccountButton";
 import { type GoogleDriveSyncHook } from "@/hooks/useGoogleDriveSync";
@@ -126,6 +128,7 @@ export function UnifiedToolbar({
 
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBOM, setShowBOM] = useState(false);
+  const [infraDiscoveryOpen, setInfraDiscoveryOpen] = useState(false);
 
   // Controlled open state so the onboarding tour can open specific dropdowns
   const [panelsOpen, setPanelsOpen] = useState(false);
@@ -381,6 +384,13 @@ export function UnifiedToolbar({
               <DropdownMenuItem onClick={() => setActivePanel(activePanel === "templates" ? null : "templates")} className={cn(ddItem, "justify-between")}>
                 <div className="flex items-center gap-2"><LayoutTemplate className="h-4 w-4 text-muted-foreground" /><span className="text-sm font-medium">Templates</span></div>
                 {activePanel === "templates" && <Check className="h-3.5 w-3.5 text-primary" />}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-1" />
+              <DropdownMenuItem onClick={() => setInfraDiscoveryOpen(true)} className={ddItem}>
+                <div className="flex items-center gap-2">
+                  <CloudDownload className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm font-medium">Importar da AWS</span>
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -664,6 +674,7 @@ export function UnifiedToolbar({
       </div>
 
       <BillOfMaterials open={showBOM} onOpenChange={setShowBOM} />
+      <InfraDiscoveryDialog open={infraDiscoveryOpen} onClose={() => setInfraDiscoveryOpen(false)} />
 
       <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
         <AlertDialogContent>

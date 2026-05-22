@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.8.3-blue?style=flat-square" alt="Version 0.8.3" />
+  <img src="https://img.shields.io/badge/version-0.9.0-blue?style=flat-square" alt="Version 0.9.0" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%20%7C%20AWS%20Bedrock%20%7C%20WebLLM-orange?style=flat-square" alt="AI Providers" />
@@ -61,13 +61,23 @@ OpenArchFlow is an **open-source Progressive Web App** designed for cloud archit
 - **Conflict resolution** — If the cloud copy is newer on app load, you can choose "Use Cloud" or "Keep Local" — no silent overwrites.
 - **Unified status** — The account button shows a Drive-status dot (green / syncing / error) and a popover with last-sync time, Sync Now, and Sign out actions.
 
+### ☁️ Import from AWS (NEW)
+
+Scan a live AWS account and turn its running resources into a diagram in seconds.
+
+- **24 supported services** — EC2, VPC, ECS, EKS, RDS, ElastiCache, ALB/NLB, Lambda, S3, DynamoDB, SQS, SNS, API Gateway, CloudFront, Route 53, Cognito, Step Functions, IAM, Kinesis, EventBridge, KMS, Secrets Manager, and more.
+- **Automatic connections** — edges are inferred from ARN references across services (ELB→EC2 target groups, ECS→ALB, CloudFront→S3/ALB origins, Step Functions→Lambda).
+- **Flexible authentication** — enter AWS Access Keys directly, or use the integrated SSO login button that auto-fills credentials after authentication. Alternatively, reuse credentials already configured for Bedrock.
+- **Selective import** — choose which services and resources to include before importing. Resources are pre-selected and expandable per service.
+- **Partial-failure tolerance** — permission errors on individual services show a "No access" badge without blocking the rest of the scan.
+
 ### 🤖 Multi-Provider AI Engine
 
 - **Cloud AI (Gemini)**: Choose between **Gemini 2.0 Flash** (fastest), **Gemini 2.5 Flash** (balanced, default), or **Gemini 2.5 Pro** (most capable) — selectable directly from the AI Provider dialog.
-- **AWS Bedrock**: Authenticate via AWS IAM Identity Center SSO (Device Authorization Flow) — no manual credential entry. Supports all Bedrock model families (Claude, Llama, Mistral, Titan, Cohere) with dynamic model discovery per account.
-- **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU
-- **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch
-- **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews
+- **AWS Bedrock**: Two authentication methods — **SSO / IAM Identity Center** (Device Authorization Flow, no manual credential entry) or **Direct Access Keys** (IAM user keys or STS temporary credentials). Supports all Bedrock model families (Claude, Llama, Mistral, Titan, Cohere) with dynamic model discovery per account. Credentials are silently refreshed before expiry using the stored SSO token.
+- **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU.
+- **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch.
+- **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews.
 
 ### 💰 AWS Pricing & Cost Estimation
 
@@ -347,12 +357,12 @@ We welcome contributions from the community! OpenArchFlow is built **by architec
 
 ### Ideas for Contributions
 
-- 🆕 Add more AWS services (AppSync, EKS, ECS, etc.)
-- 🎨 Improve UI/UX design
+- 🆕 Add more AWS services (AppSync, WAF, etc.)
 - 🌍 Add internationalization (i18n)
 - 📱 Mobile device support
 - 🧪 Add unit and integration tests
 - 📚 Improve AI prompts for better diagrams
+- 🔗 Add Azure and GCP resource discovery
 
 ---
 
