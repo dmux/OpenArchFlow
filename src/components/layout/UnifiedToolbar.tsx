@@ -33,6 +33,7 @@ import {
   Shapes,
   Compass,
   CloudDownload,
+  Spline,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,6 +77,7 @@ import html2canvas from "html2canvas";
 import { WebLLMService } from "@/lib/ai/webllm";
 import BillOfMaterials from "../diagram/BillOfMaterials";
 import { InfraDiscoveryDialog } from "../diagram/InfraDiscoveryDialog";
+import { DiagramSettingsDialog } from "./DiagramSettingsDialog";
 import { CollaborateButton } from "./CollaborateButton";
 import { GoogleAccountButton } from "./GoogleAccountButton";
 import { type GoogleDriveSyncHook } from "@/hooks/useGoogleDriveSync";
@@ -129,6 +131,7 @@ export function UnifiedToolbar({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBOM, setShowBOM] = useState(false);
   const [infraDiscoveryOpen, setInfraDiscoveryOpen] = useState(false);
+  const [diagramSettingsOpen, setDiagramSettingsOpen] = useState(false);
 
   // Controlled open state so the onboarding tour can open specific dropdowns
   const [panelsOpen, setPanelsOpen] = useState(false);
@@ -662,6 +665,13 @@ export function UnifiedToolbar({
                 <span className="text-sm font-medium">Auto Layout</span>
               </DropdownMenuItem>
 
+              <DropdownMenuSeparator className="my-1" />
+
+              <DropdownMenuItem onClick={() => setDiagramSettingsOpen(true)} className={ddItem}>
+                <Spline className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Connection Style</span>
+              </DropdownMenuItem>
+
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -675,6 +685,7 @@ export function UnifiedToolbar({
 
       <BillOfMaterials open={showBOM} onOpenChange={setShowBOM} />
       <InfraDiscoveryDialog open={infraDiscoveryOpen} onClose={() => setInfraDiscoveryOpen(false)} />
+      <DiagramSettingsDialog open={diagramSettingsOpen} onClose={() => setDiagramSettingsOpen(false)} />
 
       <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
         <AlertDialogContent>
