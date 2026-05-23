@@ -1,6 +1,7 @@
-import React, { memo } from "react";
+import React, { memo, useState, useCallback } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { cn } from "@/lib/utils";
+import { QuickAddPanel } from "./QuickAddPanel";
 import { getServiceIcon, getServiceDescription } from "@/lib/registry";
 
 import {
@@ -8,7 +9,7 @@ import {
   NodeSimulationStatus,
   useDiagramStore,
 } from "@/lib/store";
-import { Loader2, CheckCircle, XCircle, Zap, Rocket } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Zap, Rocket, Plus } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +58,9 @@ function getMetricBadgeProps(
   return { color, tooltip, errPct, p95, throttlePct };
 }
 
-const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
+type QuickAddState = { direction: "top" | "bottom" | "left" | "right"; anchorX: number; anchorY: number } | null;
+
+const CloudNode = ({ id: nodeId, data, selected }: NodeProps<AppNodeData>) => {
   const { label, service, simulation, provider, metadata, ministack } = data as any;
   const isProcessing = simulation?.status === "processing";
   const isSuccess = simulation?.status === "success";
@@ -68,6 +71,17 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
   const msDeploying = msStatus === "deploying";
   const msPending = msStatus === "pending";
   const msDeployError = msStatus === "error";
+
+  const [quickAdd, setQuickAdd] = useState<QuickAddState>(null);
+
+  const handlePlusClick = useCallback(
+    (direction: "top" | "bottom" | "left" | "right") =>
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setQuickAdd({ direction, anchorX: e.clientX, anchorY: e.clientY });
+      },
+    [],
+  );
 
   const isPlaying = useDiagramStore((s) => s.isPlaying);
   const nodeDisplayMode = useDiagramStore((s) => s.nodeDisplayMode);
@@ -163,18 +177,41 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
     </Tooltip>
   );
 
-  // With ConnectionMode.Loose, source handles accept both incoming and outgoing
-  // connections — no need for separate target handles at each position.
-  const handleCls = cn(
-    "!w-5 !h-5 !rounded-full !bg-primary !border-0",
+  // Each handle: invisible edge-connection point at the icon boundary.
+  // A visible "+" button floats further out (offsetStyle) so it doesn't
+  // overlap the icon. Clicking the "+" opens QuickAddPanel; dragging
+  // from it creates a free-form edge connection.
+  const HANDLE_OFFSET = 18; // px outside the icon container boundary
+
+  const handleBaseCls = cn(
+    "!w-5 !h-5 !rounded-full !bg-background !border !border-primary/50",
     "opacity-0 group-hover:opacity-100 transition-all duration-150",
-    "flex items-center justify-center !cursor-crosshair",
+    "flex items-center justify-center !cursor-crosshair hover:!border-primary hover:!bg-primary/10",
   );
+
+  type Dir = "top" | "bottom" | "left" | "right";
+
+  const offsetStyle = (pos: Position): React.CSSProperties => {
+    switch (pos) {
+      case Position.Top:    return { top:    `-${HANDLE_OFFSET}px` };
+      case Position.Bottom: return { bottom: `-${HANDLE_OFFSET}px` };
+      case Position.Left:   return { left:   `-${HANDLE_OFFSET}px` };
+      case Position.Right:  return { right:  `-${HANDLE_OFFSET}px` };
+    }
+  };
+
   const PlusHandle = ({ position }: { position: Position }) => (
-    <Handle type="source" position={position} className={handleCls}>
-      <span className="text-primary-foreground text-[13px] font-bold leading-none pointer-events-none select-none">+</span>
+    <Handle
+      type="source"
+      position={position}
+      className={handleBaseCls}
+      style={offsetStyle(position)}
+      onClick={handlePlusClick(position as Dir)}
+    >
+      <Plus className="w-3 h-3 text-primary pointer-events-none" strokeWidth={2.5} />
     </Handle>
   );
+
   const handles = (
     <>
       <PlusHandle position={Position.Top}    />
@@ -199,6 +236,7 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
   );
 
   return (
+    <>
     <Tooltip>
       <TooltipTrigger asChild>
         {iconMode ? (
@@ -292,6 +330,16 @@ const CloudNode = ({ data, selected }: NodeProps<AppNodeData>) => {
         </TooltipContent>
       )}
     </Tooltip>
+    {quickAdd && (
+      <QuickAddPanel
+        sourceNodeId={nodeId}
+        direction={quickAdd.direction}
+        anchorX={quickAdd.anchorX}
+        anchorY={quickAdd.anchorY}
+        onClose={() => setQuickAdd(null)}
+      />
+    )}
+    </>
   );
 };
 

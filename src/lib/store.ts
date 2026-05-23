@@ -259,6 +259,7 @@ interface DiagramState {
   setNodes: (nodes: AppNode[]) => void;
   setEdges: (edges: AppEdge[]) => void;
   addNode: (node: AppNode) => void;
+  addConnectedNode: (sourceNodeId: string, direction: "top" | "bottom" | "left" | "right", service: string, label: string, nodeType: string, provider: string) => void;
   removeNode: (id: string) => void;
   updateNode: (id: string, data: any) => void;
   removeEdge: (id: string) => void;
@@ -973,6 +974,61 @@ export const useDiagramStore = create<DiagramState>()(
             };
             syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
             return { diagrams: newDiagrams };
+          });
+        },
+
+        addConnectedNode: (sourceNodeId, direction, service, label, nodeType, provider) => {
+          const { activeDiagramId, collaborationRoomId } = get();
+          if (!activeDiagramId) return;
+
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const srcNode = activeDiagram.nodes.find((n) => n.id === sourceNodeId);
+            if (!srcNode) return {};
+
+            const GAP = 180;
+            const NODE_SIZE = 80;
+            const srcX = srcNode.position.x;
+            const srcY = srcNode.position.y;
+            const srcW = (srcNode as any).width ?? NODE_SIZE;
+            const srcH = (srcNode as any).height ?? NODE_SIZE;
+
+            let nx = srcX;
+            let ny = srcY;
+            if (direction === "right")  { nx = srcX + srcW + GAP; ny = srcY + srcH / 2 - NODE_SIZE / 2; }
+            if (direction === "left")   { nx = srcX - GAP - NODE_SIZE; ny = srcY + srcH / 2 - NODE_SIZE / 2; }
+            if (direction === "bottom") { nx = srcX + srcW / 2 - NODE_SIZE / 2; ny = srcY + srcH + GAP; }
+            if (direction === "top")    { nx = srcX + srcW / 2 - NODE_SIZE / 2; ny = srcY - GAP - NODE_SIZE; }
+
+            const newNodeId = crypto.randomUUID();
+            const newEdgeId = crypto.randomUUID();
+
+            const newNode: AppNode = {
+              id: newNodeId,
+              type: nodeType,
+              position: { x: nx, y: ny },
+              data: { label, service, provider } as any,
+            };
+
+            const newEdge = {
+              id: newEdgeId,
+              source: sourceNodeId,
+              target: newNodeId,
+              type: "styled",
+              data: { _global: true },
+            };
+
+            const newDiagrams = {
+              ...state.diagrams,
+              [activeDiagramId]: {
+                ...activeDiagram,
+                nodes: [...activeDiagram.nodes, newNode],
+                edges: [...activeDiagram.edges, newEdge],
+                lastModified: Date.now(),
+              },
+            };
+            syncToYjs(activeDiagramId, collaborationRoomId, newDiagrams);
+            return { diagrams: newDiagrams, selectedNodeId: newNodeId, selectedEdgeId: null };
           });
         },
 

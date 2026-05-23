@@ -13,35 +13,18 @@ import {
     useStore,
 } from 'reactflow';
 
-// ReactFlow stores actual DOM handle positions under this Symbol on each node.
-const RF_INTERNALS = Symbol.for("internals");
-
 /**
- * Get the exact center coordinates of the handle at `pos` on `node`,
- * reading from ReactFlow's handleBounds for pixel-perfect accuracy.
- * Falls back to geometric midpoint if bounds aren't available yet.
+ * Geometric edge-endpoint: returns the midpoint of the icon's boundary at `pos`.
+ * Using geometry (not handleBounds) so the edge connects to the icon edge
+ * regardless of where the visual "+" handle DOM element is offset to.
  */
 function handleCoords(
-    node: any,
+    _node: any,
     pa: { x: number; y: number },
     pos: Position,
     w: number,
     h: number,
 ): { x: number; y: number } {
-    const bounds = node?.[RF_INTERNALS]?.handleBounds;
-    if (bounds) {
-        const all: Array<{ x: number; y: number; width: number; height: number; position: string; id?: string | null }> =
-            [...(bounds.source ?? []), ...(bounds.target ?? [])];
-        // Prefer the unnamed (center) handle at the desired side.
-        const handle = all.find(hb => hb.position === pos && !hb.id) ?? all.find(hb => hb.position === pos);
-        if (handle) {
-            return {
-                x: pa.x + handle.x + handle.width  / 2,
-                y: pa.y + handle.y + handle.height / 2,
-            };
-        }
-    }
-    // Geometric fallback
     const cx = pa.x + w / 2;
     const cy = pa.y + h / 2;
     switch (pos) {
