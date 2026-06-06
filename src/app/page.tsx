@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { WifiOff, Cloud, Laptop, Github, Loader2 } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Github, Loader2, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -270,8 +270,9 @@ function HomeContent() {
           {/* Minimal Top Header */}
           <div className="absolute top-4 left-4 md:left-20 right-4 z-50 flex items-center justify-between pointer-events-none">
             <div className="flex items-center space-x-4 pointer-events-auto">
-              <h1 className="text-xl font-bold tracking-tighter text-foreground/80 hidden md:block select-none">
-                Open Arch Flow
+              <h1 className="flex items-center gap-2 text-xl font-bold tracking-tighter text-foreground/80 hidden md:flex select-none">
+                <Layers className="h-5 w-5 text-orange-500" />
+                OpenArchFlow
               </h1>
             </div>
 
