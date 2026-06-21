@@ -392,7 +392,7 @@ export function UnifiedToolbar({
               <DropdownMenuItem onClick={() => setInfraDiscoveryOpen(true)} className={ddItem}>
                 <div className="flex items-center gap-2">
                   <CloudDownload className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm font-medium">Importar da AWS</span>
+                  <span className="text-sm font-medium">Import from AWS</span>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

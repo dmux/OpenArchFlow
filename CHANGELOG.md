@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.0] - 2026-06-20
+
+### Changed
+
+- Updated dependencies to their latest patch/minor releases within the current major versions, including the AWS SDK clients (`3.1073.0`), Radix UI primitives, Next.js (`16.2.9`), React and React DOM (`19.2.7`), Zod (`4.4.3`), Zustand, Yjs, Framer Motion, `tailwind-merge`, `@upstash/redis`, and the TypeScript ESLint toolchain.
+
+### Removed
+
+- `@types/jspdf` — the package is deprecated; `jspdf` v4 ships its own type definitions.
+
+---
+
+## [0.11.0] - 2026-06-20
+
+### Added
+
+- Keyboard shortcuts to zoom the canvas: `+` / `=` to zoom in, `-` to zoom out. The shortcuts are listed under **View** in the keyboard shortcuts dialog and are ignored while typing in inputs.
+
+---
+
 ## [0.9.0] - 2026-05-21
 
 ### Added
