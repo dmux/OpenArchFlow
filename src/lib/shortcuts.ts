@@ -19,6 +19,8 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: ["Esc"], description: "Deselect all", category: "Edit" },
   // View
   { keys: ["Ctrl", "L"], description: "Auto layout", category: "View" },
+  { keys: ["+"], description: "Zoom in", category: "View" },
+  { keys: ["-"], description: "Zoom out", category: "View" },
   // Help
   { keys: ["Ctrl", "?"], description: "Show shortcuts", category: "Help" },
 ];

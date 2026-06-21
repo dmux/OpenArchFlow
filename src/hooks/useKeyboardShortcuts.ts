@@ -125,6 +125,20 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Zoom in — '+' or '=' (the '+' glyph requires Shift on most layouts)
+      if (!mod && (e.key === "+" || e.key === "=")) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("diagram:zoomIn"));
+        return;
+      }
+
+      // Zoom out — '-' or '_'
+      if (!mod && (e.key === "-" || e.key === "_")) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("diagram:zoomOut"));
+        return;
+      }
+
       // Delete / Backspace — remove selected nodes and edges
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
