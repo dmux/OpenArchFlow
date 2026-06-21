@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.0] - 2026-06-20
+
+### Added
+
+- Keyboard shortcuts to zoom the canvas: `+` / `=` to zoom in, `-` to zoom out. The shortcuts are listed under **View** in the keyboard shortcuts dialog and are ignored while typing in inputs.
+
+---
+
 ## [0.9.0] - 2026-05-21
 
 ### Added

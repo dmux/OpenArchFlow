@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -9,6 +9,7 @@ import ReactFlow, {
   MarkerType,
   ConnectionLineType,
   ConnectionMode,
+  useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useDiagramStore } from "@/lib/store";
@@ -127,6 +128,22 @@ function FlowCanvas() {
   } = useDiagramStore(useShallow(selector));
 
   const [showMiniMap, setShowMiniMap] = useState(false);
+
+  const { zoomIn, zoomOut } = useReactFlow();
+
+  // Zoom via keyboard shortcuts (+/-). The key mapping lives in
+  // useKeyboardShortcuts (outside the ReactFlowProvider) and reaches us here
+  // through window CustomEvents.
+  useEffect(() => {
+    const handleZoomIn = () => zoomIn({ duration: 200 });
+    const handleZoomOut = () => zoomOut({ duration: 200 });
+    window.addEventListener("diagram:zoomIn", handleZoomIn);
+    window.addEventListener("diagram:zoomOut", handleZoomOut);
+    return () => {
+      window.removeEventListener("diagram:zoomIn", handleZoomIn);
+      window.removeEventListener("diagram:zoomOut", handleZoomOut);
+    };
+  }, [zoomIn, zoomOut]);
 
   const isLaserMode = interactionMode === "laser";
   const isPanMode = interactionMode === "pan";
