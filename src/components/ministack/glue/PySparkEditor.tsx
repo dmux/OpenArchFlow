@@ -10,6 +10,9 @@ loader.config({
 
 // Default AWS Glue PySpark boilerplate (GlueContext + Job bookmarks).
 export const DEFAULT_PYSPARK_SCRIPT = `import sys
+import uuid
+from pyspark.sql import functions as F
+from pyspark.sql.types import StringType
 from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
@@ -23,20 +26,17 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
-# Read a table from the Glue Data Catalog
-# source = glueContext.create_dynamic_frame.from_catalog(
-#     database="my_database",
-#     table_name="my_table",
-# )
+row_count = 1000
+base_df = spark.range(0, row_count).withColumn("value", F.rand())
 
-# Transform with Spark, then write back to S3 / the catalog
-# source.toDF().show()
-# glueContext.write_dynamic_frame.from_options(
-#     frame=source,
-#     connection_type="s3",
-#     connection_options={"path": "s3://my-bucket/output/"},
-#     format="parquet",
-# )
+uuid_udf = F.udf(lambda: str(uuid.uuid4()), StringType())
+random_df = base_df.withColumn("id", uuid_udf()).select("id", "value")
+
+random_df.show(10, truncate=False)
+
+random_df.write.mode("overwrite").parquet(
+    "s3://openarchflow-glue-scripts/tables/table/"
+)
 
 job.commit()
 `;
