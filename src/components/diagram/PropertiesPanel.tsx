@@ -694,7 +694,12 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
   const isDeployed = status === "deployed";
   const isError = status === "error";
   const service = (node.data.service ?? "").toLowerCase();
+  const isGlue = service === "glue";
   const resourceId = ms?.resourceId ?? "";
+
+  const openGlueStudio = React.useCallback(() => {
+    window.dispatchEvent(new CustomEvent("openarchflow:open-panel", { detail: "glue" }));
+  }, []);
 
   const handleQuickInvoke = React.useCallback(async () => {
     let body: unknown;
@@ -872,7 +877,13 @@ function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
                 {INVOKE_LABEL[service] ?? "Invoke"}
               </Button>
             )}
-            {isDeployed && (
+            {isGlue && (
+              <Button size="sm" variant="outline" onClick={openGlueStudio} className="h-7 text-xs gap-1">
+                <Settings size={12} className="shrink-0" />
+                Glue Studio
+              </Button>
+            )}
+            {isDeployed && !isGlue && (
               <Button size="sm" variant="outline" onClick={() => setConsoleOpen(true)} className="h-7 text-xs gap-1">
                 <Settings size={12} className="shrink-0" />
                 Console

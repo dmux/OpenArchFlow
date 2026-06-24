@@ -11,6 +11,7 @@ import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { SSMClient } from "@aws-sdk/client-ssm";
 import { KinesisClient } from "@aws-sdk/client-kinesis";
 import { KMSClient } from "@aws-sdk/client-kms";
+import { GlueClient } from "@aws-sdk/client-glue";
 import type { MiniStackConfig } from "./types";
 
 /**
@@ -77,3 +78,6 @@ export const getKinesisClient = (config: MiniStackConfig) =>
 
 export const getKMSClient = (config: MiniStackConfig) =>
   new KMSClient(baseConfig(config));
+
+export const getGlueClient = (config: MiniStackConfig) =>
+  new GlueClient(baseConfig(config));

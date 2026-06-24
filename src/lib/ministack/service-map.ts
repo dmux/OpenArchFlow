@@ -11,7 +11,8 @@ export type SdkService =
   | "secretsmanager"
   | "ssm"
   | "kms"
-  | "cloudwatchlogs";
+  | "cloudwatchlogs"
+  | "glue";
 
 export interface ServiceDeployDef {
   sdkService: SdkService;
@@ -119,7 +120,7 @@ export const SERVICE_DEPLOY_MAP: Record<string, ServiceDeployDef> = {
   "global-accelerator": unsupported(),
 
   // Analytics
-  glue: unsupported(),
+  glue: supported("glue", { requiresIAMRole: true, consoleLabel: "Glue Catalog" }),
   athena: unsupported(),
   emr: unsupported(),
   redshift: unsupported(),

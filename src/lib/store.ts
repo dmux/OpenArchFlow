@@ -153,6 +153,36 @@ export interface TerraformNodeConfig {
   customArgs?: Record<string, unknown>;
 }
 
+/** Locally-designed AWS Glue catalog + ETL jobs, persisted with the diagram. */
+export interface GlueColumnConfig {
+  name: string;
+  type: string;
+  comment?: string;
+}
+
+export interface GlueTableConfig {
+  name: string;
+  columns: GlueColumnConfig[];
+  partitionKeys?: GlueColumnConfig[];
+  location?: string;
+  classification?: "parquet" | "json" | "csv";
+}
+
+export interface GlueJobConfig {
+  name: string;
+  pysparkCode: string;
+  glueVersion: string;
+  workerType: string;
+  numberOfWorkers: number;
+  arguments?: Record<string, string>;
+}
+
+export interface GlueNodeConfig {
+  databaseName?: string;
+  tables?: GlueTableConfig[];
+  jobs?: GlueJobConfig[];
+}
+
 export interface AppNodeData extends Record<string, unknown> {
   label: string;
   service: string;
@@ -166,6 +196,7 @@ export interface AppNodeData extends Record<string, unknown> {
     terraform?: TerraformNodeConfig;
   };
   ministack?: MiniStackNodeState;
+  glueConfig?: GlueNodeConfig;
 }
 
 export type { MiniStackNodeState, MiniStackConfig };
@@ -342,6 +373,7 @@ interface DiagramState {
   ministackConfig: MiniStackConfig;
   setMinistackConfig: (config: Partial<MiniStackConfig>) => void;
   setNodeMinistackState: (nodeId: string, state: Partial<MiniStackNodeState>) => void;
+  setNodeGlueConfig: (nodeId: string, glueConfig: Partial<GlueNodeConfig>) => void;
   resetNodeMinistackState: (nodeId: string) => void;
   resetAllMinistackStates: () => void;
 
@@ -1596,6 +1628,34 @@ export const useDiagramStore = create<DiagramState>()(
                 return {
                   ...node,
                   data: { ...node.data, ministack: merged },
+                };
+              }
+              return node;
+            });
+            return {
+              diagrams: {
+                ...state.diagrams,
+                [activeDiagramId]: {
+                  ...activeDiagram,
+                  nodes: newNodes as AppNode[],
+                  lastModified: Date.now(),
+                },
+              },
+            };
+          });
+        },
+
+        setNodeGlueConfig: (nodeId, glueConfig) => {
+          const { activeDiagramId } = get();
+          if (!activeDiagramId) return;
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const newNodes = activeDiagram.nodes.map((node) => {
+              if (node.id === nodeId) {
+                const merged = { ...(node.data.glueConfig ?? {}), ...glueConfig } as GlueNodeConfig;
+                return {
+                  ...node,
+                  data: { ...node.data, glueConfig: merged },
                 };
               }
               return node;
