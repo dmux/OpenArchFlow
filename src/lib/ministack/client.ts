@@ -12,6 +12,7 @@ import { SSMClient } from "@aws-sdk/client-ssm";
 import { KinesisClient } from "@aws-sdk/client-kinesis";
 import { KMSClient } from "@aws-sdk/client-kms";
 import { GlueClient } from "@aws-sdk/client-glue";
+import { AthenaClient } from "@aws-sdk/client-athena";
 import type { MiniStackConfig } from "./types";
 
 /**
@@ -81,3 +82,6 @@ export const getKMSClient = (config: MiniStackConfig) =>
 
 export const getGlueClient = (config: MiniStackConfig) =>
   new GlueClient(baseConfig(config));
+
+export const getAthenaClient = (config: MiniStackConfig) =>
+  new AthenaClient(baseConfig(config));

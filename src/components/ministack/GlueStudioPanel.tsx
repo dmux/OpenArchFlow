@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Database, Table2, Cog, Activity, AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
+import { X, Database, Table2, Cog, Activity, AlertTriangle, Maximize2, Minimize2, Search } from "lucide-react";
 import { ArchitectureServiceAWSGlue } from "aws-react-icons";
 import { cn } from "@/lib/utils";
 import { useDiagramStore, type AppNode, type GlueJobConfig } from "@/lib/store";
@@ -13,10 +13,11 @@ import { CatalogTab } from "./glue/CatalogTab";
 import { TablesTab } from "./glue/TablesTab";
 import { JobsTab } from "./glue/JobsTab";
 import { RunsTab } from "./glue/RunsTab";
+import { AthenaQueryTab } from "./glue/AthenaQueryTab";
 
 const GLUE_ACCENT = "#8C4FFF";
 
-type StudioTab = "catalog" | "tables" | "jobs" | "runs";
+type StudioTab = "catalog" | "tables" | "jobs" | "runs" | "query";
 
 interface GlueStudioPanelProps {
   isOpen: boolean;
@@ -87,6 +88,7 @@ export default function GlueStudioPanel({ isOpen, onClose, nodes }: GlueStudioPa
     { id: "tables", label: "Tables", icon: <Table2 size={14} /> },
     { id: "jobs", label: "Jobs", icon: <Cog size={14} /> },
     { id: "runs", label: "Runs", icon: <Activity size={14} /> },
+    { id: "query", label: "Athena Query", icon: <Search size={14} /> },
   ];
 
   const panel = (
@@ -208,6 +210,9 @@ export default function GlueStudioPanel({ isOpen, onClose, nodes }: GlueStudioPa
                 )}
                 {activeTab === "runs" && (
                   <RunsTab config={ministackConfig} activeJob={activeJob} onSelectJob={setActiveJob} />
+                )}
+                {activeTab === "query" && (
+                  <AthenaQueryTab config={ministackConfig} databaseName={activeDatabase} />
                 )}
               </>
             )}
