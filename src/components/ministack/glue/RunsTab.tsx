@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Activity, RefreshCw, Loader2, Terminal, Copy } from "lucide-react";
+import { Activity, RefreshCw, Loader2, Terminal, Copy, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,16 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
   const [streaming, setStreaming] = useState(false);
   const [allGroups, setAllGroups] = useState<string[] | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>(""); // "" = all groups
+  const [autoscroll, setAutoscroll] = useState(true);
+
+  const logEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to bottom when logs update and autoscroll is enabled
+  useEffect(() => {
+    if (autoscroll && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, autoscroll]);
 
   // List every CloudWatch log group so the user can see/pick where MiniStack
   // writes Glue Spark logs (the naming is not guaranteed to be /aws-glue/*).
@@ -87,6 +97,7 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
   useEffect(() => {
     if (hasActiveRun) setStreaming(true);
   }, [hasActiveRun]);
+
   const pollRef = useRef<number | null>(null);
   useEffect(() => {
     if (!activeJob || !hasActiveRun) return;
@@ -120,6 +131,16 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
 
   const fmtTime = (sec?: number) => (sec === undefined ? "—" : `${sec}s`);
 
+  const handleClearAllRuns = () => {
+    setRuns([]);
+    toast.success("Cleared all runs from view");
+  };
+
+  const handleClearIndividualRun = (runId: string) => {
+    setRuns((prev) => prev.filter((r) => r.id !== runId));
+    toast.success("Execution cleared from view");
+  };
+
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex items-center gap-2 shrink-0">
@@ -132,7 +153,18 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
           {jobNames.length === 0 && <option value="">No jobs deployed</option>}
           {jobNames.map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
-        <Button size="sm" variant="ghost" onClick={loadRuns} disabled={loading} className="h-7 gap-1 text-xs">
+        {runs.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleClearAllRuns}
+            className="h-7 gap-1 text-xs text-muted-foreground hover:text-destructive shrink-0"
+            title="Clear all executions from view"
+          >
+            <Trash2 className="w-3 h-3" /> Clear All
+          </Button>
+        )}
+        <Button size="sm" variant="ghost" onClick={loadRuns} disabled={loading} className="h-7 gap-1 text-xs shrink-0">
           <RefreshCw className={cn("w-3 h-3", loading && "animate-spin")} /> Refresh
         </Button>
       </div>
@@ -142,13 +174,22 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
           <p className="text-[11px] text-muted-foreground text-center py-4">{loading ? "Loading…" : "No runs yet — start one from the Jobs tab."}</p>
         )}
         {runs.map((r) => (
-          <div key={r.id} className="rounded-lg border border-border p-2.5 space-y-1">
+          <div key={r.id} className="rounded-lg border border-border p-2.5 space-y-1 relative group/run">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-mono truncate">{r.id}</span>
-              <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 flex items-center gap-1", STATE_STYLES[r.state] ?? "border-border")}>
-                {!isTerminalRunState(r.state) && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
-                {r.state}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium flex items-center gap-1", STATE_STYLES[r.state] ?? "border-border")}>
+                  {!isTerminalRunState(r.state) && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+                  {r.state}
+                </span>
+                <button
+                  onClick={() => handleClearIndividualRun(r.id)}
+                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover/run:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
+                  title="Clear execution from view"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
               <span>Exec: {fmtTime(r.executionTimeSeconds)}</span>
@@ -186,6 +227,18 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
           </button>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => setAutoscroll((s) => !s)}
+            className={cn(
+              "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+              autoscroll
+                ? "bg-blue-500/15 text-blue-600 border-blue-500/30 font-medium"
+                : "border-border text-muted-foreground hover:text-foreground"
+            )}
+            title="Toggle autoscroll to bottom on new logs"
+          >
+            Auto-scroll
+          </button>
           <button
             disabled={logs.length === 0}
             onClick={() => {
@@ -229,6 +282,7 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
               <span className="break-all">{e.message}</span>
             </div>
           ))}
+          <div ref={logEndRef} />
         </div>
       </ScrollArea>
     </div>
