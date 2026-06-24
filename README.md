@@ -282,7 +282,7 @@ pnpm start
 
 ### 6. Deploy to Local AWS (MiniStack)
 
-1. Start MiniStack: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest ministackorg/ministack:full`
+1. Start MiniStack: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest -e S3_PERSIST=1 ministackorg/ministack:full`
 2. Click the **🚀 Rocket** icon in the toolbar
 3. Click **Test Connection** — you should see "Connected"
 4. Click **Deploy All** — nodes deploy in sequence with live status badges
@@ -298,6 +298,7 @@ To emulate AWS Glue ETL jobs, query them using Athena SQL, and inspect execution
    docker run -d -p 4566:4566 \
      -v /var/run/docker.sock:/var/run/docker.sock \
      -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest \
+     -e S3_PERSIST=1 \
      ministackorg/ministack:full
    ```
    > [!NOTE]

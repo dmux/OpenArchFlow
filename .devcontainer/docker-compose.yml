@@ -24,6 +24,7 @@ services:
     environment:
       GLUE_DOCKER_IMAGE: ministack_glue_libs_4.0.0_image_01
       MINISTACK_ENDPOINT: http://ministack:4566
+      S3_PERSIST: "1"
     restart: unless-stopped
 
 volumes:
