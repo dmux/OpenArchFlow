@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.2] - 2026-06-24
+
+### Added
+
+- Log forwarding module for MiniStack Glue/PySpark containers to stream output/error logs to local CloudWatch logs endpoint.
+- GitHub Actions workflow to build and publish the custom MiniStack Glue Docker image to GHCR.
+- Auto-discovery mechanism for the emulated MiniStack host inside the Docker bridge network.
+
 ## [0.12.1] - 2026-06-24
 
 ### Added

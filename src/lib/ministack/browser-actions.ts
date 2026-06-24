@@ -66,6 +66,7 @@ import { CreateKeyCommand, ScheduleKeyDeletionCommand } from "@aws-sdk/client-km
 // CloudWatch Logs
 import {
   DescribeLogGroupsCommand, DescribeLogStreamsCommand, FilterLogEventsCommand,
+  DeleteLogGroupCommand, DeleteLogStreamCommand, CreateLogGroupCommand,
 } from "@aws-sdk/client-cloudwatch-logs";
 
 // ── Browser-safe helpers ──────────────────────────────────────────────────────
@@ -828,4 +829,19 @@ export function cwlStreamEvents(
   poll().catch(() => {});
   const id = setInterval(() => poll().catch(() => {}), 2000);
   return () => clearInterval(id);
+}
+
+export async function cwlClearGroup(config: MiniStackConfig, logGroupName: string): Promise<void> {
+  const cwl = getCloudWatchLogsClient(config);
+  try {
+    await cwl.send(new DeleteLogGroupCommand({ logGroupName }));
+    await cwl.send(new CreateLogGroupCommand({ logGroupName }));
+  } catch (e) {
+    const res = await cwl.send(new DescribeLogStreamsCommand({ logGroupName, limit: 50 }));
+    for (const stream of res.logStreams ?? []) {
+      if (stream.logStreamName) {
+        await cwl.send(new DeleteLogStreamCommand({ logGroupName, logStreamName: stream.logStreamName }));
+      }
+    }
+  }
 }

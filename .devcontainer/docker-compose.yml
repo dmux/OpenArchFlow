@@ -16,9 +16,15 @@ services:
       - ministack
 
   ministack:
-    image: ministackorg/ministack
+    image: ministackorg/ministack:full
     ports:
       - "4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      GLUE_DOCKER_IMAGE: ministack_glue_libs_4.0.0_image_01
+      MINISTACK_ENDPOINT: http://ministack:4566
+      S3_PERSIST: "1"
     restart: unless-stopped
 
 volumes:

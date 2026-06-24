@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Cog, Plus, RefreshCw, Loader2, Trash2, Rocket, Play, ChevronLeft } from "lucide-react";
+import { Cog, Plus, RefreshCw, Loader2, Trash2, Rocket, Play, ChevronLeft, Copy, Check, Download, Monitor, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import type { AppNode, GlueJobConfig } from "@/lib/store";
 import {
   glueListJobs, glueUpsertJob, glueDeleteJob, glueUploadScript, glueStartJobRun, sanitizeGlueName,
 } from "@/lib/ministack/glue-actions";
-import PySparkEditor, { DEFAULT_PYSPARK_SCRIPT } from "./PySparkEditor";
+import PySparkEditor, { DEFAULT_PYSPARK_SCRIPT, type EditorThemeMode } from "./PySparkEditor";
 
 const GLUE_VERSIONS = ["4.0", "3.0"];
 const WORKER_TYPES = ["G.1X", "G.2X"];
@@ -34,6 +34,39 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
   const [editing, setEditing] = useState<GlueJobConfig | null>(null);
   const [deploying, setDeploying] = useState(false);
   const [running, setRunning] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [editorThemeMode, setEditorThemeMode] = useState<EditorThemeMode>("app");
+
+  const handleCopy = () => {
+    if (!editing) return;
+    navigator.clipboard.writeText(editing.pysparkCode);
+    setCopied(true);
+    toast.success("Script copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    if (!editing) return;
+    const blob = new Blob([editing.pysparkCode], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${editing.name || "etl_job"}.py`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Script downloaded!");
+  };
+
+  const updateArg = (key: string, val: string) => {
+    if (!editing) return;
+    const newArgs = { ...(editing.arguments ?? {}) };
+    if (val.trim() === "") {
+      delete newArgs[key];
+    } else {
+      newArgs[key] = val;
+    }
+    setEditing({ ...editing, arguments: newArgs });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,6 +109,7 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
         glueVersion: editing.glueVersion,
         workerType: editing.workerType,
         numberOfWorkers: editing.numberOfWorkers,
+        arguments: editing.arguments,
       });
       const saved = { ...editing, name };
       persist(saved);
@@ -163,11 +197,100 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
             onChange={(e) => setEditing({ ...editing, numberOfWorkers: Math.max(2, Number(e.target.value)) })}
             className="h-7 w-20 text-xs rounded border border-border bg-background px-2"
           />
-          <span className="text-[10px] text-muted-foreground">Spark runs on the amazon/aws-glue-libs image (Docker required). Iceberg: add <code className="font-mono">--datalake-formats iceberg</code>.</span>
+          <span className="text-[10px] text-muted-foreground">Docker required. Iceberg: add <code className="font-mono">--datalake-formats iceberg</code>.</span>
         </div>
 
-        <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border">
-          <PySparkEditor value={editing.pysparkCode} onChange={(v) => setEditing({ ...editing, pysparkCode: v })} />
+        <div className="grid grid-cols-3 gap-2 shrink-0">
+          <div className="space-y-1">
+            <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Python Modules</label>
+            <input
+              value={editing.arguments?.["--additional-python-modules"] ?? ""}
+              onChange={(e) => updateArg("--additional-python-modules", e.target.value)}
+              placeholder="pandas,requests"
+              className="h-7 w-full text-[11px] rounded border border-border bg-background px-2 font-mono"
+              title="Additional Python modules (pip install)"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Data Lake Formats</label>
+            <select
+              value={editing.arguments?.["--datalake-formats"] ?? ""}
+              onChange={(e) => updateArg("--datalake-formats", e.target.value)}
+              className="h-7 w-full text-xs rounded border border-border bg-background px-1"
+              title="Data Lake format option (iceberg, delta, hudi)"
+            >
+              <option value="">Hive (Default)</option>
+              <option value="iceberg">Iceberg</option>
+              <option value="delta">Delta Lake</option>
+              <option value="hudi">Hudi</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Extra Py Files</label>
+            <input
+              value={editing.arguments?.["--extra-py-files"] ?? ""}
+              onChange={(e) => updateArg("--extra-py-files", e.target.value)}
+              placeholder="s3://bucket/utils.py"
+              className="h-7 w-full text-[11px] rounded border border-border bg-background px-2 font-mono"
+              title="Paths to extra Python files (e.g. on S3)"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border flex flex-col">
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-muted flex-shrink-0">
+            <span className="text-[10px] font-mono font-medium text-muted-foreground">script.py</span>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center rounded border border-border overflow-hidden bg-background">
+                {(
+                  [
+                    { mode: "app" as EditorThemeMode, icon: <Monitor size={11} />, title: "Sync with app theme" },
+                    { mode: "python-light" as EditorThemeMode, icon: <Sun size={11} />, title: "Light theme" },
+                    { mode: "python-dark" as EditorThemeMode, icon: <Moon size={11} />, title: "Dark theme" },
+                  ] as const
+                ).map(({ mode, icon, title }) => (
+                  <button
+                    key={mode}
+                    title={title}
+                    onClick={() => setEditorThemeMode(mode)}
+                    className={cn(
+                      "h-5 w-5 flex items-center justify-center transition-colors",
+                      editorThemeMode === mode
+                        ? "text-white bg-purple-600"
+                        : "text-muted-foreground hover:text-foreground bg-transparent",
+                    )}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5 hover:bg-background"
+                title="Copy script"
+                onClick={handleCopy}
+              >
+                {copied ? <Check size={11} className="text-green-500" /> : <Copy size={11} />}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5 hover:bg-background"
+                title="Download script"
+                onClick={handleDownload}
+              >
+                <Download size={11} />
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 min-h-0">
+            <PySparkEditor
+              value={editing.pysparkCode}
+              onChange={(v) => setEditing({ ...editing, pysparkCode: v })}
+              themeMode={editorThemeMode}
+            />
+          </div>
         </div>
       </div>
     );
