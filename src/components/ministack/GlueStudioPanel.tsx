@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Database, Table2, Cog, Activity, AlertTriangle } from "lucide-react";
+import { X, Database, Table2, Cog, Activity, AlertTriangle, Maximize2, Minimize2, Search } from "lucide-react";
 import { ArchitectureServiceAWSGlue } from "aws-react-icons";
 import { cn } from "@/lib/utils";
 import { useDiagramStore, type AppNode, type GlueJobConfig } from "@/lib/store";
@@ -13,10 +13,11 @@ import { CatalogTab } from "./glue/CatalogTab";
 import { TablesTab } from "./glue/TablesTab";
 import { JobsTab } from "./glue/JobsTab";
 import { RunsTab } from "./glue/RunsTab";
+import { AthenaQueryTab } from "./glue/AthenaQueryTab";
 
 const GLUE_ACCENT = "#8C4FFF";
 
-type StudioTab = "catalog" | "tables" | "jobs" | "runs";
+type StudioTab = "catalog" | "tables" | "jobs" | "runs" | "query";
 
 interface GlueStudioPanelProps {
   isOpen: boolean;
@@ -35,8 +36,18 @@ export default function GlueStudioPanel({ isOpen, onClose, nodes }: GlueStudioPa
   const [activeDatabase, setActiveDatabase] = useState("");
   const [activeJob, setActiveJob] = useState("");
   const [reachable, setReachable] = useState<boolean | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Esc key exits fullscreen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isFullscreen]);
 
   // Probe the endpoint directly — connectivity is independent of the
   // `enabled` flag, which only flips after a MiniStack panel deploy.
@@ -77,21 +88,28 @@ export default function GlueStudioPanel({ isOpen, onClose, nodes }: GlueStudioPa
     { id: "tables", label: "Tables", icon: <Table2 size={14} /> },
     { id: "jobs", label: "Jobs", icon: <Cog size={14} /> },
     { id: "runs", label: "Runs", icon: <Activity size={14} /> },
+    { id: "query", label: "Athena Query", icon: <Search size={14} /> },
   ];
 
   const panel = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ x: "100%", opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: "100%", opacity: 0 }}
+          key={isFullscreen ? "fullscreen" : "panel"}
+          initial={isFullscreen ? { opacity: 0, scale: 0.97 } : { x: "100%", opacity: 0 }}
+          animate={isFullscreen ? { opacity: 1, scale: 1 } : { x: 0, opacity: 1 }}
+          exit={isFullscreen ? { opacity: 0, scale: 0.97 } : { x: "100%", opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed right-0 top-0 h-full z-[9999] flex flex-col shadow-2xl border-l border-border bg-background"
-          style={{ width: 560 }}
+          className={cn(
+            "fixed z-[9999] flex flex-col shadow-2xl border-border bg-background",
+            isFullscreen
+              ? "inset-0 border-0 rounded-none"
+              : "right-0 top-0 h-full border-l",
+          )}
+          style={{ width: isFullscreen ? "100%" : 560 }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-background">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${GLUE_ACCENT}22` }}>
                 <ArchitectureServiceAWSGlue className="w-5 h-5" />
@@ -108,9 +126,18 @@ export default function GlueStudioPanel({ isOpen, onClose, nodes }: GlueStudioPa
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent shrink-0">
-              <X size={14} />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                title={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
+                onClick={() => setIsFullscreen((v) => !v)}
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
+              <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-accent shrink-0">
+                <X size={14} />
+              </button>
+            </div>
           </div>
 
           {/* Node selector (when multiple Glue nodes) */}
@@ -183,6 +210,9 @@ export default function GlueStudioPanel({ isOpen, onClose, nodes }: GlueStudioPa
                 )}
                 {activeTab === "runs" && (
                   <RunsTab config={ministackConfig} activeJob={activeJob} onSelectJob={setActiveJob} />
+                )}
+                {activeTab === "query" && (
+                  <AthenaQueryTab config={ministackConfig} databaseName={activeDatabase} />
                 )}
               </>
             )}

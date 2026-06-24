@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.12.1-blue?style=flat-square" alt="Version 0.12.1" />
+  <img src="https://img.shields.io/badge/version-0.12.2-blue?style=flat-square" alt="Version 0.12.2" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%20%7C%20AWS%20Bedrock%20%7C%20WebLLM-orange?style=flat-square" alt="AI Providers" />
@@ -282,12 +282,34 @@ pnpm start
 
 ### 6. Deploy to Local AWS (MiniStack)
 
-1. Start MiniStack: `docker run -p 4566:4566 ministackorg/ministack`
+1. Start MiniStack: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest -e S3_PERSIST=1 ministackorg/ministack:full`
 2. Click the **🚀 Rocket** icon in the toolbar
 3. Click **Test Connection** — you should see "Connected"
 4. Click **Deploy All** — nodes deploy in sequence with live status badges
 5. Click any deployed node → **Open Console** to interact with the resource
 6. Run a simulation — deployed nodes receive real traffic from the simulation engine
+
+#### 📝 AWS Glue / PySpark Emulation & Live Logs
+
+To emulate AWS Glue ETL jobs, query them using Athena SQL, and inspect execution logs directly in the OpenArchFlow UI, configure MiniStack using the `:full` image along with our custom Spark logging container:
+
+1. **Start MiniStack with Docker Socket & Custom Image**:
+   ```bash
+   docker run -d -p 4566:4566 \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest \
+     -e S3_PERSIST=1 \
+     ministackorg/ministack:full
+   ```
+   > [!NOTE]
+   > The `:full` tag of MiniStack is **required** to use the **Athena Query** tab. The default image does not contain the native DuckDB engine required to query real S3 files and returns static mocked data.
+
+   *(Alternatively, use the provided `.devcontainer/docker-compose.yml` to spin up MiniStack automatically with these settings).*
+
+2. **Run PySpark Jobs**:
+   * Open the **Glue Studio** panel on a deployed Glue Catalog node.
+   * Start your job in the **Runs** tab.
+   * Enable **● Live** to stream JVM and Spark logs directly to the dashboard interface!
 
 ### 7. Export Diagram
 
