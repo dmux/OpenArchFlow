@@ -35,6 +35,7 @@ const SERVICE_ICON: Record<string, string> = {
   eventbridge: "⚡",
   apigateway: "🌐",
   "api-gateway": "🌐",
+  glue: "🧪",
 };
 
 const SERVICE_LABEL: Record<string, string> = {
@@ -47,6 +48,7 @@ const SERVICE_LABEL: Record<string, string> = {
   eventbridge: "EventBridge Bus",
   apigateway: "API Gateway",
   "api-gateway": "API Gateway",
+  glue: "Glue Catalog",
 };
 
 function ConsoleBody({

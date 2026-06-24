@@ -26,6 +26,7 @@ import KeyboardShortcutsDialog from "@/components/layout/KeyboardShortcutsDialog
 import TemplatesDialog from "@/components/diagram/TemplatesDialog";
 import TerraformPanel from "@/components/diagram/TerraformPanel";
 import MiniStackPanel from "@/components/ministack/MiniStackPanel";
+import GlueStudioPanel from "@/components/ministack/GlueStudioPanel";
 import { OnboardingTour } from "@/components/layout/OnboardingTour";
 
 // Service
@@ -91,6 +92,15 @@ function HomeContent() {
     const handler = () => setShortcutsOpen(true);
     window.addEventListener("openShortcutsDialog", handler);
     return () => window.removeEventListener("openShortcutsDialog", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const panel = (e as CustomEvent<string>).detail;
+      if (panel) setActivePanel(panel);
+    };
+    window.addEventListener("openarchflow:open-panel", handler);
+    return () => window.removeEventListener("openarchflow:open-panel", handler);
   }, []);
 
   // Initialize Local AI model if needed
@@ -406,6 +416,12 @@ function HomeContent() {
 
         <MiniStackPanel
           isOpen={activePanel === "ministack"}
+          onClose={() => setActivePanel(null)}
+          nodes={currentNodes}
+        />
+
+        <GlueStudioPanel
+          isOpen={activePanel === "glue"}
           onClose={() => setActivePanel(null)}
           nodes={currentNodes}
         />
