@@ -16,7 +16,7 @@ services:
       - ministack
 
   ministack:
-    image: ministackorg/ministack
+    image: ministackorg/ministack:full
     ports:
       - "4566:4566"
     volumes:

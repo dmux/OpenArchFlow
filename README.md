@@ -282,7 +282,7 @@ pnpm start
 
 ### 6. Deploy to Local AWS (MiniStack)
 
-1. Start MiniStack: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest ministackorg/ministack`
+1. Start MiniStack: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest ministackorg/ministack:full`
 2. Click the **🚀 Rocket** icon in the toolbar
 3. Click **Test Connection** — you should see "Connected"
 4. Click **Deploy All** — nodes deploy in sequence with live status badges
@@ -291,15 +291,18 @@ pnpm start
 
 #### 📝 AWS Glue / PySpark Emulation & Live Logs
 
-To emulate AWS Glue ETL jobs and inspect execution logs directly in the OpenArchFlow UI, configure MiniStack with the custom image which includes a built-in log forwarder:
+To emulate AWS Glue ETL jobs, query them using Athena SQL, and inspect execution logs directly in the OpenArchFlow UI, configure MiniStack using the `:full` image along with our custom Spark logging container:
 
 1. **Start MiniStack with Docker Socket & Custom Image**:
    ```bash
    docker run -d -p 4566:4566 \
      -v /var/run/docker.sock:/var/run/docker.sock \
      -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest \
-     ministackorg/ministack
+     ministackorg/ministack:full
    ```
+   > [!NOTE]
+   > The `:full` tag of MiniStack is **required** to use the **Athena Query** tab. The default image does not contain the native DuckDB engine required to query real S3 files and returns static mocked data.
+
    *(Alternatively, use the provided `.devcontainer/docker-compose.yml` to spin up MiniStack automatically with these settings).*
 
 2. **Run PySpark Jobs**:
