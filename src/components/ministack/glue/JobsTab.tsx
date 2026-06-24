@@ -57,6 +57,17 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
     toast.success("Script downloaded!");
   };
 
+  const updateArg = (key: string, val: string) => {
+    if (!editing) return;
+    const newArgs = { ...(editing.arguments ?? {}) };
+    if (val.trim() === "") {
+      delete newArgs[key];
+    } else {
+      newArgs[key] = val;
+    }
+    setEditing({ ...editing, arguments: newArgs });
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -98,6 +109,7 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
         glueVersion: editing.glueVersion,
         workerType: editing.workerType,
         numberOfWorkers: editing.numberOfWorkers,
+        arguments: editing.arguments,
       });
       const saved = { ...editing, name };
       persist(saved);
@@ -185,7 +197,40 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
             onChange={(e) => setEditing({ ...editing, numberOfWorkers: Math.max(2, Number(e.target.value)) })}
             className="h-7 w-20 text-xs rounded border border-border bg-background px-2"
           />
-          <span className="text-[10px] text-muted-foreground">Spark runs on the amazon/aws-glue-libs image (Docker required). Iceberg: add <code className="font-mono">--datalake-formats iceberg</code>.</span>
+          <span className="text-[10px] text-muted-foreground">Docker required. Iceberg: add <code className="font-mono">--datalake-formats iceberg</code>.</span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 shrink-0">
+          <div className="space-y-1">
+            <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Python Modules</label>
+            <input
+              value={editing.arguments?.["--additional-python-modules"] ?? ""}
+              onChange={(e) => updateArg("--additional-python-modules", e.target.value)}
+              placeholder="pandas,requests"
+              className="h-7 w-full text-[11px] rounded border border-border bg-background px-2 font-mono"
+              title="Additional Python modules (pip install)"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Data Lake Formats</label>
+            <input
+              value={editing.arguments?.["--datalake-formats"] ?? ""}
+              onChange={(e) => updateArg("--datalake-formats", e.target.value)}
+              placeholder="iceberg"
+              className="h-7 w-full text-[11px] rounded border border-border bg-background px-2 font-mono"
+              title="Data Lake format option (iceberg, delta, hudi)"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Extra Py Files</label>
+            <input
+              value={editing.arguments?.["--extra-py-files"] ?? ""}
+              onChange={(e) => updateArg("--extra-py-files", e.target.value)}
+              placeholder="s3://bucket/utils.py"
+              className="h-7 w-full text-[11px] rounded border border-border bg-background px-2 font-mono"
+              title="Paths to extra Python files (e.g. on S3)"
+            />
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border flex flex-col">
