@@ -213,13 +213,17 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
           </div>
           <div className="space-y-1">
             <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Data Lake Formats</label>
-            <input
+            <select
               value={editing.arguments?.["--datalake-formats"] ?? ""}
               onChange={(e) => updateArg("--datalake-formats", e.target.value)}
-              placeholder="iceberg"
-              className="h-7 w-full text-[11px] rounded border border-border bg-background px-2 font-mono"
+              className="h-7 w-full text-xs rounded border border-border bg-background px-1"
               title="Data Lake format option (iceberg, delta, hudi)"
-            />
+            >
+              <option value="">None</option>
+              <option value="iceberg">Iceberg</option>
+              <option value="delta">Delta Lake</option>
+              <option value="hudi">Hudi</option>
+            </select>
           </div>
           <div className="space-y-1">
             <label className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Extra Py Files</label>
