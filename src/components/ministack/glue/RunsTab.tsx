@@ -11,7 +11,7 @@ import {
   glueListJobs, glueListJobRuns, glueGetJobRun, isTerminalRunState,
   type GlueJobRunInfo, type GlueJobRunState,
 } from "@/lib/ministack/glue-actions";
-import { cwlStreamEvents, cwlListGroups, type CwlLogEvent } from "@/lib/ministack/browser-actions";
+import { cwlStreamEvents, cwlListGroups, cwlClearGroup, type CwlLogEvent } from "@/lib/ministack/browser-actions";
 
 const STATE_STYLES: Record<string, string> = {
   SUCCEEDED: "bg-green-500/15 text-green-600 border-green-500/30",
@@ -141,6 +141,18 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
     toast.success("Execution cleared from view");
   };
 
+  const handleClearCloudWatchLogs = async () => {
+    const target = selectedGroup || "/aws-glue/jobs/output";
+    try {
+      await cwlClearGroup(config, target);
+      setLogs([]);
+      toast.success(`Cleared CloudWatch Log Group: ${target}`);
+      await loadGroups();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to clear CloudWatch logs");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex items-center gap-2 shrink-0">
@@ -238,6 +250,14 @@ export function RunsTab({ config, activeJob, onSelectJob }: RunsTabProps) {
             title="Toggle autoscroll to bottom on new logs"
           >
             Auto-scroll
+          </button>
+          <button
+            disabled={!selectedGroup && (!allGroups || allGroups.length === 0)}
+            onClick={handleClearCloudWatchLogs}
+            className="text-[10px] px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:text-destructive disabled:opacity-40 flex items-center gap-1"
+            title="Clear logs inside CloudWatch Logs emulator"
+          >
+            <Trash2 className="w-2.5 h-2.5" /> Clear CW
           </button>
           <button
             disabled={logs.length === 0}
