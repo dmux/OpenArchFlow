@@ -219,7 +219,7 @@ export function JobsTab({ config, node, setNodeGlueConfig, onRunStarted }: JobsT
               className="h-7 w-full text-xs rounded border border-border bg-background px-1"
               title="Data Lake format option (iceberg, delta, hudi)"
             >
-              <option value="">None</option>
+              <option value="">Hive (Default)</option>
               <option value="iceberg">Iceberg</option>
               <option value="delta">Delta Lake</option>
               <option value="hudi">Hudi</option>
