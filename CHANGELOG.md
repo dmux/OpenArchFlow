@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.1] - 2026-06-24
+
+### Added
+
+- AWS Glue studio components and GlueStudioPanel interface.
+- PySpark editor and action logs for MiniStack AWS Glue services.
+
 ## [0.12.0] - 2026-06-20
 
 ### Changed

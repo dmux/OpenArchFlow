@@ -8,6 +8,7 @@ import {
   getSSMClient, getKMSClient, getCloudWatchLogsClient,
 } from "./client";
 import { getDeployDef, sanitizeResourceName } from "./service-map";
+import { deployGlue, teardownGlue } from "./glue-actions";
 import type { MiniStackConfig, MiniStackDeployResult, MiniStackNodeState } from "./types";
 
 // S3
@@ -359,6 +360,9 @@ async function deployOne(
         return { nodeId, status: "deployed", resourceId: apiId, resourceArn: `arn:aws:apigateway:${config.region}::/restapis/${apiId}`, endpoint: `${config.endpoint}/restapis/${apiId}` };
       }
 
+      case "glue":
+        return await deployGlue(node, config);
+
       default:
         return { nodeId, status: "not_supported" };
     }
@@ -465,6 +469,9 @@ async function teardownOne(node: TeardownNodeInput, config: MiniStackConfig): Pr
       case "api-gateway": {
         await getAPIGatewayClient(config).send(new DeleteRestApiCommand({ restApiId: resourceId }));
         break;
+      }
+      case "glue": {
+        return await teardownGlue(node, config);
       }
     }
     return { nodeId, resourceId, ok: true };
@@ -791,9 +798,10 @@ export function cwlStreamEvents(
   logGroupName: string,
   logStreamName: string | undefined,
   onBatch: (events: CwlLogEvent[]) => void,
+  lookbackMs = 2 * 60 * 1000,
 ): () => void {
   const cwl = getCloudWatchLogsClient(config);
-  let lastEventTime = Date.now() - 2 * 60 * 1000;
+  let lastEventTime = Date.now() - lookbackMs;
 
   const poll = async () => {
     let pageToken: string | undefined;

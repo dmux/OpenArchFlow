@@ -69,6 +69,7 @@ import { exportPdf } from "@/lib/export/pdf";
 import { exportSqlDdl } from "@/lib/export/sql-ddl";
 import { exportTerraform } from "@/lib/export/terraform";
 import { SiTerraform } from "react-icons/si";
+import { ArchitectureServiceAWSGlue } from "aws-react-icons";
 import { SimulationEngine } from "@/lib/simulation";
 import { useReactFlow } from "reactflow";
 import { getLayoutedElements } from "@/lib/layout-utils";
@@ -316,7 +317,7 @@ export function UnifiedToolbar({
   const ddLabel = "text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1";
 
   const panelActive = ["library", "chat", "layers", "templates"].includes(activePanel ?? "") || isSidebarOpen;
-  const deployActive = ["terraform", "ministack", "simulation"].includes(activePanel ?? "") || isPlaying;
+  const deployActive = ["terraform", "ministack", "glue", "simulation"].includes(activePanel ?? "") || isPlaying;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -536,6 +537,13 @@ export function UnifiedToolbar({
                   {ministackEnabled && <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
                 </div>
                 {activePanel === "ministack" && <Check className="h-3.5 w-3.5 text-primary" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActivePanel(activePanel === "glue" ? null : "glue")} className={cn(ddItem, "justify-between")}>
+                <div className="flex items-center gap-2">
+                  <ArchitectureServiceAWSGlue className="h-4 w-4" />
+                  <span className="text-sm font-medium">Glue Studio</span>
+                </div>
+                {activePanel === "glue" && <Check className="h-3.5 w-3.5 text-primary" />}
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-1" />
               <DropdownMenuLabel className={ddLabel}>Simulation</DropdownMenuLabel>
