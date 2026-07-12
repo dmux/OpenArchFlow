@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.3] - 2026-07-12
+
+### Added
+
+- Added Progressive Web App (PWA) support with desktop installation capabilities.
+
+### Fixed
+
+- Fixed build errors caused by missing icons in `react-icons/si` (Heroku, SendGrid, Slack, Twilio).
+
 ## [0.12.2] - 2026-06-24
 
 ### Added
