@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.12.2-blue?style=flat-square" alt="Version 0.12.2" />
+  <img src="https://img.shields.io/badge/version-0.12.3-blue?style=flat-square" alt="Version 0.12.3" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
   <img src="https://img.shields.io/badge/AI-Gemini%20%7C%20AWS%20Bedrock%20%7C%20WebLLM-orange?style=flat-square" alt="AI Providers" />

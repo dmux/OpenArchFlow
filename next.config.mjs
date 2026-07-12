@@ -1,4 +1,5 @@
 import { createRequire } from 'module';
+import withPWAInit from '@ducanh2912/next-pwa';
 
 const require = createRequire(import.meta.url);
 const pkg = require('./package.json');
@@ -17,4 +18,12 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+const withPWA = withPWAInit({
+    dest: 'public',
+    cacheOnFrontEndNav: true,
+    aggressiveFrontEndNavCaching: true,
+    reloadOnOnline: true,
+    disable: process.env.NODE_ENV === 'development',
+});
+
+export default withPWA(nextConfig);
