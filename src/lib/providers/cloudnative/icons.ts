@@ -5,7 +5,7 @@ import {
     SiVault, SiOpentelemetry, SiEnvoyproxy, SiNginx, SiConsul, SiKong, SiCloudflare,
     SiGithubactions, SiGitlab, SiJenkins, SiAnsible, SiPulumi,
     SiDatadog, SiSentry, SiNewrelic, SiDynatrace, SiSplunk, SiElastic, SiKibana, SiLogstash, SiJaeger, SiFluentd,
-    SiVercel, SiFlydotio, SiHeroku, SiNetlify,
+    SiVercel, SiFlydotio, SiNetlify,
     SiSupabase, SiPlanetscale, SiTurso, SiNeo4J, SiPostgresql
 } from 'react-icons/si';
 
@@ -48,7 +48,6 @@ export const getCloudNativeIcon = (service: string, type: string): IconComponent
         'fluentd': SiFluentd,
         'vercel': SiVercel,
         'flyio': SiFlydotio,
-        'heroku': SiHeroku,
         'netlify': SiNetlify,
         'neon': SiPostgresql,
         'supabase': SiSupabase,

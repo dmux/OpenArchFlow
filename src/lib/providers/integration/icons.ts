@@ -1,6 +1,6 @@
 import { IconComponent } from '../types';
 import { ShoppingCart, Webhook, Box } from 'lucide-react';
-import { SiStripe, SiPaypal, SiApplepay, SiGooglepay, SiShopify, SiSlack, SiDiscord, SiTwilio, SiSendgrid } from 'react-icons/si';
+import { SiStripe, SiPaypal, SiApplepay, SiGooglepay, SiShopify, SiDiscord } from 'react-icons/si';
 
 export const getIntegrationIcon = (service: string, type: string, subtype?: string): IconComponent => {
     const normalizedService = service?.toLowerCase().replace(/\s+/g, '') || '';
@@ -13,10 +13,7 @@ export const getIntegrationIcon = (service: string, type: string, subtype?: stri
         'shopify': SiShopify,
         'checkout': ShoppingCart,
         'webhook': Webhook,
-        'slack': SiSlack,
         'discord': SiDiscord,
-        'twilio': SiTwilio,
-        'sendgrid': SiSendgrid,
     };
 
     if (serviceMap[normalizedService]) {
