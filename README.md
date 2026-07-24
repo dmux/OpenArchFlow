@@ -90,13 +90,34 @@ Scan a live AWS account and turn its running resources into a diagram in seconds
 
 Deploy your architecture diagram to a local AWS emulator ([MiniStack](https://ministack.dev)) running on `localhost:4566` — turning OpenArchFlow into a full **design → deploy → operate** platform with no cloud costs and no AWS account required.
 
+#### Why a CORS proxy?
+
+When you access the **hosted app** at [app.openarchflow.cloud](https://app.openarchflow.cloud) from your browser and connect to MiniStack running on your local machine (`localhost:4566`), the browser enforces CORS (Cross-Origin Resource Sharing) policy. Your browser at `https://app.openarchflow.cloud` cannot directly fetch from `http://localhost:4566` without CORS headers. MiniStack doesn't provide global CORS configuration, so we use a lightweight nginx reverse-proxy to add these headers transparently.
+
+**You don't need the proxy if:**
+- You run OpenArchFlow locally too (`localhost:3000`) — same origin, no CORS issue
+- You're willing to disable CORS in your browser (insecure, not recommended)
+
 **Getting started:**
 
+**Option 1: OpenArchFlow running locally** (`localhost:3000`):
 ```bash
 docker run -p 4566:4566 ministackorg/ministack
 ```
+Then open `localhost:3000`, configure MiniStack endpoint as `http://localhost:4566`, and deploy.
 
-Then click the **Rocket** icon in the toolbar, configure the endpoint, and hit **Deploy All**.
+**Option 2: Using the hosted app** ([app.openarchflow.cloud](https://app.openarchflow.cloud)) with local MiniStack:
+```bash
+docker compose -f docker-compose.ministack.yml up -d
+```
+This starts MiniStack **and** a local nginx sidecar that adds CORS headers, listening on `http://localhost:4567`. Then:
+1. Open [app.openarchflow.cloud](https://app.openarchflow.cloud)
+2. Click the **Rocket** icon → **Configure MiniStack**
+3. Set **Endpoint URL** to `http://localhost:4567` (note: port `4567`, not `4566`)
+4. Click **Test Connection** → should see "Connected"
+5. Click **Deploy All**
+
+The nginx proxy (port 4567) forwards all requests to MiniStack (port 4566) and adds `Access-Control-Allow-Origin: *` headers, enabling browser access from any origin.
 
 **Supported AWS services:**
 
@@ -122,8 +143,26 @@ Then click the **Rocket** icon in the toolbar, configure the endpoint, and hit *
 - **Per-node console** — click any deployed node to open its interactive console (S3 browser, Lambda invoker, SQS message reader, etc.).
 - **Simulation hybrid mode** — when a node is deployed, simulation traffic is routed to the real MiniStack resource and uses wall-clock latency instead of synthetic values.
 - **Traffic Source node** — generate configurable req/s traffic from the diagram canvas; live response icon shows last result.
-- **Browser-direct** — all AWS SDK v3 calls go from your browser directly to `localhost:4566`. Works even when OpenArchFlow is hosted on Vercel.
+- **Browser-direct** — all AWS SDK v3 calls go from your browser directly to `localhost:4566`. Works even when OpenArchFlow is hosted on Vercel (with the CORS proxy for remote access).
 - **Teardown** — delete all deployed resources in one action.
+
+#### Troubleshooting: CORS errors when using the hosted app
+
+**Error:** `Access to fetch at 'http://localhost:4566/...' from origin 'https://app.openarchflow.cloud' has been blocked by CORS policy`
+
+**Solution:** Use the CORS proxy. MiniStack doesn't provide global CORS configuration, so the bundled nginx reverse-proxy adds the required headers transparently:
+
+```bash
+# Start MiniStack with the CORS proxy sidecar
+docker compose -f docker-compose.ministack.yml up -d
+
+# In the app, configure MiniStack endpoint as: http://localhost:4567
+# (note port 4567, not 4566)
+```
+
+The proxy (port 4567) forwards all requests to MiniStack (port 4566) and adds `Access-Control-Allow-Origin: *` headers. This only affects browser access; command-line tools (aws-cli, Terraform) can still talk directly to port 4566.
+
+**Why is this needed?** When you access the hosted app (`app.openarchflow.cloud`) from your browser, the browser enforces CORS policy. Your browser can reach `localhost:4566` on your machine, but only if the response includes appropriate CORS headers. The proxy adds these headers, enabling secure cross-origin access.
 
 ### 🏗️ Terraform IaC Generation (NEW)
 
@@ -282,9 +321,16 @@ pnpm start
 
 ### 6. Deploy to Local AWS (MiniStack)
 
-1. Start MiniStack: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest -e S3_PERSIST=1 ministackorg/ministack:full`
-2. Click the **🚀 Rocket** icon in the toolbar
-3. Click **Test Connection** — you should see "Connected"
+1. Start MiniStack (see **MiniStack Local Deploy** section above for setup options)
+   - Basic: `docker run -p 4566:4566 ministackorg/ministack`
+   - With Glue support: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest -e S3_PERSIST=1 ministackorg/ministack:full`
+   - With CORS proxy (hosted app): `docker compose -f docker-compose.ministack.yml up -d`
+2. In the app, click the **🚀 Rocket** icon in the toolbar
+3. In the MiniStack Connection dialog:
+   - Set **Endpoint URL** to:
+     - `http://localhost:4566` if running OpenArchFlow locally
+     - `http://localhost:4567` if using the hosted app (with the CORS proxy)
+   - Click **Test Connection** to verify
 4. Click **Deploy All** — nodes deploy in sequence with live status badges
 5. Click any deployed node → **Open Console** to interact with the resource
 6. Run a simulation — deployed nodes receive real traffic from the simulation engine

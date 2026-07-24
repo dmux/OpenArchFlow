@@ -64,7 +64,10 @@ export function MiniStackConfigDialog({ open, onClose }: MiniStackConfigDialogPr
           </DialogTitle>
           <DialogDescription>
             Configure the local AWS emulator endpoint. MiniStack must be running
-            at the specified address.
+            at the specified address. Seeing a CORS/network error on Test
+            Connection when using the hosted app? See the "MiniStack Local
+            Deploy" section in the README for the CORS proxy setup (use port
+            4567 instead of 4566).
           </DialogDescription>
         </DialogHeader>
 

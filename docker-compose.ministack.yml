@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  ministack:
+    image: ministackorg/ministack
+    ports:
+      - "4566:4566"
+    restart: unless-stopped
+
+  ministack-cors-proxy:
+    build:
+      context: ./docker/ministack-cors-proxy
+    ports:
+      - "4567:4566"
+    depends_on:
+      - ministack
+    restart: unless-stopped

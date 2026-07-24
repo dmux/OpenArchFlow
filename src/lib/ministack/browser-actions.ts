@@ -1,5 +1,6 @@
 // All AWS SDK v3 operations — browser-compatible (no Node.js Buffer/fs/stream APIs).
-// MiniStack supports CORS; import freely from any "use client" component.
+// When the app's origin differs from localhost (e.g., app.openarchflow.cloud),
+// use the bundled CORS proxy (docker-compose.ministack.yml) on port 4567.
 
 import {
   getS3Client, getSQSClient, getDynamoDBClient, getLambdaClient,

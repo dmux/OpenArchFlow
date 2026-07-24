@@ -237,7 +237,7 @@ OpenArchFlow can now deploy your AWS architecture diagrams to a local AWS emulat
 **Browser-Direct Architecture**
 
 - All AWS SDK v3 calls go directly from the browser to `localhost:4566` — no Next.js API route proxy required. This means the panel works even when the app is hosted on Vercel (the user's browser calls their local MiniStack directly).
-- MiniStack CORS support enables this without any extra configuration.
+- When the app's origin differs from `localhost` (e.g., `app.openarchflow.cloud`), use the bundled CORS reverse-proxy (`docker-compose.ministack.yml` on port 4567) to add the missing CORS headers that MiniStack itself does not provide.
 
 ### Technical
 
