@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   ministack:
-    image: ministackorg/ministack
+    image: ministackorg/ministack:full
     ports:
       - "4566:4566"
     restart: unless-stopped

@@ -3,7 +3,7 @@
 // (Spark / PySpark) with script storage in the local S3 emulator.
 // MiniStack supports CORS; import freely from any "use client" component.
 
-import { getGlueClient, getIAMClient, getS3Client } from "./client";
+import { getGlueClient, getIAMClient, getS3Client, getCloudWatchLogsClient } from "./client";
 import type { MiniStackConfig, MiniStackDeployResult } from "./types";
 import type { DeployNodeInput, TeardownNodeInput, TeardownResult } from "./browser-actions";
 
@@ -17,6 +17,7 @@ import {
 } from "@aws-sdk/client-glue";
 import { GetRoleCommand, CreateRoleCommand } from "@aws-sdk/client-iam";
 import { HeadBucketCommand, CreateBucketCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { CreateLogGroupCommand, DescribeLogGroupsCommand } from "@aws-sdk/client-cloudwatch-logs";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -399,11 +400,30 @@ export async function glueDeleteJob(config: MiniStackConfig, jobName: string): P
 
 // ── Spark execution ──────────────────────────────────────────────────────────
 
+// Ensure CloudWatch Logs groups exist (MiniStack requires pre-existing log groups)
+async function ensureGlueLogGroups(config: MiniStackConfig): Promise<void> {
+  const cwl = getCloudWatchLogsClient(config);
+  const logGroups = ["/aws-glue/jobs/error", "/aws-glue/jobs/output", "/aws-glue/jobs/audit"];
+
+  for (const groupName of logGroups) {
+    try {
+      await cwl.send(new DescribeLogGroupsCommand({ logGroupNamePrefix: groupName }));
+    } catch {
+      try {
+        await cwl.send(new CreateLogGroupCommand({ logGroupName: groupName }));
+      } catch { /* group may exist already */ }
+    }
+  }
+}
+
 export async function glueStartJobRun(
   config: MiniStackConfig,
   jobName: string,
   args?: Record<string, string>,
 ): Promise<string> {
+  // Ensure log groups exist before starting job (MiniStack requirement)
+  await ensureGlueLogGroups(config);
+
   // Real Glue auto-injects --JOB_NAME; MiniStack does not, so the script's
   // getResolvedOptions(["JOB_NAME"]) fails unless we pass it explicitly.
   const res = await getGlueClient(config).send(new StartJobRunCommand({

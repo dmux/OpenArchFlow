@@ -100,17 +100,39 @@ When you access the **hosted app** at [app.openarchflow.cloud](https://app.opena
 
 **Getting started:**
 
-**Option 1: OpenArchFlow running locally** (`localhost:3000`):
+**Option 1: OpenArchFlow running locally** (`localhost:3000`) — Basic MiniStack:
 ```bash
 docker run -p 4566:4566 ministackorg/ministack
 ```
 Then open `localhost:3000`, configure MiniStack endpoint as `http://localhost:4566`, and deploy.
 
-**Option 2: Using the hosted app** ([app.openarchflow.cloud](https://app.openarchflow.cloud)) with local MiniStack:
+**Option 2: OpenArchFlow running locally** (`localhost:3000`) — With Glue support and persistent S3:
+```bash
+docker run -d -p 4566:4566 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest \
+  -e S3_PERSIST=1 \
+  ministackorg/ministack:full
+```
+Or use Docker Compose:
+```bash
+docker compose -f docker-compose.ministack-aws-glue-full.yml up -d
+```
+The compose file automatically pulls the required Glue image before starting MiniStack.
+
+**Option 3: Using the hosted app** ([app.openarchflow.cloud](https://app.openarchflow.cloud)) with local MiniStack and CORS proxy:
+
+*Basic setup (recommended for simple testing):*
 ```bash
 docker compose -f docker-compose.ministack.yml up -d
 ```
-This starts MiniStack **and** a local nginx sidecar that adds CORS headers, listening on `http://localhost:4567`. Then:
+
+*With Glue support (for AWS Glue testing):*
+```bash
+docker compose -f docker-compose.ministack-aws-glue-full.yml up -d
+```
+
+Both options start MiniStack **and** a local nginx sidecar that adds CORS headers, listening on `http://localhost:4567`. Then:
 1. Open [app.openarchflow.cloud](https://app.openarchflow.cloud)
 2. Click the **Rocket** icon → **Configure MiniStack**
 3. Set **Endpoint URL** to `http://localhost:4567` (note: port `4567`, not `4566`)
@@ -163,6 +185,26 @@ docker compose -f docker-compose.ministack.yml up -d
 The proxy (port 4567) forwards all requests to MiniStack (port 4566) and adds `Access-Control-Allow-Origin: *` headers. This only affects browser access; command-line tools (aws-cli, Terraform) can still talk directly to port 4566.
 
 **Why is this needed?** When you access the hosted app (`app.openarchflow.cloud`) from your browser, the browser enforces CORS policy. Your browser can reach `localhost:4566` on your machine, but only if the response includes appropriate CORS headers. The proxy adds these headers, enabling secure cross-origin access.
+
+#### Troubleshooting: AWS Glue image not loading
+
+**Error:** `[glue] Glue: image ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest not available — stubbing job`
+
+**Solution:** The docker-compose file automatically handles image pulling:
+
+```bash
+docker compose -f docker-compose.ministack-aws-glue-full.yml up -d
+```
+
+The compose configuration:
+- Has a `glue-image-puller` service that pulls the Glue image before MiniStack starts
+- Uses `pull_policy: always` to ensure the latest image is used
+- MiniStack waits for image pull to complete before starting
+
+If you still see the error, verify:
+1. Docker daemon is running
+2. You have internet access to ghcr.io (GitHub Container Registry)
+3. Try manually: `docker pull ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest`
 
 ### 🏗️ Terraform IaC Generation (NEW)
 
@@ -322,9 +364,10 @@ pnpm start
 ### 6. Deploy to Local AWS (MiniStack)
 
 1. Start MiniStack (see **MiniStack Local Deploy** section above for setup options)
-   - Basic: `docker run -p 4566:4566 ministackorg/ministack`
-   - With Glue support: `docker run -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock -e GLUE_DOCKER_IMAGE=ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest -e S3_PERSIST=1 ministackorg/ministack:full`
-   - With CORS proxy (hosted app): `docker compose -f docker-compose.ministack.yml up -d`
+   - **Basic** (no Glue): `docker run -p 4566:4566 ministackorg/ministack`
+   - **With Glue & persistent S3** (Docker Compose): `docker compose -f docker-compose.ministack-aws-glue-full.yml up -d`
+   - **With CORS proxy** (for hosted app): `docker compose -f docker-compose.ministack.yml up -d`
+   - **With Glue + CORS proxy** (hosted app + Glue): `docker compose -f docker-compose.ministack-aws-glue-full.yml up -d` then use `http://localhost:4567`
 2. In the app, click the **🚀 Rocket** icon in the toolbar
 3. In the MiniStack Connection dialog:
    - Set **Endpoint URL** to:

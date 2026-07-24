@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  glue-image-puller:
+    image: docker:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: pull ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest
+    restart: "no"
+
+  ministack:
+    image: ministackorg/ministack:full
+    pull_policy: always
+    ports:
+      - "4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      GLUE_DOCKER_IMAGE: ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest
+      S3_PERSIST: "1"
+    depends_on:
+      glue-image-puller:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  ministack-cors-proxy:
+    build:
+      context: ./docker/ministack-cors-proxy
+    ports:
+      - "4567:4566"
+    depends_on:
+      - ministack
+    restart: unless-stopped
