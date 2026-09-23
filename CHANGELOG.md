@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.13.0] - 2026-09-22
+
+### Changed
+
+- Updated dependencies to their latest patch/minor releases within the current major versions, including the AWS SDK clients (`3.1137.0`), Next.js and `eslint-config-next` (`16.3.5`), React and React DOM (`19.3.0`), Zod (`4.6.5`), `@modelcontextprotocol/sdk` (`1.30.0`), Radix UI primitives, `@upstash/ratelimit` (`2.1.0`), `@upstash/redis` (`1.39.0`), Zustand, Yjs, Framer Motion (`12.43.0`), `tailwind-merge` (`3.7.0`), and the TypeScript ESLint toolchain (`8.70.1`).
+
+### Deferred
+
+- Major upgrades pending dedicated migration: TypeScript 7, Tailwind CSS 4, ESLint 10, Framer Motion 13, `@vercel/analytics` 2, `dotenv` 18, `@types/node` 26, `lucide-react` 1.x, and `elkjs` 0.12.
+
 ## [0.12.3] - 2026-07-12
 
 ### Added
