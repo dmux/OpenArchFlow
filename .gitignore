@@ -43,3 +43,8 @@ next-env.d.ts
 *.njsproj
 *.sln
 *.sw?
+
+# PWA generated files (next-pwa)
+public/sw.js
+public/swe-worker-*.js
+public/workbox-*.js
