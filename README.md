@@ -1,4 +1,7 @@
-# OpenArchFlow 🏗️
+<p align="center">
+   <img src="docs/openarchflow.png" alt="OpenArchFlow Logo" width="220"/>
+</p>
+
 
 <p align="center">
   <img src="docs/openarchflow.gif" alt="OpenArchFlow Screenshot" width="800"/>
