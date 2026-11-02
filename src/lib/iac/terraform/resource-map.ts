@@ -513,9 +513,14 @@ const AWS_RESOURCE_MAP: Record<string, TerraformResourceDef> = {
   },
 };
 
+// Service names used by the canvas/templates that differ from the map keys.
+const SERVICE_ALIASES: Record<string, string> = {
+  cognito: "cognitouserpool",
+};
+
 export function getResourceDef(service: string): TerraformResourceDef | null {
   const key = service.toLowerCase().replace(/\s+/g, "");
-  return AWS_RESOURCE_MAP[key] ?? null;
+  return AWS_RESOURCE_MAP[SERVICE_ALIASES[key] ?? key] ?? null;
 }
 
 export function sanitizeResourceName(name: string): string {

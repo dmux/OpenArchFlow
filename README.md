@@ -486,7 +486,7 @@ We welcome contributions from the community! OpenArchFlow is built **by architec
 
 - ✅ **No data collection**: We don't collect any personal data, diagrams, or API keys
 - ✅ **Local storage only**: All your work stays on your device
-- ✅ **No tracking**: No analytics, no cookies, no telemetry
+- ✅ **Minimal tracking**: The hosted app uses anonymous page-view analytics (Vercel Web Analytics); diagrams, API keys and file contents are never sent. Self-hosted builds can remove `@vercel/analytics` from `src/app/layout.tsx`
 - ✅ **Open source**: The entire codebase is available for inspection
 - ✅ **Optional cloud AI**: Use Local AI for complete offline privacy
 
