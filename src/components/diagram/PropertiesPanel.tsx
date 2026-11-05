@@ -672,6 +672,29 @@ const INVOKE_LABEL: Record<string, string> = {
   apigateway: "Send request", "api-gateway": "Send request",
 };
 
+function DatabricksSection() {
+  return (
+    <div className="w-full space-y-2">
+      <span className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+        <Rocket size={14} />
+        Databricks (minilake)
+      </span>
+      <p className="text-xs text-muted-foreground">
+        Write and run PySpark jobs against a local minilake server.
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => window.dispatchEvent(new CustomEvent("openarchflow:open-panel", { detail: "databricks" }))}
+        className="h-7 text-xs gap-1"
+      >
+        <Settings size={12} className="shrink-0" />
+        Databricks Studio
+      </Button>
+    </div>
+  );
+}
+
 function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [consoleOpen, setConsoleOpen] = React.useState(false);
@@ -2233,9 +2256,12 @@ export default function PropertiesPanel() {
               )}
 
               {/* MiniStack Deploy — shown for all AWS nodes */}
-              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
-                <MiniStackSection nodeId={selectedNodeId} node={selectedNode} />
-              )}
+              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) &&
+                (selectedNode.data.service === "databricks" ? (
+                  <DatabricksSection />
+                ) : (
+                  <MiniStackSection nodeId={selectedNodeId} node={selectedNode} />
+                ))}
 
               {/* Custom Properties */}
               <CustomPropertiesEditor

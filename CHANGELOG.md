@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Databricks Studio: write and run PySpark jobs against a local minilake server (Jobs, Runs and Settings tabs), with a Databricks service in the Analytics category and a `databricks_job` Terraform mapping.
+- `docker-compose.minilake.yml` to start minilake with CORS enabled for local development.
+
 ## [0.13.0] - 2026-09-22
 
 ### Changed

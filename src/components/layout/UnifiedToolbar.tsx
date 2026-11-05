@@ -70,6 +70,7 @@ import { exportSqlDdl } from "@/lib/export/sql-ddl";
 import { exportTerraform } from "@/lib/export/terraform";
 import { SiTerraform } from "react-icons/si";
 import { ArchitectureServiceAWSGlue } from "aws-react-icons";
+import { AzDatabricks } from "azure-react-icons";
 import { SimulationEngine } from "@/lib/simulation";
 import { useReactFlow } from "reactflow";
 import { getLayoutedElements } from "@/lib/layout-utils";
@@ -317,7 +318,7 @@ export function UnifiedToolbar({
   const ddLabel = "text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1";
 
   const panelActive = ["library", "chat", "layers", "templates"].includes(activePanel ?? "") || isSidebarOpen;
-  const deployActive = ["terraform", "ministack", "glue", "simulation"].includes(activePanel ?? "") || isPlaying;
+  const deployActive = ["terraform", "ministack", "glue", "databricks", "simulation"].includes(activePanel ?? "") || isPlaying;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -544,6 +545,13 @@ export function UnifiedToolbar({
                   <span className="text-sm font-medium">Glue Studio</span>
                 </div>
                 {activePanel === "glue" && <Check className="h-3.5 w-3.5 text-primary" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActivePanel(activePanel === "databricks" ? null : "databricks")} className={cn(ddItem, "justify-between")}>
+                <div className="flex items-center gap-2">
+                  <AzDatabricks className="h-4 w-4" />
+                  <span className="text-sm font-medium">Databricks Studio</span>
+                </div>
+                {activePanel === "databricks" && <Check className="h-3.5 w-3.5 text-primary" />}
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-1" />
               <DropdownMenuLabel className={ddLabel}>Simulation</DropdownMenuLabel>

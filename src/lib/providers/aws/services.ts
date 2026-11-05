@@ -172,6 +172,7 @@ export const AWS_SERVICES: ServiceCategory[] = [
         items: [
             { name: "Kinesis", service: "kinesis", type: "aws-analytics", description: "Easily collect, process, and analyze video and data streams in real time." },
             { name: "Glue", service: "glue", type: "aws-analytics", description: "Scalable, serverless data integration service that makes it easy to discover, prepare, and combine data." },
+            { name: "Databricks", service: "databricks", type: "aws-analytics", description: "Unified analytics platform for data engineering, Spark and ML. Run jobs locally with minilake." },
             { name: "Athena", service: "athena", type: "aws-analytics", description: "Interactive query service that makes it easy to analyze data in Amazon S3 using standard SQL." },
             { name: "EMR", service: "emr", type: "aws-analytics", description: "Industry-leading cloud big data platform for processing vast amounts of data." },
             { name: "Redshift", service: "redshift", description: "Fast, fully managed, and cost-effective data warehouse." },

@@ -189,6 +189,23 @@ The proxy (port 4567) forwards all requests to MiniStack (port 4566) and adds `A
 
 **Why is this needed?** When you access the hosted app (`app.openarchflow.cloud`) from your browser, the browser enforces CORS policy. Your browser can reach `localhost:4566` on your machine, but only if the response includes appropriate CORS headers. The proxy adds these headers, enabling secure cross-origin access.
 
+### Databricks Studio (minilake)
+
+OpenArchFlow can write and run PySpark jobs against [minilake](https://github.com/dmux/minilake), a local emulator of the Databricks REST API.
+
+```bash
+docker compose -f docker-compose.minilake.yml up -d
+```
+
+1. Add a **Databricks** service (Analytics category) to your diagram.
+2. Open **Databricks Studio** from the toolbar or from the node's properties.
+3. Create a job, edit the PySpark script and click **Run**. The script is uploaded to the minilake workspace and submitted with `jobs/runs/submit`; status and logs appear in the **Runs** tab.
+
+Notes:
+- The browser calls minilake directly, so `MINILAKE_CORS_ORIGINS` must include the origin serving OpenArchFlow (the compose file defaults to `http://localhost:3000`). Requires a minilake version with CORS origin support.
+- Jobs run in sibling `apache/spark` containers, so the Docker socket is mounted.
+- minilake has no authentication; the token in **Settings** is not checked.
+
 #### Troubleshooting: AWS Glue image not loading
 
 **Error:** `[glue] Glue: image ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest not available — stubbing job`

@@ -155,6 +155,7 @@ import {
     // Developer Tools additions
     ArchitectureServiceAmazonCodeGuru,
 } from 'aws-react-icons';
+import { AzDatabricks } from 'azure-react-icons';
 
 export const getAwsIcon = (service: string, type: string): IconComponent => {
     const normalizedService = service?.toLowerCase().replace(/\s+/g, '') || '';
@@ -193,6 +194,7 @@ export const getAwsIcon = (service: string, type: string): IconComponent => {
         'elasticache': ArchitectureServiceAmazonElastiCache,
         'kinesis': ArchitectureServiceAmazonKinesis,
         'glue': ArchitectureServiceAWSGlue,
+        'databricks': AzDatabricks,
         'stepfunctions': ArchitectureServiceAWSStepFunctions,
         'eventbridge': ArchitectureServiceAmazonEventBridge,
         'athena': ArchitectureServiceAmazonAthena,
