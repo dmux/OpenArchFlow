@@ -31,6 +31,7 @@ import JsonEditor from "./JsonEditor";
 import PricingSection from "./PricingSection";
 import { SiTerraform } from "react-icons/si";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
+import { isTerraformNode } from "@/lib/iac/terraform/nodes";
 import { MiniConsoleDialog } from "@/components/ministack/MiniConsoleDialog";
 import { Rocket, CheckCircle, XCircle, Clock, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -2252,7 +2253,7 @@ export default function PropertiesPanel() {
               ) : null}
 
               {/* Infrastructure as Code Config — shown for all AWS nodes */}
-              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
+              {isTerraformNode(selectedNode) && (
                 <IaCConfigSection nodeId={selectedNodeId} node={selectedNode} />
               )}
 

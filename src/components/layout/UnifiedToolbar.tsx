@@ -70,7 +70,7 @@ import { exportSqlDdl } from "@/lib/export/sql-ddl";
 import { exportTerraform } from "@/lib/export/terraform";
 import { SiTerraform } from "react-icons/si";
 import { ArchitectureServiceAWSGlue } from "aws-react-icons";
-import { AzDatabricks } from "azure-react-icons";
+import { getDatabricksIcon } from "@/lib/providers/databricks/icons";
 import { SimulationEngine } from "@/lib/simulation";
 import { useReactFlow } from "reactflow";
 import { getLayoutedElements } from "@/lib/layout-utils";
@@ -548,7 +548,7 @@ export function UnifiedToolbar({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setActivePanel(activePanel === "databricks" ? null : "databricks")} className={cn(ddItem, "justify-between")}>
                 <div className="flex items-center gap-2">
-                  <AzDatabricks className="h-4 w-4" />
+                  {React.createElement(getDatabricksIcon("databricks", ""), { className: "h-4 w-4" })}
                   <span className="text-sm font-medium">Databricks Studio</span>
                 </div>
                 {activePanel === "databricks" && <Check className="h-3.5 w-3.5 text-primary" />}

@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { TerraformContextProvider } from "@/lib/mcp/terraform-client";
 import { TerraformGenerator } from "@/lib/iac/terraform";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
+import { isTerraformNode } from "@/lib/iac/terraform/nodes";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -19,9 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Collect unique resource types from the diagram
-    const awsNodes = nodes.filter((n: any) =>
-      (n.type ?? "").startsWith("aws-") || (n.data?.type ?? "").startsWith("aws-"),
-    );
+    const awsNodes = nodes.filter((n: any) => isTerraformNode(n));
 
     const resourceTypes = [...new Set(
       awsNodes

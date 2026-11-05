@@ -1,6 +1,7 @@
 import type { AppNode, AppEdge } from "@/lib/store";
 import type { IaCGenerator, IaCOutput } from "@/lib/iac/types";
 import { getResourceDef, sanitizeResourceName } from "./resource-map";
+import { isAwsNode, isDatabricksNode, isTerraformNode } from "./nodes";
 
 interface ResourceEntry {
   resourceType: string;
@@ -11,11 +12,6 @@ interface ResourceEntry {
   defaultArgs: Record<string, unknown>;
   outputs: string[];
   customArgs?: Record<string, unknown>;
-}
-
-function isAwsNode(node: AppNode): boolean {
-  const t = node.type ?? "";
-  return t.startsWith("aws-") || (node.data.type ?? "").startsWith("aws-");
 }
 
 function buildDependsOn(
@@ -30,18 +26,54 @@ function buildDependsOn(
     .map((r) => `${r.resourceType}.${r.resourceName}`);
 }
 
+const EXPRESSION_PREFIXES = ['"', "var.", "aws_", "databricks_", "local.", "data.", "{", "["];
+
+/** True when the value is already an HCL expression and must not be wrapped in quotes. */
+function isHclExpression(val: string): boolean {
+  return (
+    val === "true" ||
+    val === "false" ||
+    /^\d+$/.test(val) ||
+    // Function calls such as base64encode(...) or replace(...)
+    /^[a-z_0-9]+\(/.test(val) ||
+    EXPRESSION_PREFIXES.some((p) => val.startsWith(p))
+  );
+}
+
+/** Replace the `{{name}}` placeholder in default args with the resource's own name. */
+function fillNamePlaceholder(value: unknown, name: string): unknown {
+  if (typeof value === "string") return value.replaceAll("{{name}}", name);
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, fillNamePlaceholder(v, name)]),
+    );
+  }
+  return value;
+}
+
 function renderArgs(args: Record<string, unknown>, indent = 2): string {
   const pad = " ".repeat(indent);
   return Object.entries(args)
     .map(([k, v]) => {
+      // Plain objects render as nested blocks (e.g. databricks_job's `task { ... }`).
+      if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+        return `${pad}${k} {\n${renderArgs(v as Record<string, unknown>, indent + 2)}\n${pad}}`;
+      }
       const val = String(v);
-      // Already looks like HCL expression (no quotes wrapping needed)
-      if (val.startsWith('"') || val === "true" || val === "false" || /^\d+$/.test(val) || val.startsWith("var.") || val.startsWith("aws_") || val.startsWith("local.") || val.startsWith("data.") || val.startsWith("{") || val.startsWith("[")) {
+      // Already looks like an HCL expression (no quotes wrapping needed)
+      if (isHclExpression(val)) {
         return `${pad}${k} = ${val}`;
       }
       return `${pad}${k} = "${val}"`;
     })
     .join("\n");
+}
+
+/** Which providers the generated configuration needs, based on the mapped resources. */
+function detectProviders(resources: ResourceEntry[]): { aws: boolean; databricks: boolean } {
+  const databricks = resources.some((r) => r.resourceType.startsWith("databricks_"));
+  const aws = resources.some((r) => !r.resourceType.startsWith("databricks_")) || !databricks;
+  return { aws, databricks };
 }
 
 function generateMainTf(
@@ -51,25 +83,49 @@ function generateMainTf(
   providerVersion: string,
   region: string,
 ): string {
-  const blocks: string[] = [
-    `terraform {
-  required_version = ">= 1.6.0"
+  const uses = detectProviders(resources);
 
-  required_providers {
-    aws = {
+  const requiredProviders: string[] = [];
+  if (uses.aws) {
+    requiredProviders.push(`    aws = {
       source  = "hashicorp/aws"
       version = "~> ${providerVersion}"
-    }
+    }`);
   }
-}
+  if (uses.databricks) {
+    requiredProviders.push(`    databricks = {
+      source  = "databricks/databricks"
+      version = "~> 1.50"
+    }`);
+  }
 
-provider "aws" {
+  const providerBlocks: string[] = [];
+  if (uses.aws) {
+    providerBlocks.push(`provider "aws" {
   region = var.aws_region
 
   default_tags {
     tags = local.common_tags
   }
+}`);
+  }
+  if (uses.databricks) {
+    providerBlocks.push(`provider "databricks" {
+  host  = var.databricks_host
+  token = var.databricks_token
+}`);
+  }
+
+  const blocks: string[] = [
+    `terraform {
+  required_version = ">= 1.6.0"
+
+  required_providers {
+${requiredProviders.join("\n")}
+  }
 }
+
+${providerBlocks.join("\n\n")}
 
 locals {
   name_prefix  = "\${var.project}-\${var.environment}"
@@ -84,7 +140,10 @@ locals {
 
   for (const res of resources) {
     const dependsOn = buildDependsOn(res.nodeId, edges, resourceByNodeId);
-    const mergedArgs = { ...res.defaultArgs, ...res.customArgs };
+    const mergedArgs = fillNamePlaceholder(
+      { ...res.defaultArgs, ...res.customArgs },
+      res.resourceName,
+    ) as Record<string, unknown>;
     const argsHcl = renderArgs(mergedArgs);
     const dependsBlock =
       dependsOn.length > 0
@@ -99,7 +158,86 @@ locals {
   return blocks.join("\n\n");
 }
 
-function generateVariablesTf(region: string): string {
+const DATABRICKS_VARIABLES = `
+variable "databricks_host" {
+  description = "Databricks workspace URL, e.g. https://dbc-1234.cloud.databricks.com (or a local minilake URL)"
+  type        = string
+}
+
+variable "databricks_token" {
+  description = "Databricks personal access token"
+  type        = string
+  sensitive   = true
+}
+
+variable "databricks_spark_version" {
+  description = "Databricks Runtime version for clusters and jobs"
+  type        = string
+  default     = "15.4.x-scala2.12"
+}
+
+variable "databricks_node_type_id" {
+  description = "Node type for clusters and jobs"
+  type        = string
+  default     = "i3.xlarge"
+}
+
+variable "databricks_python_file" {
+  description = "Workspace path of the PySpark file run by jobs"
+  type        = string
+  default     = "/Workspace/Shared/main.py"
+}
+
+variable "databricks_pipeline_notebook_path" {
+  description = "Notebook path used by Delta Live Tables pipelines"
+  type        = string
+  default     = "/Shared/pipeline"
+}
+
+variable "databricks_catalog_name" {
+  description = "Unity Catalog catalog used by schemas, volumes and tables"
+  type        = string
+  default     = "main"
+}
+
+variable "databricks_schema_name" {
+  description = "Unity Catalog schema used by volumes and tables"
+  type        = string
+  default     = "default"
+}
+
+variable "databricks_warehouse_id" {
+  description = "SQL warehouse ID used to create tables"
+  type        = string
+  default     = ""
+}
+`;
+
+function generateVariablesTf(region: string, uses: { aws: boolean; databricks: boolean }): string {
+  const common = `variable "project" {
+  description = "Project name used as prefix for all resources"
+  type        = string
+  default     = "my-project"
+}
+
+variable "environment" {
+  description = "Deployment environment (dev, staging, prod)"
+  type        = string
+  default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod."
+  }
+}
+`;
+  if (!uses.aws) {
+    return common + DATABRICKS_VARIABLES;
+  }
+  return generateAwsVariablesTf(region) + (uses.databricks ? DATABRICKS_VARIABLES : "");
+}
+
+function generateAwsVariablesTf(region: string): string {
   return `variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
@@ -206,7 +344,7 @@ function generateOutputsTf(resources: ResourceEntry[]): string {
   }
 
   if (blocks.length === 0) {
-    return "# No outputs defined — add AWS nodes to the diagram to generate outputs\n";
+    return "# No outputs defined — add AWS or Databricks nodes to the diagram to generate outputs\n";
   }
 
   return blocks.join("\n\n") + "\n";
@@ -227,10 +365,10 @@ export class TerraformGenerator implements IaCGenerator {
 
   generate(nodes: AppNode[], edges: AppEdge[], diagramName: string): IaCOutput {
     const warnings: string[] = [];
-    const awsNodes = nodes.filter(isAwsNode);
+    const awsNodes = nodes.filter(isTerraformNode);
 
     if (awsNodes.length === 0) {
-      warnings.push("No AWS nodes found in diagram. Add AWS services to generate Terraform code.");
+      warnings.push("No AWS or Databricks nodes found in diagram. Add AWS or Databricks components to generate Terraform code.");
     }
 
     const resourceByNodeId = new Map<string, ResourceEntry>();
@@ -276,7 +414,7 @@ export class TerraformGenerator implements IaCGenerator {
     }
 
     const mainTf = generateMainTf(resources, edges, resourceByNodeId, this.providerVersion, this.region);
-    const variablesTf = generateVariablesTf(this.region);
+    const variablesTf = generateVariablesTf(this.region, detectProviders(resources));
     const outputsTf = generateOutputsTf(resources);
 
     return {

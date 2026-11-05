@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="48" height="48" viewBox="0 0 48 48" fill="none" role="img" aria-label="Apache Spark Declarative Pipelines">
+<title>Apache Spark Declarative Pipelines</title>
+<g transform="translate(2 2) scale(0.2933)"><g clip-path="url(#spark-declarative-pipelines-clip0_11165_511)">
+<path d="M68.37 74.1602C68.37 95.0502 85.3 111.98 106.19 111.98V126.76C77.14 126.76 53.6 103.21 53.6 74.1702" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M68.3701 74.1596C68.3701 53.2696 51.44 36.3396 30.55 36.3396V21.5596C59.6 21.5596 83.14 45.1096 83.14 74.1496" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M53.59 74.1602H44.22" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M92.49 74.1602H83.12" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M53.5899 74.1597C53.5899 61.4197 43.2899 51.0996 30.5499 51.0996V57.8496H18.8199V47.1396" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M30.5499 21.5599V15.6699H18.8199V25.2699" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M126.94 128.97H139.18V116.73H126.94V122.85H117.92V132.66H106.18V126.75" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M117.92 99.9805V121.87" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M83.14 74.1602C83.14 86.9002 93.44 97.2202 106.18 97.2202V91.3902H117.91V107.88H125.76L132.47 95.3002L139.18 107.88H130.56" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+<path d="M21.92 32.0102C20.61 30.2802 18.53 29.1602 16.19 29.1602C12.23 29.1602 9.01001 32.3702 9.01001 36.3402C9.01001 40.3102 12.22 43.5202 16.19 43.5202C20.16 43.5202 23.37 40.3102 23.37 36.3402H30.55" stroke="#FF5F46" stroke-width="3" stroke-miterlimit="3"/>
+</g>
+<defs>
+<clipPath id="spark-declarative-pipelines-clip0_11165_511">
+<rect width="150" height="150" fill="white"/>
+</clipPath>
+</defs></g>
+</svg>
