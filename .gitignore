@@ -47,4 +47,5 @@ next-env.d.ts
 # PWA generated files (next-pwa)
 public/sw.js
 public/swe-worker-*.js
+public/worker-*.js
 public/workbox-*.js
