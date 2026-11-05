@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useDiagramStore, type AppNode, type DatabricksJobConfig } from "@/lib/store";
 import {
   cancelRun, checkMinilakeHealth, getRun, getRunOutput, isTerminalRunState,
-  listRuns, parsePipLibraries, runStatusLabel, submitPythonRun,
+  DEFAULT_DATABRICKS_LIBRARIES, listRuns, parsePipLibraries, runStatusLabel, submitPythonRun,
 } from "@/lib/minilake/databricks-actions";
 import type { DatabricksRun, DatabricksRunOutput } from "@/lib/minilake/types";
 import { getDatabricksIcon } from "@/lib/providers/databricks/icons";
@@ -94,7 +94,7 @@ export default function DatabricksStudioPanel({ isOpen, onClose, nodes }: Databr
   const addJob = () => {
     let i = jobs.length + 1;
     while (jobs.some((j) => j.name === `job-${i}`)) i++;
-    const job = { name: `job-${i}`, pysparkCode: DEFAULT_DATABRICKS_SCRIPT };
+    const job = { name: `job-${i}`, pysparkCode: DEFAULT_DATABRICKS_SCRIPT, libraries: DEFAULT_DATABRICKS_LIBRARIES };
     saveJobs([...jobs, job]);
     setActiveJobName(job.name);
   };
@@ -115,7 +115,7 @@ export default function DatabricksStudioPanel({ isOpen, onClose, nodes }: Databr
     if (!activeJob) return;
     setRunning(true);
     try {
-      const runId = await submitPythonRun(config, activeJob.name, activeJob.pysparkCode, activeJob.parameters, parsePipLibraries(activeJob.libraries));
+      const runId = await submitPythonRun(config, activeJob.name, activeJob.pysparkCode, activeJob.parameters, parsePipLibraries(activeJob.libraries ?? DEFAULT_DATABRICKS_LIBRARIES));
       toast.success(`Run ${runId} submitted`);
       setSelectedRunId(runId);
       setActiveTab("runs");
@@ -304,7 +304,7 @@ function JobsTab({
           <label className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
             <span className="shrink-0">Python libraries</span>
             <input
-              value={activeJob.libraries ?? ""}
+              value={activeJob.libraries ?? DEFAULT_DATABRICKS_LIBRARIES}
               onChange={(e) => onUpdate({ libraries: e.target.value })}
               placeholder="databricks-sdk requests>=2.31"
               className="h-8 flex-1 text-xs rounded border border-border bg-background px-2 font-mono text-foreground"

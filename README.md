@@ -200,7 +200,7 @@ docker compose -f docker-compose.minilake.yml up -d
 1. Open the **Databricks** tab of the Component Library and add a **Job** or **Notebook** to your diagram (other components such as Cluster, Unity Catalog and Delta Table are available for architecture diagrams).
 2. Open **Databricks Studio** from the toolbar or from the node's properties.
 3. Create a job, edit the PySpark script and click **Run**. The script is uploaded to the minilake workspace and submitted with `jobs/runs/submit`; status and logs appear in the **Runs** tab.
-4. Need a package such as `databricks-sdk`? List it in **Python libraries** (space separated, any pip spec). It is installed in the job container before the script runs, and inside the job `WorkspaceClient()` reaches minilake with no arguments.
+4. Each job starts with `databricks-sdk` in **Python libraries**; add other packages there or clear the field. Entries are space separated pip specs, installed in the job container before the script runs, and inside the job `WorkspaceClient()` reaches minilake with no arguments.
 
 Databricks components also generate Terraform (`databricks/databricks` provider) from the Terraform panel. Components without a mapping (Workspace, Auto Loader, Model Serving) are skipped with a warning.
 

@@ -83,6 +83,9 @@ export async function uploadScript(
 }
 
 /** Upload the script, then submit a one-shot run. Returns the new run id. */
+/** Python libraries every job starts with, so scripts can call `WorkspaceClient()` out of the box. */
+export const DEFAULT_DATABRICKS_LIBRARIES = "databricks-sdk";
+
 /** Splits the "Python libraries" field into pip requirement specs. */
 export function parsePipLibraries(text: string | undefined): string[] {
   return (text ?? "").split(/\s+/).filter(Boolean);
