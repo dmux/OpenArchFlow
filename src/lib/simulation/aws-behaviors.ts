@@ -250,7 +250,7 @@ const PROFILES: Record<string, ServiceBehaviorProfile> = {
   },
 
   // ── Analytics ─────────────────────────────────────────────────────────────
-  databricks: {
+  "databricks-job": {
     routing: "unicast",
     latencyRange: [5000, 60000], // Spark job latency
     coldStart: true,

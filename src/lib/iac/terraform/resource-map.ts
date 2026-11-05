@@ -464,13 +464,6 @@ const AWS_RESOURCE_MAP: Record<string, TerraformResourceDef> = {
     },
     outputs: ["id", "arn"],
   },
-  databricks: {
-    resource: "databricks_job",
-    defaultArgs: {
-      name: "local.name_prefix",
-    },
-    outputs: ["id", "url"],
-  },
   athena: {
     resource: "aws_athena_workgroup",
     defaultArgs: {

@@ -197,7 +197,7 @@ OpenArchFlow can write and run PySpark jobs against [minilake](https://github.co
 docker compose -f docker-compose.minilake.yml up -d
 ```
 
-1. Add a **Databricks** service (Analytics category) to your diagram.
+1. Open the **Databricks** tab of the Component Library and add a **Job** or **Notebook** to your diagram (other components such as Cluster, Unity Catalog and Delta Table are available for architecture diagrams).
 2. Open **Databricks Studio** from the toolbar or from the node's properties.
 3. Create a job, edit the PySpark script and click **Run**. The script is uploaded to the minilake workspace and submitted with `jobs/runs/submit`; status and logs appear in the **Runs** tab.
 

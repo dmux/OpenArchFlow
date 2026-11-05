@@ -17,6 +17,7 @@ import {
   listRuns, runStatusLabel, submitPythonRun,
 } from "@/lib/minilake/databricks-actions";
 import type { DatabricksRun, DatabricksRunOutput } from "@/lib/minilake/types";
+import { DATABRICKS_RUNNABLE_SERVICES } from "@/lib/providers/databricks/services";
 import PySparkEditor from "@/components/ministack/glue/PySparkEditor";
 
 const ACCENT = "#FF3621";
@@ -72,7 +73,7 @@ export default function DatabricksStudioPanel({ isOpen, onClose, nodes }: Databr
     return () => { cancelled = true; };
   }, [isOpen, config]);
 
-  const dbNodes = useMemo(() => nodes.filter((n) => n.data.service === "databricks"), [nodes]);
+  const dbNodes = useMemo(() => nodes.filter((n) => (DATABRICKS_RUNNABLE_SERVICES as readonly string[]).includes(n.data.service)), [nodes]);
 
   const activeNode = useMemo<AppNode | null>(() => {
     if (activeNodeId) return dbNodes.find((n) => n.id === activeNodeId) ?? null;
@@ -221,8 +222,8 @@ export default function DatabricksStudioPanel({ isOpen, onClose, nodes }: Databr
             ) : dbNodes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
                 <AzDatabricks className="w-12 h-12 opacity-60" />
-                <p className="text-sm font-medium">No Databricks node on the canvas</p>
-                <p className="text-xs text-muted-foreground">Add a Databricks service from the Analytics category to write and run PySpark jobs here.</p>
+                <p className="text-sm font-medium">No Databricks Job or Notebook on the canvas</p>
+                <p className="text-xs text-muted-foreground">Add a Job or Notebook from the Databricks tab of the Component Library to write and run PySpark jobs here.</p>
               </div>
             ) : activeTab === "jobs" ? (
               <JobsTab

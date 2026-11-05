@@ -35,6 +35,7 @@ import { MiniConsoleDialog } from "@/components/ministack/MiniConsoleDialog";
 import { Rocket, CheckCircle, XCircle, Clock, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { prettyPayload } from "@/lib/format-payload";
+import { DATABRICKS_RUNNABLE_SERVICES } from "@/lib/providers/databricks/services";
 import {
   lambdaInvoke,
   sqsSendMessage,
@@ -2256,12 +2257,14 @@ export default function PropertiesPanel() {
               )}
 
               {/* MiniStack Deploy — shown for all AWS nodes */}
-              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) &&
-                (selectedNode.data.service === "databricks" ? (
-                  <DatabricksSection />
-                ) : (
-                  <MiniStackSection nodeId={selectedNodeId} node={selectedNode} />
-                ))}
+              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
+                <MiniStackSection nodeId={selectedNodeId} node={selectedNode} />
+              )}
+
+              {/* Databricks Studio — runnable Databricks components (jobs, notebooks) */}
+              {(DATABRICKS_RUNNABLE_SERVICES as readonly string[]).includes(selectedNode.data.service) && (
+                <DatabricksSection />
+              )}
 
               {/* Custom Properties */}
               <CustomPropertiesEditor
