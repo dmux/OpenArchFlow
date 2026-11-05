@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Databricks Studio: write and run PySpark jobs against a local minilake server (Jobs, Runs and Settings tabs), and a **Databricks** tab in the Component Library with workspace, compute, jobs, Unity Catalog and ML components.
+- Databricks Studio: a **Python libraries** field per job, sent as `libraries[].pypi` so scripts can use packages such as `databricks-sdk` (needs a minilake release with PyPI library support).
 - Terraform generation for Databricks components (`databricks/databricks` provider): cluster, SQL warehouse, job, notebook, Delta Live Tables pipeline, catalog, schema, volume, Delta table and MLflow experiment. The provider block, `databricks_host`/`databricks_token` variables and nested blocks (e.g. `task { ... }`) are emitted only when Databricks nodes are present; mixed AWS and Databricks diagrams get both providers.
 - Databricks icons in the Component Library, taken from the community [databricks-architecture-icons](https://github.com/oieduardorabelo/databricks-architecture-icons) set (MIT, unofficial). See `public/icons/databricks/README.md` for attribution and trademark notes.
 - `docker-compose.minilake.yml` to start minilake with CORS enabled for local development.

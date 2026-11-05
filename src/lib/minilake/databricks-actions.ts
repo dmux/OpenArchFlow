@@ -83,11 +83,17 @@ export async function uploadScript(
 }
 
 /** Upload the script, then submit a one-shot run. Returns the new run id. */
+/** Splits the "Python libraries" field into pip requirement specs. */
+export function parsePipLibraries(text: string | undefined): string[] {
+  return (text ?? "").split(/\s+/).filter(Boolean);
+}
+
 export async function submitPythonRun(
   config: MinilakeConfig,
   jobName: string,
   code: string,
   parameters: string[] = [],
+  pipLibraries: string[] = [],
 ): Promise<number> {
   const pythonFile = await uploadScript(config, jobName, code);
   const res = await request<{ run_id: number }>(config, "POST", "/api/2.2/jobs/runs/submit", {
@@ -96,6 +102,8 @@ export async function submitPythonRun(
       {
         task_key: "main",
         spark_python_task: { python_file: pythonFile, parameters },
+        // pip requirements installed in the job container before the script runs.
+        libraries: pipLibraries.map((pkg) => ({ pypi: { package: pkg } })),
       },
     ],
   });

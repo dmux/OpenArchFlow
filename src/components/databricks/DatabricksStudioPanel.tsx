@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useDiagramStore, type AppNode, type DatabricksJobConfig } from "@/lib/store";
 import {
   cancelRun, checkMinilakeHealth, getRun, getRunOutput, isTerminalRunState,
-  listRuns, runStatusLabel, submitPythonRun,
+  listRuns, parsePipLibraries, runStatusLabel, submitPythonRun,
 } from "@/lib/minilake/databricks-actions";
 import type { DatabricksRun, DatabricksRunOutput } from "@/lib/minilake/types";
 import { getDatabricksIcon } from "@/lib/providers/databricks/icons";
@@ -115,7 +115,7 @@ export default function DatabricksStudioPanel({ isOpen, onClose, nodes }: Databr
     if (!activeJob) return;
     setRunning(true);
     try {
-      const runId = await submitPythonRun(config, activeJob.name, activeJob.pysparkCode, activeJob.parameters);
+      const runId = await submitPythonRun(config, activeJob.name, activeJob.pysparkCode, activeJob.parameters, parsePipLibraries(activeJob.libraries));
       toast.success(`Run ${runId} submitted`);
       setSelectedRunId(runId);
       setActiveTab("runs");
@@ -301,6 +301,16 @@ function JobsTab({
               Run
             </Button>
           </div>
+          <label className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
+            <span className="shrink-0">Python libraries</span>
+            <input
+              value={activeJob.libraries ?? ""}
+              onChange={(e) => onUpdate({ libraries: e.target.value })}
+              placeholder="databricks-sdk requests>=2.31"
+              className="h-8 flex-1 text-xs rounded border border-border bg-background px-2 font-mono text-foreground"
+              aria-label="Python libraries (pip requirements, space separated)"
+            />
+          </label>
           <div className="flex-1 min-h-0 rounded border border-border overflow-hidden">
             <PySparkEditor value={activeJob.pysparkCode} onChange={(v) => onUpdate({ pysparkCode: v })} />
           </div>

@@ -188,6 +188,8 @@ export interface DatabricksJobConfig {
   name: string;
   pysparkCode: string;
   parameters?: string[];
+  /** pip requirements, whitespace separated (e.g. "databricks-sdk requests>=2.31"), installed before the script runs. */
+  libraries?: string;
 }
 
 export interface DatabricksNodeConfig {
