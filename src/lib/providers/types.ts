@@ -1,7 +1,7 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
-export type ProviderId = 'aws' | 'azure' | 'gcp' | 'cloudnative' | 'generic' | 'integration';
+export type ProviderId = 'aws' | 'azure' | 'gcp' | 'cloudnative' | 'generic' | 'integration' | 'databricks';
 
 export type IconComponent = React.ComponentType<any> | LucideIcon | React.ElementType;
 

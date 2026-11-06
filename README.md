@@ -189,6 +189,28 @@ The proxy (port 4567) forwards all requests to MiniStack (port 4566) and adds `A
 
 **Why is this needed?** When you access the hosted app (`app.openarchflow.cloud`) from your browser, the browser enforces CORS policy. Your browser can reach `localhost:4566` on your machine, but only if the response includes appropriate CORS headers. The proxy adds these headers, enabling secure cross-origin access.
 
+### Databricks Studio (minilake)
+
+OpenArchFlow can write and run PySpark jobs against [minilake](https://github.com/dmux/minilake), a local emulator of the Databricks REST API.
+
+```bash
+docker compose -f docker-compose.minilake.yml up -d
+```
+
+1. Open the **Databricks** tab of the Component Library and add a **Job** or **Notebook** to your diagram (other components such as Cluster, Unity Catalog and Delta Table are available for architecture diagrams).
+2. Open **Databricks Studio** from the toolbar or from the node's properties.
+3. Create a job, edit the PySpark script and click **Run**. The script is uploaded to the minilake workspace and submitted with `jobs/runs/submit`; status and logs appear in the **Runs** tab.
+4. Each job starts with `databricks-sdk` in **Python libraries**; add other packages there or clear the field. Entries are space separated pip specs, installed in the job container before the script runs, and inside the job `WorkspaceClient()` reaches minilake with no arguments.
+
+Databricks components also generate Terraform (`databricks/databricks` provider) from the Terraform panel. Components without a mapping (Workspace, Auto Loader, Model Serving) are skipped with a warning.
+
+Databricks icons come from the unofficial community set [databricks-architecture-icons](https://github.com/oieduardorabelo/databricks-architecture-icons) (MIT). Databricks and its logo are trademarks of Databricks, Inc.
+
+Notes:
+- The browser calls minilake directly, so `MINILAKE_CORS_ORIGINS` must include the origin serving OpenArchFlow (the compose file defaults to `http://localhost:3000`). Requires a minilake version with CORS origin support, and one with PyPI library support (minilake PR #96) for **Python libraries**.
+- Jobs run in sibling `apache/spark` containers, so the Docker socket is mounted.
+- minilake has no authentication; the token in **Settings** is not checked.
+
 #### Troubleshooting: AWS Glue image not loading
 
 **Error:** `[glue] Glue: image ghcr.io/dmux/openarchflow/ministack_glue_libs_4.0.0_image_01:latest not available — stubbing job`

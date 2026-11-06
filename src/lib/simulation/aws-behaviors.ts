@@ -250,6 +250,14 @@ const PROFILES: Record<string, ServiceBehaviorProfile> = {
   },
 
   // ── Analytics ─────────────────────────────────────────────────────────────
+  "databricks-job": {
+    routing: "unicast",
+    latencyRange: [5000, 60000], // Spark job latency
+    coldStart: true,
+    coldStartLatency: [10000, 40000],
+    cost: { unit: "hour", pricePerUnit: 0.55, unitsPerRequest: 1 },
+    category: "analytics",
+  },
   glue: {
     routing: "unicast",
     latencyRange: [5000, 60000], // ETL job latency
