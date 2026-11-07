@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { WifiOff, Cloud, Laptop, Check, RefreshCw, Loader2, Bot, Trash2 } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Check, RefreshCw, Loader2, Bot, Trash2, ArrowLeft } from "lucide-react";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
 import { BedrockAuthDialog } from "./BedrockAuthDialog";
@@ -48,6 +48,8 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
   const setOpenAIRememberKey = useDiagramStore((s) => s.setOpenAIRememberKey);
   const setOpenAIModel = useDiagramStore((s) => s.setOpenAIModel);
   const setOpenAICustomModel = useDiagramStore((s) => s.setOpenAICustomModel);
+  const [step, setStep] = useState<"select" | "configure">("select");
+  const [selectedProvider, setSelectedProvider] = useState(aiProvider);
 
   const [keyInput, setKeyInput] = useState(
     geminiApiKey && geminiApiKey !== "offline" ? geminiApiKey : "",
@@ -56,6 +58,13 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [openAIKeyInput, setOpenAIKeyInput] = useState("");
   const [isValidatingOpenAI, setIsValidatingOpenAI] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setStep("select");
+      setSelectedProvider(aiProvider);
+    }
+  }, [open, aiProvider]);
 
   const OPENAI_MODELS = [
     "gpt-6-astra",
@@ -170,38 +179,134 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
     onClose();
   };
 
+  const handleChooseProvider = (provider: typeof aiProvider) => {
+    if (provider === "offline") {
+      handleSelectOffline();
+      return;
+    }
+    setSelectedProvider(provider);
+    setStep("configure");
+  };
+
+  const providerName = {
+    offline: "Offline",
+    gemini: "Gemini Cloud",
+    openai: "OpenAI",
+    local: "Local (WebLLM)",
+    bedrock: "AWS Bedrock",
+  }[selectedProvider];
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>AI Provider</DialogTitle>
+          <div className="flex items-center gap-2">
+            {step === "configure" && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 -ml-2"
+                onClick={() => setStep("select")}
+                aria-label="Voltar à seleção de provider"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <DialogTitle>{step === "select" ? "AI Provider" : `Configurar ${providerName}`}</DialogTitle>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-3 py-2">
-          {/* Offline */}
-          <div
-            className={cn(
-              "flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all hover:border-foreground/40",
-              aiProvider === "offline" && "border-primary bg-primary/5",
-            )}
-            onClick={handleSelectOffline}
-          >
-            <WifiOff className="mt-0.5 h-5 w-5 text-muted-foreground shrink-0" />
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Offline</p>
-                {aiProvider === "offline" && (
-                  <Check className="h-4 w-4 text-primary" />
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                No AI features. Use the diagram editor manually.
-              </p>
-            </div>
-          </div>
+        <p className="text-xs text-muted-foreground">
+          {step === "select"
+            ? "Etapa 1 de 2 · Escolha um provider para continuar."
+            : `Etapa 2 de 2 · Configure ${providerName} para usar IA no projeto.`}
+        </p>
 
+        {step === "select" ? (
+          <div className="grid grid-cols-2 gap-2 py-2">
+            <button
+              type="button"
+              onClick={() => handleChooseProvider("offline")}
+              aria-pressed={aiProvider === "offline"}
+              className={cn(
+                "flex min-h-20 items-start gap-2 rounded-xl border p-3 text-left transition-colors hover:border-foreground/40",
+                aiProvider === "offline" && "border-primary bg-primary/5",
+              )}
+            >
+              <WifiOff className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 text-sm font-semibold">Offline {aiProvider === "offline" && <Check className="h-3.5 w-3.5 text-primary" />}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">Use sem recursos de IA</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChooseProvider("gemini")}
+              aria-pressed={aiProvider === "gemini"}
+              className={cn(
+                "flex min-h-20 items-start gap-2 rounded-xl border p-3 text-left transition-colors hover:border-sky-500/60",
+                aiProvider === "gemini" && "border-sky-500 bg-sky-500/5",
+              )}
+            >
+              <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 text-sm font-semibold">Gemini Cloud {aiProvider === "gemini" && <Check className="h-3.5 w-3.5 text-sky-500" />}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">Chave Google AI Studio</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChooseProvider("openai")}
+              aria-pressed={aiProvider === "openai"}
+              className={cn(
+                "flex min-h-20 items-start gap-2 rounded-xl border p-3 text-left transition-colors hover:border-emerald-500/60",
+                aiProvider === "openai" && "border-emerald-500 bg-emerald-500/5",
+              )}
+            >
+              <Bot className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 text-sm font-semibold">OpenAI {aiProvider === "openai" && openAIStatus === "connected" && <Check className="h-3.5 w-3.5 text-emerald-500" />}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">Sua chave, direto do navegador</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChooseProvider("local")}
+              aria-pressed={aiProvider === "local"}
+              className={cn(
+                "flex min-h-20 items-start gap-2 rounded-xl border p-3 text-left transition-colors hover:border-emerald-500/60",
+                aiProvider === "local" && "border-emerald-500 bg-emerald-500/5",
+              )}
+            >
+              <Laptop className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 text-sm font-semibold">Local (WebLLM) {aiProvider === "local" && <Check className="h-3.5 w-3.5 text-emerald-500" />}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">Executa neste navegador</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChooseProvider("bedrock")}
+              aria-pressed={aiProvider === "bedrock"}
+              className={cn(
+                "col-span-2 flex min-h-16 items-start gap-2 rounded-xl border p-3 text-left transition-colors hover:border-orange-500/60",
+                aiProvider === "bedrock" && "border-orange-500 bg-orange-500/5",
+              )}
+            >
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 text-sm font-semibold">AWS Bedrock {aiProvider === "bedrock" && <Check className="h-3.5 w-3.5 text-orange-500" />}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">Conecte com AWS SSO</span>
+              </span>
+            </button>
+          </div>
+        ) : (
+        <div className="grid gap-3 py-2">
           {/* Gemini Cloud */}
-          <div
+          {selectedProvider === "gemini" && <div
             className={cn(
               "flex items-start gap-3 rounded-xl border p-4 transition-all",
               aiProvider === "gemini" && "border-sky-500 bg-sky-500/5",
@@ -267,10 +372,10 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                 ))}
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* OpenAI BYOK */}
-          <div
+          {selectedProvider === "openai" && <div
             className={cn(
               "flex items-start gap-3 rounded-xl border p-4 transition-all",
               aiProvider === "openai" && openAIStatus === "connected"
@@ -395,10 +500,10 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                 )}
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Local WebLLM */}
-          <div
+          {selectedProvider === "local" && <div
             className={cn(
               "flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all hover:border-foreground/40",
               aiProvider === "local" && "border-emerald-500 bg-emerald-500/5",
@@ -415,13 +520,13 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Phi-3 mini runs entirely in your browser. No internet required.
-                Downloads ~2 GB on first use.
+                Downloads ~2 GB on first use. Clique para ativar.
               </p>
             </div>
-          </div>
+          </div>}
 
           {/* AWS Bedrock */}
-          <div
+          {selectedProvider === "bedrock" && <div
             className={cn(
               "flex items-start gap-3 rounded-xl border p-4 transition-all",
               aiProvider === "bedrock" && bedrockConfig
@@ -498,8 +603,9 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                 </p>
               )}
             </div>
-          </div>
+          </div>}
         </div>
+        )}
       </DialogContent>
 
       <BedrockAuthDialog

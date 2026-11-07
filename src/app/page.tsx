@@ -157,10 +157,11 @@ function HomeContent() {
             currentEdges,
           );
           try {
-            result = JSON.parse(rawJson);
-          } catch (e) {
+            const parsed: unknown = JSON.parse(rawJson);
+            result = sanitizeArchitecture(architectureSchema.parse(parsed));
+          } catch {
             throw new Error(
-              "Local AI generated invalid JSON. Please try again.",
+              "A IA local retornou um diagrama inválido. Tente novamente.",
             );
           }
         } else if (aiProvider === "openai") {
