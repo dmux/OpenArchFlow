@@ -3,6 +3,7 @@ import { TerraformContextProvider } from "@/lib/mcp/terraform-client";
 import { TerraformGenerator } from "@/lib/iac/terraform";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
 import { NextRequest, NextResponse } from "next/server";
+import { buildTerraformPrompts } from "@/lib/ai/prompts";
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,58 +45,15 @@ export async function POST(req: NextRequest) {
       console.warn("Terraform MCP context fetch failed, proceeding without:", mcpError);
     }
 
-    // Build a summary of the diagram for the prompt
-    const diagramSummary = awsNodes
-      .map((n: any) => `- ${n.data.label} (${n.data.service ?? n.type})`)
-      .join("\n");
-
-    const edgeSummary = edges
-      .map((e: any) => {
-        const src = nodes.find((n: any) => n.id === e.source);
-        const tgt = nodes.find((n: any) => n.id === e.target);
-        return `- ${src?.data?.label ?? e.source} → ${tgt?.data?.label ?? e.target}`;
-      })
-      .join("\n");
-
-    const systemPrompt = `You are a HashiCorp Terraform expert and AWS Solutions Architect.
-Your task is to generate production-quality Terraform HCL code for an AWS architecture diagram.
-
-Guidelines:
-- Follow Terraform best practices and the AWS Well-Architected Framework
-- Use meaningful resource names based on node labels
-- Add depends_on only where truly needed (inferred from diagram edges)
-- Include security best practices (encryption, least-privilege IAM, private subnets)
-- Generate three files: main.tf, variables.tf, outputs.tf
-- Use locals for common naming patterns
-- Prefer aws provider version ~> ${providerVersion}
-- Target region: ${region}
-- Add helpful inline comments for non-obvious configurations
-
-Return ONLY valid JSON with this exact structure:
-{
-  "files": [
-    { "name": "main.tf", "content": "..." },
-    { "name": "variables.tf", "content": "..." },
-    { "name": "outputs.tf", "content": "..." }
-  ],
-  "warnings": []
-}`;
-
-    const userPrompt = `Generate production-ready Terraform code for this AWS architecture: "${diagramName}"
-
-AWS Services in the diagram:
-${diagramSummary || "No AWS services found."}
-
-Connections (edges representing data flow / dependencies):
-${edgeSummary || "No connections defined."}
-
-Static HCL baseline (enhance and improve this):
-\`\`\`hcl
-${staticOutput.files.map((f) => `# ${f.name}\n${f.content}`).join("\n\n")}
-\`\`\`
-${terraformContext ? `\nTerraform Provider Documentation Context:\n${terraformContext}` : ""}
-
-Generate improved, production-ready HCL. Add security groups, IAM roles, and proper resource linking where applicable.`;
+    const { instructions: systemPrompt, input: userPrompt } = buildTerraformPrompts({
+      nodes,
+      edges,
+      diagramName,
+      region,
+      providerVersion,
+      staticFiles: staticOutput.files,
+      terraformContext,
+    });
 
     let responseText: string;
 

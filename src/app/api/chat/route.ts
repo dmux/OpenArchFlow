@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
+import { buildDiagramChatPrompt } from '@/lib/ai/prompts';
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,26 +10,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
         }
 
-        const hasExistingArchitecture = currentNodes && currentNodes.length > 0;
-        let serializedCurrent = "";
-
-        if (hasExistingArchitecture) {
-            serializedCurrent = JSON.stringify({ nodes: currentNodes, edges: currentEdges }, null, 2);
-        }
-
-        const systemPrompt = `You are an AI Architecture Assistant integrated into an AWS/Cloud diagramming tool (OpenArchFlow).
-Your goal is to help the user understand, improve, and discuss their current architecture diagram.
-
-${hasExistingArchitecture ?
-                (`CURRENT ARCHITECTURE JSON:
----
-${serializedCurrent}
----`) :
-                (`The user currently has an empty canvas.`)}
-
-Your responses should be formatted in Markdown, be concise yet informative, and directly address the user's prompt.
-When discussing specific components, refer to them by their label or service name as present in the diagram.
-Do NOT generate a JSON schema of the architecture unless explicitly asked to provide JSON. Provide textual analysis, explanations, pricing estimates, or security reviews as requested.`;
+        const systemPrompt = buildDiagramChatPrompt({ currentNodes, currentEdges });
 
         let text: string;
 

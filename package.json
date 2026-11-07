@@ -21,6 +21,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
+    "test": "node --test src/lib/ai/openai.test.ts",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0",
     "signaling": "node scripts/signaling.mjs"
   },
@@ -90,6 +91,7 @@
     "lucide-react": "^0.577.0",
     "next": "^16.4.3",
     "next-themes": "^0.4.6",
+    "openai": "7.52.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-icons": "^5.7.0",

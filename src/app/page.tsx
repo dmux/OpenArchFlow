@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { WifiOff, Cloud, Laptop, Github, Loader2, Layers } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Github, Loader2, Layers, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -34,6 +34,9 @@ import { WebLLMService } from "@/lib/ai/webllm";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useGoogleDriveSync } from "@/hooks/useGoogleDriveSync";
 import { useBedrockExpiry } from "@/hooks/useBedrockExpiry";
+import { OpenAIProviderError, parseOpenAIJson, requestOpenAIText } from "@/lib/ai/openai";
+import { architectureSchema, sanitizeArchitecture } from "@/lib/ai/schemas";
+import { buildArchitecturePrompt } from "@/lib/ai/prompts";
 
 // UI Components
 
@@ -64,6 +67,11 @@ function HomeContent() {
   const geminiModel = useDiagramStore((state) => state.geminiModel);
   const bedrockConfig = useDiagramStore((state) => state.bedrockConfig);
   const bedrockModel = useDiagramStore((state) => state.bedrockModel);
+  const openAIApiKey = useDiagramStore((state) => state.openAIApiKey);
+  const openAIStatus = useDiagramStore((state) => state.openAIStatus);
+  const openAIModel = useDiagramStore((state) => state.openAIModel);
+  const openAICustomModel = useDiagramStore((state) => state.openAICustomModel);
+  const setOpenAIStatus = useDiagramStore((state) => state.setOpenAIStatus);
   const generatedSpecification = useDiagramStore(
     (state) => state.generatedSpecification,
   );
@@ -155,6 +163,21 @@ function HomeContent() {
               "Local AI generated invalid JSON. Please try again.",
             );
           }
+        } else if (aiProvider === "openai") {
+          if (!openAIApiKey || openAIStatus !== "connected") {
+            setIsAIDialogOpen(true);
+            throw new Error("Configure sua chave da OpenAI para continuar.");
+          }
+          const responseText = await requestOpenAIText({
+            apiKey: openAIApiKey,
+            model: openAICustomModel.trim() || openAIModel,
+            instructions: buildArchitecturePrompt({ currentNodes, currentEdges }),
+            input: prompt,
+            jsonMode: true,
+          });
+          result = sanitizeArchitecture(
+            parseOpenAIJson(responseText, (value) => architectureSchema.parse(value)),
+          );
         } else if (aiProvider === "bedrock") {
           if (!bedrockConfig) {
             setIsAIDialogOpen(true);
@@ -228,14 +251,23 @@ function HomeContent() {
           setActivePanel(null); // Close AI panel on success
         }
       } catch (error) {
-        console.error("Generation error:", error);
-        const message =
-          error instanceof Error
+        if (aiProvider !== "openai") console.error("Generation error:", error);
+        const message = error instanceof OpenAIProviderError
+          ? error.message
+          : error instanceof Error
             ? error.message
             : "Failed to generate architecture";
+        if (
+          aiProvider === "openai" &&
+          error instanceof OpenAIProviderError &&
+          (error.code === "invalid_api_key" || error.code === "missing_model_read_permission")
+        ) {
+          setOpenAIStatus("error", error.code);
+          setIsAIDialogOpen(true);
+        }
         const isApiKeyError =
           /api key/i.test(message) || message.includes("API_KEY_INVALID");
-        if (isApiKeyError) {
+        if (isApiKeyError && aiProvider !== "openai") {
           setIsAIDialogOpen(true);
         } else {
           toast.error(message);
@@ -256,6 +288,11 @@ function HomeContent() {
       bedrockConfig,
       bedrockModel,
       geminiModel,
+      openAIApiKey,
+      openAIStatus,
+      openAIModel,
+      openAICustomModel,
+      setOpenAIStatus,
     ],
   );
 
@@ -272,6 +309,7 @@ function HomeContent() {
           isGenerating={isGenerating}
           setIsGenerating={setIsGenerating}
           useLocalAI={aiProvider === "local"}
+          onConfigureAI={() => setIsAIDialogOpen(true)}
           driveSync={driveSync}
         />
 
@@ -300,6 +338,8 @@ function HomeContent() {
                       "animate-pulse bg-emerald-500/20 shadow-[0_0_12px_4px_rgb(16_185_129_/_0.35)]",
                     aiProvider === "bedrock" &&
                       "animate-pulse bg-orange-500/20 shadow-[0_0_12px_4px_rgb(249_115_22_/_0.35)]",
+                    aiProvider === "openai" &&
+                      "animate-pulse bg-emerald-500/20 shadow-[0_0_12px_4px_rgb(16_185_129_/_0.35)]",
                   )}
                 />
                 <button
@@ -312,6 +352,8 @@ function HomeContent() {
                         ? "Gemini Cloud AI ativo — clique para alterar"
                         : aiProvider === "bedrock"
                           ? "AWS Bedrock ativo — clique para alterar"
+                          : aiProvider === "openai"
+                            ? "OpenAI ativo — clique para configurar"
                           : "Local AI (WebLLM) ativo — clique para alterar"
                   }
                   className={cn(
@@ -320,6 +362,7 @@ function HomeContent() {
                     aiProvider === "gemini" && "border-sky-500/60",
                     aiProvider === "local" && "border-emerald-500/60",
                     aiProvider === "bedrock" && "border-orange-500/60",
+                    aiProvider === "openai" && "border-emerald-500/60",
                   )}
                 >
                   {aiProvider === "offline" && (
@@ -336,6 +379,7 @@ function HomeContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
                     </svg>
                   )}
+                  {aiProvider === "openai" && <Bot className="w-4 h-4 text-emerald-600" />}
                 </button>
               </div>
 
@@ -373,9 +417,13 @@ function HomeContent() {
             isOpen={activePanel === "ai"}
             onSubmit={handlePromptSubmit}
             isLoading={isLoading}
-            disabled={isModelLoading}
+            disabled={isModelLoading || (aiProvider === "openai" && openAIStatus !== "connected")}
+            configureRequired={aiProvider === "openai" && openAIStatus !== "connected"}
+            onConfigure={() => setIsAIDialogOpen(true)}
             placeholder={
-              aiProvider === "local"
+              aiProvider === "openai"
+                ? "Describe your architecture (OpenAI)..."
+                : aiProvider === "local"
                 ? "Describe using Local AI..."
                 : "Describe architecture (Gemini)..."
             }
@@ -398,6 +446,7 @@ function HomeContent() {
           currentNodes={currentNodes}
           currentEdges={currentEdges}
           geminiApiKey={geminiApiKey}
+          onConfigureAI={() => setIsAIDialogOpen(true)}
         />
 
         <LayersPanel
@@ -412,6 +461,7 @@ function HomeContent() {
           edges={currentEdges}
           diagramName={activeDiagram?.name || "diagram"}
           geminiApiKey={geminiApiKey}
+          onConfigureAI={() => setIsAIDialogOpen(true)}
         />
 
         <MiniStackPanel

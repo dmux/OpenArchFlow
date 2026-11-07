@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Added OpenAI as a browser-direct BYOK provider for diagram generation and editing, diagram chat, architecture documentation, and Terraform enhancement. Keys are session-only by default, with an explicit local remember option and per-provider model selection.
+
 ## [0.13.0] - 2026-09-22
 
 ### Changed

@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { useDiagramStore } from '@/lib/store';
+import { OpenAIProviderError, requestOpenAIText } from '@/lib/ai/openai';
+import { buildDiagramChatPrompt } from '@/lib/ai/prompts';
 
 interface DiagramChatProps {
     isOpen: boolean;
@@ -23,6 +25,7 @@ interface DiagramChatProps {
     currentNodes: any[];
     currentEdges: any[];
     geminiApiKey: string | null;
+    onConfigureAI: () => void;
 }
 
 interface ChatMessage {
@@ -43,16 +46,23 @@ export default function DiagramChat({
     onClose,
     currentNodes,
     currentEdges,
-    geminiApiKey
+    geminiApiKey,
+    onConfigureAI,
 }: DiagramChatProps) {
     const geminiModel = useDiagramStore((s) => s.geminiModel);
     const aiProvider = useDiagramStore((s) => s.aiProvider);
     const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
     const bedrockModel = useDiagramStore((s) => s.bedrockModel);
+    const openAIApiKey = useDiagramStore((s) => s.openAIApiKey);
+    const openAIStatus = useDiagramStore((s) => s.openAIStatus);
+    const openAIModel = useDiagramStore((s) => s.openAIModel);
+    const openAICustomModel = useDiagramStore((s) => s.openAICustomModel);
+    const setOpenAIStatus = useDiagramStore((s) => s.setOpenAIStatus);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const openAIReady = Boolean(openAIApiKey && openAIStatus === "connected");
 
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -75,7 +85,10 @@ export default function DiagramChat({
                 toast.error("Bedrock credentials expired. Please re-authenticate.");
                 return;
             }
-        } else if (!geminiApiKey || geminiApiKey === 'offline') {
+        } else if (aiProvider === "openai" && !openAIReady) {
+            toast.error("Configure sua chave OpenAI para habilitar o chat.");
+            return;
+        } else if (aiProvider !== "openai" && (!geminiApiKey || geminiApiKey === 'offline')) {
             toast.error("Please set your Gemini API Key first.");
             return;
         }
@@ -90,6 +103,23 @@ export default function DiagramChat({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 content: msg.content
             }));
+
+            if (aiProvider === "openai" && openAIApiKey) {
+                const conversation = chatHistory
+                    .map((message) => `${message.role === "user" ? "User" : "Assistant"}: ${message.content}`)
+                    .join("\n\n");
+                const response = await requestOpenAIText({
+                    apiKey: openAIApiKey,
+                    model: openAICustomModel.trim() || openAIModel,
+                    instructions: buildDiagramChatPrompt({ currentNodes, currentEdges }),
+                    input: `${conversation ? `Conversation so far:\n${conversation}\n\n` : ""}User: ${promptText}`,
+                });
+                setMessages((prev) => [
+                    ...prev,
+                    { id: (Date.now() + 1).toString(), role: "assistant", content: response },
+                ]);
+                return;
+            }
 
             const body: Record<string, unknown> = {
                 prompt: promptText,
@@ -133,8 +163,13 @@ export default function DiagramChat({
             setMessages(prev => [...prev, aiMsg]);
 
         } catch (error) {
-            console.error('Chat error:', error);
-            toast.error(error instanceof Error ? error.message : 'Error communicating with AI');
+            if (aiProvider !== "openai") console.error('Chat error:', error);
+            const providerError = error instanceof OpenAIProviderError ? error : null;
+            if (providerError && (providerError.code === "invalid_api_key" || providerError.code === "missing_model_read_permission")) {
+                setOpenAIStatus("error", providerError.code);
+                onConfigureAI();
+            }
+            toast.error(providerError?.message ?? (error instanceof Error ? error.message : 'Error communicating with AI'));
         } finally {
             setIsLoading(false);
         }
@@ -166,6 +201,13 @@ export default function DiagramChat({
                     </div>
                 </SheetHeader>
 
+                {aiProvider === "openai" && !openAIReady && (
+                    <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+                        <p className="text-sm text-muted-foreground">Configure sua chave OpenAI para usar o chat.</p>
+                        <Button size="sm" onClick={onConfigureAI}>Configurar chave</Button>
+                    </div>
+                )}
+
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                     {messages.length === 0 ? (
                         <div className="flex flex-col h-full items-center justify-center text-center space-y-6 mt-10">
@@ -185,6 +227,7 @@ export default function DiagramChat({
                                         variant="outline"
                                         className="justify-start text-xs h-auto py-2.5 px-3 whitespace-normal text-left"
                                         onClick={() => handleSend(prompt.prompt)}
+                                        disabled={aiProvider === "openai" && !openAIReady}
                                     >
                                         <Sparkles className="w-3.5 h-3.5 mr-2 text-primary shrink-0" />
                                         {prompt.label}
@@ -250,13 +293,13 @@ export default function DiagramChat({
                             placeholder="Ask about your architecture..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            disabled={isLoading}
+                            disabled={isLoading || (aiProvider === "openai" && !openAIReady)}
                             className="bg-secondary/50 border-0 focus-visible:ring-1 min-h-[44px]"
                         />
                         <Button
                             type="submit"
                             size="icon"
-                            disabled={isLoading || !input.trim()}
+                            disabled={isLoading || !input.trim() || (aiProvider === "openai" && !openAIReady)}
                             className="h-11 w-11 shrink-0 rounded-xl"
                         >
                             <Send className="h-5 w-5" />

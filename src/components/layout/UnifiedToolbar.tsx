@@ -34,6 +34,7 @@ import {
   Compass,
   CloudDownload,
   Spline,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +83,8 @@ import { DiagramSettingsDialog } from "./DiagramSettingsDialog";
 import { CollaborateButton } from "./CollaborateButton";
 import { GoogleAccountButton } from "./GoogleAccountButton";
 import { type GoogleDriveSyncHook } from "@/hooks/useGoogleDriveSync";
+import { OpenAIProviderError, requestOpenAIText } from "@/lib/ai/openai";
+import { buildSpecificationPrompt, serializeDiagram } from "@/lib/ai/prompts";
 
 interface UnifiedToolbarProps {
   activePanel: string | null;
@@ -92,6 +95,7 @@ interface UnifiedToolbarProps {
   setIsGenerating: (value: boolean) => void;
   useLocalAI: boolean;
   driveSync: GoogleDriveSyncHook;
+  onConfigureAI: () => void;
 }
 
 export function UnifiedToolbar({
@@ -103,6 +107,7 @@ export function UnifiedToolbar({
   setIsGenerating,
   useLocalAI,
   driveSync,
+  onConfigureAI,
 }: UnifiedToolbarProps) {
   const { getNodes, fitView } = useReactFlow();
   const isPlaying = useDiagramStore((state) => state.isPlaying);
@@ -121,6 +126,11 @@ export function UnifiedToolbar({
   const geminiModel = useDiagramStore((state) => state.geminiModel);
   const bedrockConfig = useDiagramStore((state) => state.bedrockConfig);
   const bedrockModel = useDiagramStore((state) => state.bedrockModel);
+  const openAIApiKey = useDiagramStore((state) => state.openAIApiKey);
+  const openAIStatus = useDiagramStore((state) => state.openAIStatus);
+  const openAIModel = useDiagramStore((state) => state.openAIModel);
+  const openAICustomModel = useDiagramStore((state) => state.openAICustomModel);
+  const setOpenAIStatus = useDiagramStore((state) => state.setOpenAIStatus);
   const aiProvider = useDiagramStore((state) => state.aiProvider);
   const setGeneratedSpecification = useDiagramStore((state) => state.setGeneratedSpecification);
   const { setTheme, theme } = useTheme();
@@ -268,6 +278,17 @@ export function UnifiedToolbar({
         const service = WebLLMService.getInstance();
         if (!service.isReady()) throw new Error("Local model not ready yet.");
         specification = await service.generateSpecification(nodes, edges, activeDiagramName);
+      } else if (aiProvider === "openai") {
+        if (!openAIApiKey || openAIStatus !== "connected") {
+          onConfigureAI();
+          throw new Error("Configure sua chave OpenAI para gerar a documentação.");
+        }
+        specification = await requestOpenAIText({
+          apiKey: openAIApiKey,
+          model: openAICustomModel.trim() || openAIModel,
+          instructions: buildSpecificationPrompt(),
+          input: `\n\nDiagram to analyze:\n${serializeDiagram(nodes, edges, activeDiagramName)}`,
+        });
       } else if (aiProvider === "bedrock" && bedrockConfig) {
         if (Date.now() > bedrockConfig.credentials.expiration) throw new Error("Bedrock credentials expired. Please re-authenticate.");
         toast.info("Generating specification with AWS Bedrock...");
@@ -305,9 +326,17 @@ export function UnifiedToolbar({
       setGeneratedSpecification(specification);
       toast.success("Specification generated successfully!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to generate specification");
+      if (
+        aiProvider === "openai" &&
+        error instanceof OpenAIProviderError &&
+        (error.code === "invalid_api_key" || error.code === "missing_model_read_permission")
+      ) {
+        setOpenAIStatus("error", error.code);
+        onConfigureAI();
+      }
+      toast.error(error instanceof OpenAIProviderError ? error.message : error instanceof Error ? error.message : "Failed to generate specification");
     } finally { setIsGenerating(false); }
-  }, [nodes, edges, activeDiagramName, geminiApiKey, geminiModel, bedrockConfig, bedrockModel, aiProvider, setGeneratedSpecification, setIsGenerating, useLocalAI]);
+  }, [nodes, edges, activeDiagramName, geminiApiKey, geminiModel, bedrockConfig, bedrockModel, aiProvider, setGeneratedSpecification, setIsGenerating, useLocalAI, openAIApiKey, openAIStatus, openAIModel, openAICustomModel, setOpenAIStatus, onConfigureAI]);
 
   const btnCls = "h-9 w-9 md:h-7 md:w-7 rounded-lg transition-all duration-200";
   const icoSize = "h-4 w-4 md:h-3.5 md:w-3.5";
@@ -593,10 +622,17 @@ export function UnifiedToolbar({
                 <span className="text-sm font-medium">Terraform (.tf)</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-1" />
-              <DropdownMenuItem onClick={handleGenerateSpec} className={ddItem}>
-                <FileText className={cn("h-4 w-4 text-muted-foreground", isGenerating && "animate-spin")} />
-                <span className="text-sm font-medium">Generate Spec</span>
-              </DropdownMenuItem>
+              {aiProvider === "openai" && (!openAIApiKey || openAIStatus !== "connected") ? (
+                <DropdownMenuItem onClick={onConfigureAI} className={ddItem}>
+                  <Bot className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Configure OpenAI key</span>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleGenerateSpec} className={ddItem}>
+                  <FileText className={cn("h-4 w-4 text-muted-foreground", isGenerating && "animate-spin")} />
+                  <span className="text-sm font-medium">Generate Spec</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => setShowBOM(true)} className={ddItem}>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Cost Summary</span>

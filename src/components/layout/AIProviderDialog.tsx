@@ -10,11 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { WifiOff, Cloud, Laptop, Check, RefreshCw, Loader2 } from "lucide-react";
+import { WifiOff, Cloud, Laptop, Check, RefreshCw, Loader2, Bot, Trash2 } from "lucide-react";
 import { useDiagramStore } from "@/lib/store";
 import { toast } from "sonner";
 import { BedrockAuthDialog } from "./BedrockAuthDialog";
 import { refreshBedrockCredentials } from "@/hooks/useBedrockExpiry";
+import { OpenAIProviderError, validateOpenAIApiKey } from "@/lib/ai/openai";
 
 interface AIProviderDialogProps {
   open: boolean;
@@ -33,12 +34,79 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
   const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
   const setBedrockConfig = useDiagramStore((s) => s.setBedrockConfig);
   const bedrockModel = useDiagramStore((s) => s.bedrockModel);
+  const openAIApiKey = useDiagramStore((s) => s.openAIApiKey);
+  const openAISavedApiKey = useDiagramStore((s) => s.openAISavedApiKey);
+  const openAIRememberKey = useDiagramStore((s) => s.openAIRememberKey);
+  const openAIStatus = useDiagramStore((s) => s.openAIStatus);
+  const openAIErrorCode = useDiagramStore((s) => s.openAIErrorCode);
+  const openAIModel = useDiagramStore((s) => s.openAIModel);
+  const openAICustomModel = useDiagramStore((s) => s.openAICustomModel);
+  const connectOpenAI = useDiagramStore((s) => s.connectOpenAI);
+  const disconnectOpenAI = useDiagramStore((s) => s.disconnectOpenAI);
+  const deleteSavedOpenAIKey = useDiagramStore((s) => s.deleteSavedOpenAIKey);
+  const setOpenAIStatus = useDiagramStore((s) => s.setOpenAIStatus);
+  const setOpenAIRememberKey = useDiagramStore((s) => s.setOpenAIRememberKey);
+  const setOpenAIModel = useDiagramStore((s) => s.setOpenAIModel);
+  const setOpenAICustomModel = useDiagramStore((s) => s.setOpenAICustomModel);
 
   const [keyInput, setKeyInput] = useState(
     geminiApiKey && geminiApiKey !== "offline" ? geminiApiKey : "",
   );
   const [showBedrockAuth, setShowBedrockAuth] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [openAIKeyInput, setOpenAIKeyInput] = useState("");
+  const [isValidatingOpenAI, setIsValidatingOpenAI] = useState(false);
+
+  const OPENAI_MODELS = [
+    "gpt-6-astra",
+    "gpt-6.1-sol",
+    "gpt-6.1-terra",
+    "gpt-6-luna",
+    "gpt-6-cyber",
+    "gpt-5.6-sol",
+    "gpt-6-rosalind",
+    "gpt-rosalind-research",
+    "gpt-rosalind-discovery",
+    "gpt-6-astra-law",
+  ];
+
+  const handleConnectOpenAI = async () => {
+    const apiKey = openAIKeyInput.trim() || openAIApiKey || openAISavedApiKey;
+    if (!apiKey) {
+      toast.error("Informe uma chave de API da OpenAI.");
+      return;
+    }
+
+    setIsValidatingOpenAI(true);
+    setOpenAIStatus("validating");
+    try {
+      await validateOpenAIApiKey(apiKey);
+      connectOpenAI(apiKey, openAIRememberKey);
+      setOpenAIKeyInput("");
+      toast.success("OpenAI conectada.");
+      onClose();
+    } catch (error) {
+      const providerError =
+        error instanceof OpenAIProviderError
+          ? error
+          : new OpenAIProviderError("unknown");
+      setOpenAIStatus("error", providerError.code);
+      toast.error(providerError.message);
+    } finally {
+      setIsValidatingOpenAI(false);
+    }
+  };
+
+  const handleDisconnectOpenAI = () => {
+    disconnectOpenAI();
+    toast.success("OpenAI desconectada. A chave lembrada foi mantida neste dispositivo.");
+  };
+
+  const handleClearSavedOpenAIKey = () => {
+    deleteSavedOpenAIKey();
+    setOpenAIKeyInput("");
+    toast.success("Chave salva removida deste dispositivo.");
+  };
 
   const handleRefreshCredentials = async () => {
     setIsRefreshing(true);
@@ -104,7 +172,7 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent aria-describedby={undefined} className="sm:max-w-md">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>AI Provider</DialogTitle>
         </DialogHeader>
@@ -197,6 +265,134 @@ export function AIProviderDialog({ open, onClose }: AIProviderDialogProps) {
                     <p className="text-[10px] opacity-70">{m.description}</p>
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* OpenAI BYOK */}
+          <div
+            className={cn(
+              "flex items-start gap-3 rounded-xl border p-4 transition-all",
+              aiProvider === "openai" && openAIStatus === "connected"
+                ? "border-emerald-500 bg-emerald-500/5"
+                : "hover:border-foreground/40",
+            )}
+          >
+            <Bot className="mt-0.5 h-5 w-5 text-foreground shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">OpenAI</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "text-[10px] font-medium",
+                      openAIStatus === "connected" && aiProvider === "openai"
+                        ? "text-emerald-600"
+                        : openAIStatus === "error"
+                          ? "text-destructive"
+                          : "text-muted-foreground",
+                    )}
+                  >
+                    {openAIStatus === "validating"
+                      ? "Validando"
+                      : openAIStatus === "error"
+                        ? "Erro"
+                        : openAIStatus === "connected" && aiProvider === "openai"
+                          ? "Conectado"
+                          : "Não configurado"}
+                  </span>
+                  {aiProvider === "openai" && openAIStatus === "connected" && (
+                    <Check className="h-4 w-4 text-emerald-500" />
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use sua própria chave da OpenAI diretamente no navegador.
+              </p>
+
+              <div className="flex gap-2">
+                <Input
+                  value={openAIKeyInput}
+                  onChange={(event) => setOpenAIKeyInput(event.target.value)}
+                  placeholder={openAISavedApiKey ? "Chave salva; digite para substituir" : "Chave de API da OpenAI"}
+                  type="password"
+                  autoComplete="off"
+                  className="h-8 text-xs"
+                  onKeyDown={(event) => event.key === "Enter" && void handleConnectOpenAI()}
+                />
+                <Button
+                  size="sm"
+                  className="h-8 shrink-0"
+                  disabled={isValidatingOpenAI || (!openAIKeyInput.trim() && !openAIApiKey && !openAISavedApiKey)}
+                  onClick={() => void handleConnectOpenAI()}
+                >
+                  {isValidatingOpenAI ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Validar e conectar"}
+                </Button>
+              </div>
+
+              <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={openAIRememberKey}
+                  onChange={(event) => setOpenAIRememberKey(event.target.checked)}
+                  className="mt-0.5 accent-primary"
+                />
+                <span>Lembrar neste dispositivo</span>
+              </label>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                O armazenamento no navegador não equivale a um cofre seguro. Crie uma chave dedicada e configure limites de gasto na OpenAI.
+              </p>
+
+              {openAIErrorCode && openAIStatus === "error" && (
+                <p role="alert" className="text-xs text-destructive">
+                  {new OpenAIProviderError(openAIErrorCode).message}
+                </p>
+              )}
+
+              <div className="grid gap-1.5">
+                <label htmlFor="openai-model" className="text-xs font-medium">Modelo</label>
+                <select
+                  id="openai-model"
+                  value={openAIModel}
+                  onChange={(event) => setOpenAIModel(event.target.value)}
+                  className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                >
+                  {OPENAI_MODELS.map((model) => (
+                    <option key={model} value={model}>{model}{model === "gpt-6-luna" ? " (padrão)" : ""}</option>
+                  ))}
+                </select>
+                <Input
+                  value={openAICustomModel}
+                  onChange={(event) => setOpenAICustomModel(event.target.value)}
+                  placeholder="Modelo personalizado (opcional)"
+                  className="h-8 text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Disponibilidade dos modelos especializados pode variar por projeto.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {openAISavedApiKey && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-[11px] text-destructive/80"
+                    onClick={handleClearSavedOpenAIKey}
+                  >
+                    <Trash2 className="mr-1 h-3 w-3" /> Apagar chave salva
+                  </Button>
+                )}
+                {(aiProvider === "openai" || openAIApiKey) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={handleDisconnectOpenAI}
+                  >
+                    Desconectar
+                  </Button>
+                )}
               </div>
             </div>
           </div>
