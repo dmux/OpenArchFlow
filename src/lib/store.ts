@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { temporal } from "zundo";
 import type { MiniStackNodeState, MiniStackConfig } from "./ministack/types";
 import { DEFAULT_MINISTACK_CONFIG } from "./ministack/types";
+import type { OpenAIProviderErrorCode } from "./ai/openai";
 
 export interface BedrockCredentials {
   accessKeyId: string;
@@ -254,12 +255,29 @@ interface DiagramState {
   selectedEdgeId: string | null;
   geminiApiKey: string | null;
   isOfflineMode: boolean;
-  aiProvider: "offline" | "gemini" | "local" | "bedrock";
+  aiProvider: "offline" | "gemini" | "local" | "bedrock" | "openai";
   nodeDisplayMode: "card" | "icon";
   edgeSettings: EdgeSettings;
   setNodeDisplayMode: (mode: "card" | "icon") => void;
   setEdgeSettings: (settings: Partial<EdgeSettings>) => void;
-  setAiProvider: (provider: "offline" | "gemini" | "local" | "bedrock") => void;
+  setAiProvider: (provider: "offline" | "gemini" | "local" | "bedrock" | "openai") => void;
+  openAIApiKey: string | null;
+  openAISavedApiKey: string | null;
+  openAIRememberKey: boolean;
+  openAIStatus: "not_configured" | "validating" | "connected" | "error";
+  openAIErrorCode: OpenAIProviderErrorCode | null;
+  openAIModel: string;
+  openAICustomModel: string;
+  connectOpenAI: (apiKey: string, remember: boolean) => void;
+  disconnectOpenAI: () => void;
+  deleteSavedOpenAIKey: () => void;
+  setOpenAIRememberKey: (remember: boolean) => void;
+  setOpenAIStatus: (
+    status: "not_configured" | "validating" | "connected" | "error",
+    errorCode?: OpenAIProviderErrorCode | null,
+  ) => void;
+  setOpenAIModel: (model: string) => void;
+  setOpenAICustomModel: (model: string) => void;
   bedrockConfig: BedrockConfig | null;
   bedrockModel: string;
   setBedrockConfig: (config: BedrockConfig | null) => void;
@@ -413,6 +431,13 @@ export const useDiagramStore = create<DiagramState>()(
         geminiApiKey: null,
         isOfflineMode: false,
         aiProvider: "offline" as const,
+        openAIApiKey: null,
+        openAISavedApiKey: null,
+        openAIRememberKey: false,
+        openAIStatus: "not_configured" as const,
+        openAIErrorCode: null,
+        openAIModel: "gpt-6-luna",
+        openAICustomModel: "",
         nodeDisplayMode: "icon" as const,
         edgeSettings: DEFAULT_EDGE_SETTINGS,
         isPlaying: false,
@@ -816,7 +841,46 @@ export const useDiagramStore = create<DiagramState>()(
         setNodeDisplayMode: (mode) => set({ nodeDisplayMode: mode }),
         setEdgeSettings: (settings) =>
           set((s) => ({ edgeSettings: { ...s.edgeSettings, ...settings } })),
-        setAiProvider: (provider) => set({ aiProvider: provider }),
+        setAiProvider: (provider) =>
+          set((state) => ({
+            aiProvider: provider,
+            ...(state.aiProvider === "openai" && provider !== "openai"
+              ? {
+                  openAIApiKey: null,
+                  openAIStatus: "not_configured" as const,
+                  openAIErrorCode: null,
+                }
+              : {}),
+          })),
+        connectOpenAI: (apiKey, remember) =>
+          set({
+            aiProvider: "openai",
+            isOfflineMode: false,
+            openAIApiKey: apiKey,
+            openAISavedApiKey: remember ? apiKey : null,
+            openAIRememberKey: remember,
+            openAIStatus: "connected",
+            openAIErrorCode: null,
+          }),
+        disconnectOpenAI: () =>
+          set({
+            aiProvider: "offline",
+            isOfflineMode: true,
+            openAIApiKey: null,
+            openAIStatus: "not_configured",
+            openAIErrorCode: null,
+          }),
+        deleteSavedOpenAIKey: () =>
+          set({ openAISavedApiKey: null, openAIRememberKey: false }),
+        setOpenAIRememberKey: (remember) =>
+          set((state) => ({
+            openAIRememberKey: remember,
+            openAISavedApiKey: remember
+              ? state.openAIApiKey ?? state.openAISavedApiKey
+              : null,
+          })),
+        setOpenAIStatus: (status, errorCode = null) =>
+          set({ openAIStatus: status, openAIErrorCode: errorCode }),
         setGeneratedSpecification: (spec) =>
           set({ generatedSpecification: spec }),
 
@@ -1720,6 +1784,8 @@ export const useDiagramStore = create<DiagramState>()(
 
         setGoogleUser: (user) => set({ googleUser: user }),
         setGeminiModel: (model) => set({ geminiModel: model }),
+        setOpenAIModel: (model) => set({ openAIModel: model }),
+        setOpenAICustomModel: (model) => set({ openAICustomModel: model }),
         setBedrockConfig: (config) => set({ bedrockConfig: config }),
         setBedrockModel: (model) => set({ bedrockModel: model }),
         setDriveFileId: (id) => set({ driveFileId: id }),
@@ -1741,6 +1807,12 @@ export const useDiagramStore = create<DiagramState>()(
           geminiModel: state.geminiModel,
           bedrockConfig: state.bedrockConfig,
           bedrockModel: state.bedrockModel,
+          openAISavedApiKey: state.openAIRememberKey
+            ? state.openAISavedApiKey
+            : null,
+          openAIRememberKey: state.openAIRememberKey,
+          openAIModel: state.openAIModel,
+          openAICustomModel: state.openAICustomModel,
           googleUser: state.googleUser,
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
@@ -1752,6 +1824,16 @@ export const useDiagramStore = create<DiagramState>()(
           tourCompleted: state.tourCompleted,
         }),
         onRehydrateStorage: () => (state) => {
+          if (state) {
+            // OpenAI session credentials intentionally never survive a page reload.
+            state.openAIApiKey = null;
+            state.openAIStatus = "not_configured";
+            state.openAIErrorCode = null;
+            if (state.aiProvider === "openai") {
+              state.aiProvider = "offline";
+              state.isOfflineMode = true;
+            }
+          }
           // Clear expired Bedrock credentials on load
           if (state?.bedrockConfig) {
             if (Date.now() > state.bedrockConfig.credentials.expiration) {

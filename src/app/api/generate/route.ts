@@ -3,7 +3,8 @@ import { AWSContextProvider } from '@/lib/mcp/aws-client';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { architectureSchema } from '@/lib/ai/schemas';
+import { buildArchitecturePrompt } from '@/lib/ai/prompts';
 
 // Initialize Redis and Ratelimit
 const redis = new Redis({
@@ -14,30 +15,6 @@ const redis = new Redis({
 const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(5, '24 h'),
-});
-
-// Architecture Schema Validation
-const NodeSchema = z.object({
-    id: z.string(),
-    type: z.enum(['aws-compute', 'aws-database', 'aws-network', 'aws-storage', 'default']).default('default'),
-    data: z.object({
-        label: z.string(),
-        service: z.string(),
-        metadata: z.record(z.string(), z.string()).optional(),
-    }),
-});
-
-const EdgeSchema = z.object({
-    id: z.string(),
-    source: z.string(),
-    target: z.string(),
-    label: z.string().optional(),
-});
-
-const ArchitectureSchema = z.object({
-    nodes: z.array(NodeSchema),
-    edges: z.array(EdgeSchema),
-    recommendations: z.array(z.string()).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -78,59 +55,11 @@ export async function POST(req: NextRequest) {
             // Continue without context
         }
 
-        const hasExistingArchitecture = currentNodes && currentNodes.length > 0;
-        let serializedCurrent = "";
-
-        if (hasExistingArchitecture) {
-            serializedCurrent = JSON.stringify({ nodes: currentNodes, edges: currentEdges });
-        }
-
-        const systemPrompt = `
-      You are an AWS Certified Solutions Architect and DevOps Expert.
-      Your goal is to design or modify a high-quality, production-ready AWS architecture based on the user's request.
-      
-      ${awsContext ? `\nIMPORTANT: Use the following AWS Documentation context to inform your design decisions and service selection:\n${awsContext}\n` : ""}
-
-      Follow the **AWS Well-Architected Framework**:
-      1. **Operational Excellence**: Include monitoring/logging (CloudWatch).
-      2. **Security**: Use private subnets, WAF, IAM where appropriate.
-      3. **Reliability**: Suggest Multi-AZ RDS, Auto Scaling Groups.
-      4. **Performance**: Use caching (ElastiCache, CloudFront).
-      5. **Cost Optimization**: Select appropriate instance types (e.g., t3.micro for starters).
-
-      **Output Format**:
-      Return a strictly valid JSON object.
-      
-      Nodes Schema:
-      - id: unique string (e.g., "node-1")
-      - type: "aws-compute" | "aws-database" | "aws-network" | "aws-storage" | "default"
-        (IMPORTANT: You MUST use ONLY these exact values for 'type'. Do NOT invent others like 'aws-analytics' or 'aws-security'.)
-      - data: { 
-          label: string (e.g., "Web Server"), 
-          service: string (Exact AWS Service Name, e.g., "EC2", "Lambda", "S3", "DynamoDB"), 
-          metadata: { ...key-value pairs... } 
-          (IMPORTANT: All metadata values MUST be strings. distinct values should be comma-joined. Do NOT use arrays or objects.)
-        }
-
-      Edges Schema:
-      - id: unique string
-      - source: id of source node
-      - target: id of target node
-      - label: description of connection (e.g., "sends logs", "queries")
-
-      ${hasExistingArchitecture ?
-                `**CRITICAL INSTRUCTION: EXISTING ARCHITECTURE**
-      The user ALREADY HAS an existing architecture.
-      CURRENT ARCHITECTURE JSON:
-      ${serializedCurrent}
-      
-      Your task is to MODIFY this architecture based on the user's request.
-      IMPORTANT: You MUST return the FULL updated JSON, containing EVERYTHING from the existing architecture PLUS any new nodes or edges you add or modifications you make.
-      DO NOT remove existing components unless requested. Maintain existing IDs.`
-                :
-                `**Example**:
-      If user asks for "Serverless API", include API Gateway -> Lambda -> DynamoDB, plus CloudWatch for logs.`}
-    `;
+        const systemPrompt = buildArchitecturePrompt({
+            currentNodes,
+            currentEdges,
+            awsContext,
+        });
 
         // 3. Generate via Bedrock or Gemini
         let text: string;
@@ -165,7 +94,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Failed to generate valid structure' }, { status: 500 });
         }
 
-        const validation = ArchitectureSchema.safeParse(rawJson);
+        const validation = architectureSchema.safeParse(rawJson);
 
         if (!validation.success) {
             console.error("Schema validation failed:", validation.error);

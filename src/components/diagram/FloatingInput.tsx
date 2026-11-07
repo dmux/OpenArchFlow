@@ -21,6 +21,8 @@ interface FloatingInputProps {
     disabled?: boolean;
     placeholder?: string;
     isOpen: boolean;
+    configureRequired?: boolean;
+    onConfigure?: () => void;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -52,7 +54,9 @@ export default function FloatingInput({
     isLoading,
     disabled,
     placeholder,
-    isOpen
+    isOpen,
+    configureRequired,
+    onConfigure,
 }: FloatingInputProps) {
     const [prompt, setPrompt] = useState('');
     const [showExamples, setShowExamples] = useState(false);
@@ -95,6 +99,14 @@ export default function FloatingInput({
 
     return (
         <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-300" ref={dropdownRef}>
+            {configureRequired && (
+                <div className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-border bg-background/95 px-4 py-3 shadow-xl">
+                    <p className="text-sm text-muted-foreground">Configure sua chave OpenAI para habilitar as ações de IA.</p>
+                    <Button type="button" size="sm" onClick={onConfigure}>
+                        Configurar chave
+                    </Button>
+                </div>
+            )}
             <div className="relative">
                 <form
                     onSubmit={handleSubmit}

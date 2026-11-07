@@ -2,6 +2,59 @@ import { CreateMLCEngine, MLCEngine, InitProgressCallback } from "@mlc-ai/web-ll
 
 // Defines the model to use. Phi-3 is a good balance of speed and quality for this use case.
 const SELECTED_MODEL = "Phi-3-mini-4k-instruct-q4f16_1-MLC";
+const ARCHITECTURE_JSON_SCHEMA = JSON.stringify({
+    type: "object",
+    properties: {
+        nodes: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    id: { type: "string" },
+                    type: {
+                        type: "string",
+                        enum: ["aws-compute", "aws-database", "aws-network", "aws-storage", "default"],
+                    },
+                    data: {
+                        type: "object",
+                        properties: {
+                            label: { type: "string" },
+                            service: { type: "string" },
+                            metadata: {
+                                type: "object",
+                                additionalProperties: { type: "string" },
+                            },
+                        },
+                        required: ["label", "service"],
+                        additionalProperties: false,
+                    },
+                },
+                required: ["id", "data"],
+                additionalProperties: false,
+            },
+        },
+        edges: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    id: { type: "string" },
+                    source: { type: "string" },
+                    target: { type: "string" },
+                    label: { type: "string" },
+                },
+                required: ["id", "source", "target"],
+                additionalProperties: false,
+            },
+        },
+        recommendations: {
+            type: "array",
+            items: { type: "string" },
+        },
+    },
+    required: ["nodes", "edges"],
+    additionalProperties: false,
+});
 
 export class WebLLMService {
     private static instance: WebLLMService;
@@ -72,7 +125,12 @@ export class WebLLMService {
                 { role: "system", content: systemPrompt },
                 { role: "user", content: prompt }
             ],
-            response_format: { type: "json_object" },
+            // WebLLM requires the schema field to be a string when JSON mode is enabled.
+            // The complete architecture shape is validated by the shared Zod schema before use.
+            response_format: {
+                type: "json_object",
+                schema: ARCHITECTURE_JSON_SCHEMA,
+            },
             temperature: 0.1, // Low temperature for consistent JSON
         });
 

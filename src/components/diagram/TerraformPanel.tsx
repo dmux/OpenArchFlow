@@ -34,6 +34,9 @@ import { TerraformGenerator } from "@/lib/iac/terraform";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
 import { exportTerraform, exportTerraformZip } from "@/lib/export/terraform";
 import type { IaCOutput } from "@/lib/iac/types";
+import { OpenAIProviderError, parseOpenAIJson, requestOpenAIText } from "@/lib/ai/openai";
+import { buildTerraformPrompts } from "@/lib/ai/prompts";
+import { terraformOutputSchema, terraformResponseJsonSchema } from "@/lib/ai/schemas";
 
 const TERRAFORM_PURPLE = "#7B42BC";
 const PROVIDER_VERSION = "5.0";
@@ -48,6 +51,7 @@ interface TerraformPanelProps {
   edges: AppEdge[];
   diagramName: string;
   geminiApiKey?: string | null;
+  onConfigureAI: () => void;
 }
 
 interface ResourceSummary {
@@ -146,11 +150,18 @@ export default function TerraformPanel({
   edges,
   diagramName,
   geminiApiKey,
+  onConfigureAI,
 }: TerraformPanelProps) {
   const geminiModel = useDiagramStore((s) => s.geminiModel);
   const bedrockConfig = useDiagramStore((s) => s.bedrockConfig);
   const bedrockModel = useDiagramStore((s) => s.bedrockModel);
   const aiProvider = useDiagramStore((s) => s.aiProvider);
+  const openAIApiKey = useDiagramStore((s) => s.openAIApiKey);
+  const openAIStatus = useDiagramStore((s) => s.openAIStatus);
+  const openAIModel = useDiagramStore((s) => s.openAIModel);
+  const openAICustomModel = useDiagramStore((s) => s.openAICustomModel);
+  const setOpenAIStatus = useDiagramStore((s) => s.setOpenAIStatus);
+  const openAIReady = Boolean(openAIApiKey && openAIStatus === "connected");
   const [activeTab, setActiveTab] = useState<PanelTab>("code");
   const [activeFile, setActiveFile] = useState<CodeFile>("main.tf");
   const [output, setOutput] = useState<IaCOutput | null>(null);
@@ -223,7 +234,11 @@ export default function TerraformPanel({
   }, [nodes, edges, diagramName, region, providerVersion, isOpen, awsNodes.length]);
 
   const generateWithAI = useCallback(async () => {
-    if (aiProvider !== "bedrock" && !geminiApiKey) {
+    if (aiProvider === "openai" && !openAIReady) {
+      onConfigureAI();
+      return;
+    }
+    if (aiProvider !== "bedrock" && aiProvider !== "openai" && !geminiApiKey) {
       toast.error("AI provider not configured. Set up Gemini or AWS Bedrock in AI settings.");
       return;
     }
@@ -237,6 +252,41 @@ export default function TerraformPanel({
     }
     setIsGenerating(true);
     try {
+      if (aiProvider === "openai" && openAIApiKey) {
+        const staticBaseline = new TerraformGenerator({ region, providerVersion }).generate(
+          nodes,
+          edges,
+          diagramName,
+        );
+        const prompts = buildTerraformPrompts({
+          nodes,
+          edges,
+          diagramName,
+          region,
+          providerVersion,
+          staticFiles: staticBaseline.files,
+        });
+        const responseText = await requestOpenAIText({
+          apiKey: openAIApiKey,
+          model: openAICustomModel.trim() || openAIModel,
+          instructions: prompts.instructions,
+          input: prompts.input,
+          jsonSchema: {
+            type: "json_schema",
+            name: "terraform_output",
+            strict: true,
+            schema: terraformResponseJsonSchema,
+          },
+        });
+        const aiOutput = parseOpenAIJson(responseText, (value) =>
+          terraformOutputSchema.parse(value),
+        );
+        setOutput(aiOutput);
+        setEditedContent({});
+        toast.success("OpenAI-enhanced Terraform generated!");
+        return;
+      }
+
       const bedrockCreds = aiProvider === "bedrock" && bedrockConfig
         ? { region: bedrockConfig.region, ...bedrockConfig.credentials }
         : undefined;
@@ -264,13 +314,25 @@ export default function TerraformPanel({
       setEditedContent({});
       toast.success(data.source === "ai" ? "AI-enhanced Terraform generated!" : "Terraform generated (static).");
     } catch (err) {
-      toast.error("AI generation failed. Using static generation.");
+      if (
+        aiProvider === "openai" &&
+        err instanceof OpenAIProviderError &&
+        (err.code === "invalid_api_key" || err.code === "missing_model_read_permission")
+      ) {
+        setOpenAIStatus("error", err.code);
+        onConfigureAI();
+      }
+      toast.error(
+        aiProvider === "openai" && err instanceof OpenAIProviderError
+          ? `${err.message} Using static generation.`
+          : "AI generation failed. Using static generation.",
+      );
       const generator = new TerraformGenerator({ region, providerVersion });
       setOutput(generator.generate(nodes, edges, diagramName));
     } finally {
       setIsGenerating(false);
     }
-  }, [nodes, edges, diagramName, region, providerVersion, geminiApiKey, geminiModel, aiProvider, bedrockConfig, bedrockModel]);
+  }, [nodes, edges, diagramName, region, providerVersion, geminiApiKey, geminiModel, aiProvider, bedrockConfig, bedrockModel, openAIReady, openAIApiKey, openAIModel, openAICustomModel, setOpenAIStatus, onConfigureAI]);
 
   const currentFileContent = useMemo(() => {
     if (!output) return "";
@@ -370,8 +432,8 @@ export default function TerraformPanel({
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2 text-xs gap-1.5"
-                onClick={generateWithAI}
-                disabled={isGenerating || awsNodes.length === 0}
+                onClick={aiProvider === "openai" && !openAIReady ? onConfigureAI : generateWithAI}
+                disabled={isGenerating || (awsNodes.length === 0 && !(aiProvider === "openai" && !openAIReady))}
                 style={!isGenerating ? { color: TERRAFORM_PURPLE } : {}}
               >
                 {isGenerating ? (
@@ -379,7 +441,7 @@ export default function TerraformPanel({
                 ) : (
                   <Sparkles size={13} />
                 )}
-                {isGenerating ? "Generating…" : "AI Enhance"}
+                {isGenerating ? "Generating…" : aiProvider === "openai" && !openAIReady ? "Configure OpenAI key" : "AI Enhance"}
               </Button>
               <Button
                 size="icon"
@@ -678,7 +740,9 @@ export default function TerraformPanel({
 
                       <div className="p-3 rounded-lg border border-[#7B42BC] bg-muted">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          <strong className="text-foreground">AI Enhancement</strong> uses Gemini 2.5 Flash + HashiCorp Terraform MCP to generate production-ready HCL with real provider schemas, IAM roles, and security groups.
+                          <strong className="text-foreground">AI Enhancement</strong>{aiProvider === "openai"
+                            ? " sends your diagram and Terraform baseline directly from this browser to OpenAI using your key."
+                            : " uses the selected AI provider and HashiCorp Terraform MCP where available to generate production-ready HCL."}
                         </p>
                       </div>
                     </div>
@@ -695,7 +759,7 @@ export default function TerraformPanel({
                 size="sm"
                 className="flex-1 gap-2 text-xs text-white"
                 style={{ background: `linear-gradient(135deg, ${TERRAFORM_PURPLE}, #5C2D8A)` }}
-                onClick={generateWithAI}
+                onClick={aiProvider === "openai" && !openAIReady ? onConfigureAI : generateWithAI}
                 disabled={isGenerating}
               >
                 {isGenerating ? (
@@ -703,7 +767,7 @@ export default function TerraformPanel({
                 ) : (
                   <Sparkles size={13} />
                 )}
-                {isGenerating ? "Generating with AI…" : "Generate with AI"}
+                {isGenerating ? "Generating with AI…" : aiProvider === "openai" && !openAIReady ? "Configure OpenAI key" : "Generate with AI"}
               </Button>
               <Button
                 size="sm"

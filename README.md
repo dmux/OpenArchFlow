@@ -25,7 +25,7 @@
   <img src="https://img.shields.io/badge/version-0.13.0-blue?style=flat-square" alt="Version 0.13.0" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16+-black?style=flat-square&logo=next.js" alt="Next.js 16+" />
-  <img src="https://img.shields.io/badge/AI-Gemini%20%7C%20AWS%20Bedrock%20%7C%20WebLLM-orange?style=flat-square" alt="AI Providers" />
+  <img src="https://img.shields.io/badge/AI-OpenAI%20%7C%20Gemini%20%7C%20AWS%20Bedrock%20%7C%20WebLLM-orange?style=flat-square" alt="AI Providers" />
 </p>
 
 ---
@@ -76,11 +76,18 @@ Scan a live AWS account and turn its running resources into a diagram in seconds
 
 ### 🤖 Multi-Provider AI Engine
 
+- **OpenAI (BYOK)**: Use your own API key from the browser. OpenArchFlow sends OpenAI requests directly to `api.openai.com`; the key is kept in memory unless you enable **Lembrar neste dispositivo**, which stores it in this browser's local storage. Browser storage is not a secure vault. Use a dedicated key with minimum required permissions and configure OpenAI spending limits. The model selector includes the ten newest pricing-page entries plus an optional custom model; access to specialized models can vary by project.
 - **Cloud AI (Gemini)**: Choose between **Gemini 2.0 Flash** (fastest), **Gemini 2.5 Flash** (balanced, default), or **Gemini 2.5 Pro** (most capable) — selectable directly from the AI Provider dialog.
 - **AWS Bedrock**: Two authentication methods — **SSO / IAM Identity Center** (Device Authorization Flow, no manual credential entry) or **Direct Access Keys** (IAM user keys or STS temporary credentials). Supports all Bedrock model families (Claude, Llama, Mistral, Titan, Cohere) with dynamic model discovery per account. Credentials are silently refreshed before expiry using the stored SSO token.
 - **Local AI (WebLLM)**: Privacy-focused, runs Phi-3 entirely in your browser via WebGPU.
 - **Incremental Generation**: AI can intelligently modify and append to existing architecture diagrams instead of starting from scratch.
 - **Diagram Chat**: Discuss your architecture with an AI Assistant directly from the toolbar for explanations, pricing estimates, and security reviews.
+
+#### OpenAI key safety
+
+OpenAI is an explicit Bring Your Own Key (BYOK) option. The browser sends the key and AI request directly to OpenAI's API; OpenArchFlow does not configure an OpenAI key through environment variables or a server proxy. Key validation uses `GET /v1/models` and does not generate tokens. Responses requests set `store: false`.
+
+By default the key exists only in memory for the current session. Enabling **Lembrar neste dispositivo** saves it locally in the browser using the app's local settings storage. That storage is accessible to browser code on this device and is not equivalent to a secure vault. Disconnecting clears the session key and returns the app to Offline; a remembered key stays saved until you delete it. Create a dedicated project key with only the permissions needed for model listing and Responses, and configure spending limits in the OpenAI platform.
 
 ### 💰 AWS Pricing & Cost Estimation
 
