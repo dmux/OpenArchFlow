@@ -120,12 +120,15 @@ export async function requestOpenAIText(
   fetchImplementation: typeof fetch = fetch,
 ): Promise<string> {
   const client = createOpenAIClient(request.apiKey, fetchImplementation);
+  const input = request.jsonMode && !/\bjson\b/i.test(request.input)
+    ? `${request.input}\n\nRespond in JSON.`
+    : request.input;
 
   try {
     const response = await client.responses.create({
       model: request.model,
       instructions: request.instructions,
-      input: request.input,
+      input,
       store: false,
       ...(request.jsonSchema
         ? { text: { format: request.jsonSchema } }

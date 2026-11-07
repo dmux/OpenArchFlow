@@ -207,7 +207,7 @@ test("serializes a non-persistent JSON-mode Responses request to OpenAI", async 
   assert.deepEqual(parsedBody, {
     model: "gpt-6-luna",
     instructions: "Return a JSON object.",
-    input: "Create a serverless architecture.",
+    input: "Create a serverless architecture.\n\nRespond in JSON.",
     store: false,
     text: { format: { type: "json_object" } },
   });
