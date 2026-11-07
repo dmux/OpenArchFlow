@@ -135,6 +135,32 @@ test("maps exhausted OpenAI credits separately from rate limiting", async () => 
   );
 });
 
+test("maps exhausted credit balances to the user-facing credits message", async () => {
+  await assert.rejects(
+    requestOpenAIText(
+      {
+        apiKey: "sk-credit-balance-key",
+        model: "gpt-6-luna",
+        instructions: "Respond helpfully.",
+        input: "Hello",
+      },
+      mockOpenAIError(
+        429,
+        "credit_balance_exhausted",
+        "You have no credits remaining. Add credits to continue.",
+      ),
+    ),
+    (error: unknown) => {
+      assert.ok(error instanceof OpenAIProviderError);
+      assert.equal(error.code, "insufficient_quota");
+      assert.match(error.message, /no available API credits|spending limit/i);
+      assert.equal(error.message.includes("sk-credit-balance-key"), false);
+      assert.equal(error.message.includes("Add credits to continue"), false);
+      return true;
+    },
+  );
+});
+
 test("maps ordinary 429 responses to a retryable rate-limit message", async () => {
   await assert.rejects(
     validateOpenAIApiKey(

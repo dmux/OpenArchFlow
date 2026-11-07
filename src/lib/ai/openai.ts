@@ -55,9 +55,12 @@ export function mapOpenAIError(
       return new OpenAIProviderError("invalid_api_key");
     }
     if (
-      ["insufficient_quota", "billing_hard_limit_reached", "billing_not_active"].some(
-        (quotaCode) => code.includes(quotaCode),
-      )
+      [
+        "insufficient_quota",
+        "credit_balance_exhausted",
+        "billing_hard_limit_reached",
+        "billing_not_active",
+      ].some((quotaCode) => code.includes(quotaCode))
     ) {
       return new OpenAIProviderError("insufficient_quota");
     }
