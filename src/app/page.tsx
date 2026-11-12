@@ -27,6 +27,7 @@ import TemplatesDialog from "@/components/diagram/TemplatesDialog";
 import TerraformPanel from "@/components/diagram/TerraformPanel";
 import MiniStackPanel from "@/components/ministack/MiniStackPanel";
 import GlueStudioPanel from "@/components/ministack/GlueStudioPanel";
+import DatabricksStudioPanel from "@/components/databricks/DatabricksStudioPanel";
 import { OnboardingTour } from "@/components/layout/OnboardingTour";
 
 // Service
@@ -422,6 +423,12 @@ function HomeContent() {
 
         <GlueStudioPanel
           isOpen={activePanel === "glue"}
+          onClose={() => setActivePanel(null)}
+          nodes={currentNodes}
+        />
+
+        <DatabricksStudioPanel
+          isOpen={activePanel === "databricks"}
           onClose={() => setActivePanel(null)}
           nodes={currentNodes}
         />

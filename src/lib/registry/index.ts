@@ -4,6 +4,7 @@ import { azureProvider } from '../providers/azure';
 import { cloudNativeProvider } from '../providers/cloudnative';
 import { genericProvider } from '../providers/generic';
 import { integrationProvider } from '../providers/integration';
+import { databricksProvider } from '../providers/databricks';
 import { Box } from 'lucide-react';
 
 const providers: Record<ProviderId, ProviderDefinition> = {
@@ -12,6 +13,7 @@ const providers: Record<ProviderId, ProviderDefinition> = {
     cloudnative: cloudNativeProvider,
     generic: genericProvider,
     integration: integrationProvider,
+    databricks: databricksProvider,
     gcp: {} as any, // Stub for GCP to satisfy ProviderId for now
 };
 
@@ -20,7 +22,7 @@ export const getProvider = (id: ProviderId): ProviderDefinition => {
 };
 
 export const getAllProviders = (): ProviderDefinition[] => {
-    return [awsProvider, azureProvider, cloudNativeProvider, integrationProvider, genericProvider];
+    return [awsProvider, azureProvider, cloudNativeProvider, databricksProvider, integrationProvider, genericProvider];
 };
 
 export const getServiceIcon = (providerId: string, service: string, type: string, subtype?: string): IconComponent => {

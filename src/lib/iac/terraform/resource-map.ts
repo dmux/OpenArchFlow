@@ -513,6 +513,121 @@ const AWS_RESOURCE_MAP: Record<string, TerraformResourceDef> = {
   },
 };
 
+// `{{name}}` is replaced by the generator with the resource's own name, so several
+// resources of the same kind get distinct names.
+const UNIQUE_NAME = '"${local.name_prefix}-{{name}}"';
+// Unity Catalog object names may only contain letters, digits and underscores.
+const SCHEMA_NAME = 'replace("${local.name_prefix}_{{name}}", "-", "_")';
+
+/**
+ * Databricks resources (provider databricks/databricks). Keys are the service ids
+ * of the Databricks Component Library tab. Nested object values render as blocks.
+ */
+const DATABRICKS_RESOURCE_MAP: Record<string, TerraformResourceDef> = {
+  "databricks-cluster": {
+    resource: "databricks_cluster",
+    defaultArgs: {
+      cluster_name: UNIQUE_NAME,
+      spark_version: "var.databricks_spark_version",
+      node_type_id: "var.databricks_node_type_id",
+      num_workers: "1",
+      autotermination_minutes: "20",
+    },
+    outputs: ["id", "url"],
+  },
+  "databricks-sql-warehouse": {
+    resource: "databricks_sql_endpoint",
+    defaultArgs: {
+      name: UNIQUE_NAME,
+      cluster_size: "2X-Small",
+      max_num_clusters: "1",
+      auto_stop_mins: "10",
+    },
+    outputs: ["id", "jdbc_url"],
+  },
+  "databricks-job": {
+    resource: "databricks_job",
+    defaultArgs: {
+      name: UNIQUE_NAME,
+      task: {
+        task_key: "main",
+        spark_python_task: { python_file: "var.databricks_python_file" },
+        new_cluster: {
+          spark_version: "var.databricks_spark_version",
+          node_type_id: "var.databricks_node_type_id",
+          num_workers: "1",
+        },
+      },
+    },
+    outputs: ["id", "url"],
+  },
+  "databricks-notebook": {
+    resource: "databricks_notebook",
+    defaultArgs: {
+      path: '"/Shared/${local.name_prefix}-{{name}}"',
+      language: "PYTHON",
+      content_base64: 'base64encode("# Databricks notebook source\\nprint(\'hello from OpenArchFlow\')\\n")',
+    },
+    outputs: ["id", "url"],
+  },
+  "databricks-pipeline": {
+    resource: "databricks_pipeline",
+    defaultArgs: {
+      name: UNIQUE_NAME,
+      development: "true",
+      continuous: "false",
+      library: { notebook: { path: "var.databricks_pipeline_notebook_path" } },
+    },
+    outputs: ["id", "url"],
+  },
+  "databricks-catalog": {
+    resource: "databricks_catalog",
+    defaultArgs: {
+      name: SCHEMA_NAME,
+      comment: "Managed by Terraform (OpenArchFlow)",
+    },
+    outputs: ["id", "name"],
+  },
+  "databricks-schema": {
+    resource: "databricks_schema",
+    defaultArgs: {
+      catalog_name: "var.databricks_catalog_name",
+      name: SCHEMA_NAME,
+    },
+    outputs: ["id", "name"],
+  },
+  "databricks-volume": {
+    resource: "databricks_volume",
+    defaultArgs: {
+      catalog_name: "var.databricks_catalog_name",
+      schema_name: "var.databricks_schema_name",
+      name: SCHEMA_NAME,
+      volume_type: "MANAGED",
+    },
+    outputs: ["id", "volume_path"],
+  },
+  "databricks-table": {
+    resource: "databricks_sql_table",
+    defaultArgs: {
+      catalog_name: "var.databricks_catalog_name",
+      schema_name: "var.databricks_schema_name",
+      name: SCHEMA_NAME,
+      table_type: "MANAGED",
+      data_source_format: "DELTA",
+      warehouse_id: "var.databricks_warehouse_id",
+      column: { name: "id", type: "BIGINT" },
+    },
+    outputs: ["id"],
+  },
+  "databricks-mlflow": {
+    resource: "databricks_mlflow_experiment",
+    defaultArgs: {
+      name: '"/Shared/${local.name_prefix}-{{name}}"',
+    },
+    outputs: ["id"],
+  },
+};
+
 // Service names used by the canvas/templates that differ from the map keys.
 const SERVICE_ALIASES: Record<string, string> = {
   cognito: "cognitouserpool",
@@ -520,7 +635,11 @@ const SERVICE_ALIASES: Record<string, string> = {
 
 export function getResourceDef(service: string): TerraformResourceDef | null {
   const key = service.toLowerCase().replace(/\s+/g, "");
-  return AWS_RESOURCE_MAP[SERVICE_ALIASES[key] ?? key] ?? null;
+  return (
+    AWS_RESOURCE_MAP[SERVICE_ALIASES[key] ?? key] ??
+    DATABRICKS_RESOURCE_MAP[key] ??
+    null
+  );
 }
 
 export function sanitizeResourceName(name: string): string {

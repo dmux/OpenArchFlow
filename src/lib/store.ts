@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { temporal } from "zundo";
 import type { MiniStackNodeState, MiniStackConfig } from "./ministack/types";
 import { DEFAULT_MINISTACK_CONFIG } from "./ministack/types";
+import { DEFAULT_MINILAKE_CONFIG, type MinilakeConfig } from "./minilake/types";
 
 export interface BedrockCredentials {
   accessKeyId: string;
@@ -183,6 +184,18 @@ export interface GlueNodeConfig {
   jobs?: GlueJobConfig[];
 }
 
+export interface DatabricksJobConfig {
+  name: string;
+  pysparkCode: string;
+  parameters?: string[];
+  /** pip requirements, whitespace separated (e.g. "databricks-sdk requests>=2.31"), installed before the script runs. */
+  libraries?: string;
+}
+
+export interface DatabricksNodeConfig {
+  jobs?: DatabricksJobConfig[];
+}
+
 export interface AppNodeData extends Record<string, unknown> {
   label: string;
   service: string;
@@ -197,6 +210,7 @@ export interface AppNodeData extends Record<string, unknown> {
   };
   ministack?: MiniStackNodeState;
   glueConfig?: GlueNodeConfig;
+  databricksConfig?: DatabricksNodeConfig;
 }
 
 export type { MiniStackNodeState, MiniStackConfig };
@@ -372,6 +386,9 @@ interface DiagramState {
   // MiniStack
   ministackConfig: MiniStackConfig;
   setMinistackConfig: (config: Partial<MiniStackConfig>) => void;
+  minilakeConfig: MinilakeConfig;
+  setMinilakeConfig: (config: Partial<MinilakeConfig>) => void;
+  setNodeDatabricksConfig: (nodeId: string, databricksConfig: Partial<DatabricksNodeConfig>) => void;
   setNodeMinistackState: (nodeId: string, state: Partial<MiniStackNodeState>) => void;
   setNodeGlueConfig: (nodeId: string, glueConfig: Partial<GlueNodeConfig>) => void;
   resetNodeMinistackState: (nodeId: string) => void;
@@ -431,6 +448,7 @@ export const useDiagramStore = create<DiagramState>()(
           "active" | "error" | "throttled"
         >(),
         ministackConfig: { ...DEFAULT_MINISTACK_CONFIG },
+        minilakeConfig: { ...DEFAULT_MINILAKE_CONFIG },
         googleUser: null,
         geminiModel: "gemini-2.5-flash",
         bedrockConfig: null,
@@ -1645,6 +1663,37 @@ export const useDiagramStore = create<DiagramState>()(
           });
         },
 
+        setMinilakeConfig: (config) => {
+          set((state) => ({
+            minilakeConfig: { ...state.minilakeConfig, ...config },
+          }));
+        },
+
+        setNodeDatabricksConfig: (nodeId, databricksConfig) => {
+          const { activeDiagramId } = get();
+          if (!activeDiagramId) return;
+          set((state) => {
+            const activeDiagram = state.diagrams[activeDiagramId];
+            const newNodes = activeDiagram.nodes.map((node) => {
+              if (node.id === nodeId) {
+                const merged = { ...(node.data.databricksConfig ?? {}), ...databricksConfig } as DatabricksNodeConfig;
+                return { ...node, data: { ...node.data, databricksConfig: merged } };
+              }
+              return node;
+            });
+            return {
+              diagrams: {
+                ...state.diagrams,
+                [activeDiagramId]: {
+                  ...activeDiagram,
+                  nodes: newNodes as AppNode[],
+                  lastModified: Date.now(),
+                },
+              },
+            };
+          });
+        },
+
         setNodeGlueConfig: (nodeId, glueConfig) => {
           const { activeDiagramId } = get();
           if (!activeDiagramId) return;
@@ -1745,6 +1794,7 @@ export const useDiagramStore = create<DiagramState>()(
           collaborationRoomId: state.collaborationRoomId,
           customShapes: state.customShapes,
           ministackConfig: state.ministackConfig,
+          minilakeConfig: state.minilakeConfig,
           nodeDisplayMode: state.nodeDisplayMode,
           edgeSettings: state.edgeSettings,
           driveFileId: state.driveFileId,

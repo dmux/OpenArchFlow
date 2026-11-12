@@ -1,0 +1,24 @@
+# minilake: local Databricks REST API emulator used by OpenArchFlow's Databricks Studio.
+#
+#   docker compose -f docker-compose.minilake.yml up
+#
+# Jobs run in sibling apache/spark containers, so the Docker socket is mounted.
+# MINILAKE_CORS_ORIGINS must include the origin that serves OpenArchFlow.
+services:
+  minilake:
+    image: ghcr.io/dmux/minilake:latest
+    ports:
+      - "8000:8000"
+    environment:
+      MINILAKE_DATA_DIR: /data
+      MINILAKE_HOST: 0.0.0.0
+      MINILAKE_PORT: 8000
+      MINILAKE_DOCKER_VOLUME: minilake_data
+      MINILAKE_SPARK_IMAGE: apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
+      MINILAKE_CORS_ORIGINS: ${MINILAKE_CORS_ORIGINS:-http://localhost:3000}
+    volumes:
+      - minilake_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  minilake_data:

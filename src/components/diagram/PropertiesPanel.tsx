@@ -31,10 +31,12 @@ import JsonEditor from "./JsonEditor";
 import PricingSection from "./PricingSection";
 import { SiTerraform } from "react-icons/si";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
+import { isTerraformNode } from "@/lib/iac/terraform/nodes";
 import { MiniConsoleDialog } from "@/components/ministack/MiniConsoleDialog";
 import { Rocket, CheckCircle, XCircle, Clock, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { prettyPayload } from "@/lib/format-payload";
+import { DATABRICKS_RUNNABLE_SERVICES } from "@/lib/providers/databricks/services";
 import {
   lambdaInvoke,
   sqsSendMessage,
@@ -671,6 +673,29 @@ const INVOKE_LABEL: Record<string, string> = {
   sns: "Publish", eventbridge: "Put event", s3: "Put object",
   apigateway: "Send request", "api-gateway": "Send request",
 };
+
+function DatabricksSection() {
+  return (
+    <div className="w-full space-y-2">
+      <span className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+        <Rocket size={14} />
+        Databricks (minilake)
+      </span>
+      <p className="text-xs text-muted-foreground">
+        Write and run PySpark jobs against a local minilake server.
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => window.dispatchEvent(new CustomEvent("openarchflow:open-panel", { detail: "databricks" }))}
+        className="h-7 text-xs gap-1"
+      >
+        <Settings size={12} className="shrink-0" />
+        Databricks Studio
+      </Button>
+    </div>
+  );
+}
 
 function MiniStackSection({ nodeId, node }: { nodeId: string; node: any }) {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -2228,13 +2253,18 @@ export default function PropertiesPanel() {
               ) : null}
 
               {/* Infrastructure as Code Config — shown for all AWS nodes */}
-              {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
+              {isTerraformNode(selectedNode) && (
                 <IaCConfigSection nodeId={selectedNodeId} node={selectedNode} />
               )}
 
               {/* MiniStack Deploy — shown for all AWS nodes */}
               {(type.startsWith("aws-") || (selectedNode.data.type ?? "").toString().startsWith("aws-")) && (
                 <MiniStackSection nodeId={selectedNodeId} node={selectedNode} />
+              )}
+
+              {/* Databricks Studio — runnable Databricks components (jobs, notebooks) */}
+              {(DATABRICKS_RUNNABLE_SERVICES as readonly string[]).includes(selectedNode.data.service) && (
+                <DatabricksSection />
               )}
 
               {/* Custom Properties */}

@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useDiagramStore, type AppNode, type AppEdge } from "@/lib/store";
 import { TerraformGenerator } from "@/lib/iac/terraform";
 import { getResourceDef } from "@/lib/iac/terraform/resource-map";
+import { isTerraformNode } from "@/lib/iac/terraform/nodes";
 import { exportTerraform, exportTerraformZip } from "@/lib/export/terraform";
 import type { IaCOutput } from "@/lib/iac/types";
 
@@ -183,7 +184,7 @@ export default function TerraformPanel({
   }, []);
 
   const awsNodes = useMemo(
-    () => nodes.filter((n) => (n.type ?? "").startsWith("aws-") || (n.data.type ?? "").startsWith("aws-")),
+    () => nodes.filter(isTerraformNode),
     [nodes],
   );
 
